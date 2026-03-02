@@ -63,10 +63,10 @@ export default async function CustomerDetailPage({
 
   return (
     <div className="space-y-6">
-      <section className="card p-4">
+      <section className="card p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-lg font-semibold">Customer Detail</h1>
-          <Link href="/admin/customers" className="text-sm text-blue-700">
+          <h1 className="text-xl font-semibold" style={{ color: "var(--foreground)" }}>Customer Detail</h1>
+          <Link href="/admin/customers" className="link text-sm">
             Back to customers
           </Link>
         </div>
@@ -103,34 +103,33 @@ export default async function CustomerDetailPage({
         </form>
       </section>
 
-      <section className="card p-4">
-        <h2 className="text-base font-semibold">Customer Jobs</h2>
-        <div className="mt-3 overflow-x-auto">
+      <section className="card overflow-hidden p-0">
+        <div className="border-b p-4" style={{ borderColor: "var(--border)" }}>
+          <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>Customer Jobs</h2>
+        </div>
+        <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-zinc-500">
-                <th className="py-2 pr-4">Title</th>
-                <th className="py-2 pr-4">Scheduled</th>
-                <th className="py-2 pr-4">Status</th>
+              <tr className="border-b bg-[var(--muted-bg)]" style={{ borderColor: "var(--border)" }}>
+                <th className="table-header py-3 pl-5 pr-4">Title</th>
+                <th className="table-header py-3 pr-4">Scheduled</th>
+                <th className="table-header py-3 pr-5">Status</th>
               </tr>
             </thead>
             <tbody>
               {(jobs ?? []).map((job) => (
-                <tr key={job.id} className="border-b last:border-none">
-                  <td className="py-2 pr-4">
-                    <Link
-                      href={`/admin/jobs/${job.id}`}
-                      className="font-medium text-blue-700 hover:underline"
-                    >
+                <tr key={job.id} className="border-b transition hover:bg-[var(--muted-bg)]/50" style={{ borderColor: "var(--border)" }}>
+                  <td className="py-3 pl-5 pr-4">
+                    <Link href={`/admin/jobs/${job.id}`} className="link font-medium">
                       {job.title}
                     </Link>
                   </td>
-                  <td className="py-2 pr-4">
+                  <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>
                     {job.scheduled_start
                       ? new Date(job.scheduled_start).toLocaleString()
                       : "Unscheduled"}
                   </td>
-                  <td className="py-2 pr-4">
+                  <td className="py-3 pr-5">
                     <JobStatusBadge status={job.status} />
                   </td>
                 </tr>

@@ -37,35 +37,39 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="mt-1 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--foreground)" }}>
+          Dashboard
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
           Live snapshot of customers, jobs, and invoices.
         </p>
       </div>
-      <section className="grid gap-3 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-3">
         {cards.map((card) => (
-          <div key={card.label} className="card p-4">
-            <p className="text-sm text-zinc-600">{card.label}</p>
-            <p className="text-2xl font-semibold">{card.value}</p>
+          <div key={card.label} className="card p-5">
+            <p className="text-sm" style={{ color: "var(--muted)" }}>{card.label}</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums" style={{ color: "var(--foreground)" }}>
+              {card.value}
+            </p>
           </div>
         ))}
       </section>
 
-      <section className="card p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Recent Jobs</h2>
-          <Link href="/admin/jobs" className="btn-primary px-3 py-1.5">
+      <section className="card overflow-hidden p-0">
+        <div className="flex items-center justify-between border-b p-4" style={{ borderColor: "var(--border)" }}>
+          <h2 className="text-lg font-semibold" style={{ color: "var(--foreground)" }}>Recent Jobs</h2>
+          <Link href="/admin/jobs" className="btn-primary px-3 py-1.5 text-sm">
             View all jobs
           </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-zinc-500">
-                <th className="py-2 pr-4">Job</th>
-                <th className="py-2 pr-4">Customer</th>
-                <th className="py-2 pr-4">Scheduled</th>
-                <th className="py-2 pr-4">Status</th>
+              <tr className="border-b bg-[var(--muted-bg)]" style={{ borderColor: "var(--border)" }}>
+                <th className="table-header py-3 pl-5 pr-4">Job</th>
+                <th className="table-header py-3 pr-4">Customer</th>
+                <th className="table-header py-3 pr-4">Scheduled</th>
+                <th className="table-header py-3 pr-5">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -74,22 +78,19 @@ export default async function AdminDashboardPage() {
                   ? job.customers[0]?.name
                   : job.customers?.name;
                 return (
-                  <tr key={job.id} className="border-b last:border-none">
-                    <td className="py-2 pr-4">
-                      <Link
-                        href={`/admin/jobs/${job.id}`}
-                        className="font-medium text-blue-700 hover:underline"
-                      >
+                  <tr key={job.id} className="border-b transition hover:bg-[var(--muted-bg)]/50" style={{ borderColor: "var(--border)" }}>
+                    <td className="py-3 pl-5 pr-4">
+                      <Link href={`/admin/jobs/${job.id}`} className="link font-medium">
                         {job.title}
                       </Link>
                     </td>
-                    <td className="py-2 pr-4">{customer ?? "-"}</td>
-                    <td className="py-2 pr-4">
+                    <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>{customer ?? "-"}</td>
+                    <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>
                       {job.scheduled_start
                         ? new Date(job.scheduled_start).toLocaleString()
                         : "Unscheduled"}
                     </td>
-                    <td className="py-2 pr-4">
+                    <td className="py-3 pr-5">
                       <JobStatusBadge status={job.status} />
                     </td>
                   </tr>

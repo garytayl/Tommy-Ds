@@ -15,41 +15,44 @@ type InvoiceSummaryProps = {
 export function InvoiceSummary({ invoice }: InvoiceSummaryProps) {
   if (!invoice) {
     return (
-      <div className="card p-4">
-        <h3 className="text-sm font-semibold">Invoice</h3>
-        <p className="mt-2 text-sm text-zinc-500">No invoice created yet.</p>
+      <div className="card p-5">
+        <h3 className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>Invoice</h3>
+        <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>No invoice created yet.</p>
       </div>
     );
   }
 
   return (
-    <div className="card p-4">
+    <div className="card p-5">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Invoice</h3>
-        <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
-          {invoice.status}
+        <h3 className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>Invoice</h3>
+        <span
+          className="rounded-full px-2.5 py-1 text-xs font-medium capitalize"
+          style={{ backgroundColor: "var(--muted-bg)", color: "var(--muted)" }}
+        >
+          {invoice.status.replace("_", " ")}
         </span>
       </div>
       <dl className="space-y-2 text-sm">
         <div className="flex justify-between">
-          <dt className="text-zinc-600">Subtotal</dt>
-          <dd>{formatCents(invoice.subtotal_cents)}</dd>
+          <dt style={{ color: "var(--muted)" }}>Subtotal</dt>
+          <dd className="tabular-nums">{formatCents(invoice.subtotal_cents)}</dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-zinc-600">Tax</dt>
-          <dd>{formatCents(invoice.tax_cents)}</dd>
+          <dt style={{ color: "var(--muted)" }}>Tax</dt>
+          <dd className="tabular-nums">{formatCents(invoice.tax_cents)}</dd>
         </div>
-        <div className="flex justify-between border-t pt-2 font-medium">
+        <div className="flex justify-between border-t pt-2 font-medium" style={{ borderColor: "var(--border)" }}>
           <dt>Total</dt>
-          <dd>{formatCents(invoice.total_cents)}</dd>
+          <dd className="tabular-nums">{formatCents(invoice.total_cents)}</dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-zinc-600">Paid</dt>
-          <dd>{formatCents(invoice.deposit_paid_cents)}</dd>
+          <dt style={{ color: "var(--muted)" }}>Paid</dt>
+          <dd className="tabular-nums">{formatCents(invoice.deposit_paid_cents)}</dd>
         </div>
         <div className="flex justify-between font-semibold">
           <dt>Balance Due</dt>
-          <dd>{formatCents(invoice.balance_due_cents)}</dd>
+          <dd className="tabular-nums">{formatCents(invoice.balance_due_cents)}</dd>
         </div>
       </dl>
     </div>

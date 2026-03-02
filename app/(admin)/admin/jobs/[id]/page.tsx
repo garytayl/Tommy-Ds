@@ -124,15 +124,15 @@ export default async function JobDetailPage({
   return (
     <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
       <section className="space-y-6">
-        <div className="card p-4">
+        <div className="card p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-semibold">{job.title}</h1>
-              <p className="text-sm text-zinc-600">
+              <h1 className="text-xl font-semibold" style={{ color: "var(--foreground)" }}>{job.title}</h1>
+              <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
                 Customer:{" "}
                 <Link
                   href={customer?.id ? `/admin/customers/${customer.id}` : "/admin/customers"}
-                  className="text-blue-700 hover:underline"
+                  className="link"
                 >
                   {customer?.name ?? "Unknown customer"}
                 </Link>
@@ -141,7 +141,7 @@ export default async function JobDetailPage({
             <JobStatusBadge status={job.status} />
           </div>
 
-          <p className="text-sm text-zinc-700">
+          <p className="text-sm" style={{ color: "var(--muted)" }}>
             {job.address_line1}
             {job.address_line2 ? `, ${job.address_line2}` : ""}
             {`, ${job.city}, ${job.state} ${job.zip}`}
@@ -205,7 +205,7 @@ export default async function JobDetailPage({
         {invoice ? (
           <Link
             href={`/admin/invoices/${invoice.id}`}
-            className="btn-primary block w-full text-center"
+            className="btn-primary block w-full text-center py-2.5"
           >
             Open invoice
           </Link>

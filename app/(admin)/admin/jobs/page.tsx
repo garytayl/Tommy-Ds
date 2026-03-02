@@ -80,8 +80,16 @@ export default async function JobsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="card p-4">
-        <h1 className="text-lg font-semibold">Jobs</h1>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--foreground)" }}>
+          Jobs
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
+          Create and manage jobs, scheduling, and assign installers.
+        </p>
+      </div>
+      <section className="card p-5">
+        <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>Create job</h2>
         <form action={createJob} className="mt-4 grid gap-3 sm:grid-cols-2">
           <select name="customer_id" required className="field">
             <option value="">Select customer</option>
@@ -168,17 +176,17 @@ export default async function JobsPage() {
         </form>
       </section>
 
-      <section className="card p-4">
+      <section className="card overflow-hidden p-0">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-zinc-500">
-                <th className="py-2 pr-4">Title</th>
-                <th className="py-2 pr-4">Customer</th>
-                <th className="py-2 pr-4">Installer</th>
-                <th className="py-2 pr-4">Scheduled</th>
-                <th className="py-2 pr-4">Status</th>
-                <th className="py-2 pr-4">Action</th>
+              <tr className="border-b bg-[var(--muted-bg)]" style={{ borderColor: "var(--border)" }}>
+                <th className="table-header py-3 pl-5 pr-4">Title</th>
+                <th className="table-header py-3 pr-4">Customer</th>
+                <th className="table-header py-3 pr-4">Installer</th>
+                <th className="table-header py-3 pr-4">Scheduled</th>
+                <th className="table-header py-3 pr-4">Status</th>
+                <th className="table-header py-3 pr-5">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -191,23 +199,20 @@ export default async function JobsPage() {
                   : job.profiles?.full_name;
 
                 return (
-                  <tr key={job.id} className="border-b last:border-none">
-                    <td className="py-2 pr-4 font-medium">{job.title}</td>
-                    <td className="py-2 pr-4">{customer ?? "-"}</td>
-                    <td className="py-2 pr-4">{installer ?? "Unassigned"}</td>
-                    <td className="py-2 pr-4">
+                  <tr key={job.id} className="border-b transition hover:bg-[var(--muted-bg)]/50" style={{ borderColor: "var(--border)" }}>
+                    <td className="py-3 pl-5 pr-4 font-medium">{job.title}</td>
+                    <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>{customer ?? "-"}</td>
+                    <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>{installer ?? "Unassigned"}</td>
+                    <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>
                       {job.scheduled_start
                         ? new Date(job.scheduled_start).toLocaleString()
                         : "Unscheduled"}
                     </td>
-                    <td className="py-2 pr-4">
+                    <td className="py-3 pr-4">
                       <JobStatusBadge status={job.status} />
                     </td>
-                    <td className="py-2 pr-4">
-                      <Link
-                        href={`/admin/jobs/${job.id}`}
-                        className="text-blue-700 hover:underline"
-                      >
+                    <td className="py-3 pr-5">
+                      <Link href={`/admin/jobs/${job.id}`} className="link">
                         Open
                       </Link>
                     </td>

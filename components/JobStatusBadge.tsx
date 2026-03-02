@@ -7,21 +7,24 @@ type JobStatus =
   | "canceled"
   | string;
 
-const STATUS_STYLES: Record<string, string> = {
-  lead: "bg-zinc-100 text-zinc-700",
-  scheduled: "bg-blue-100 text-blue-700",
-  in_progress: "bg-amber-100 text-amber-700",
-  completed: "bg-emerald-100 text-emerald-700",
-  paid: "bg-green-100 text-green-700",
-  canceled: "bg-rose-100 text-rose-700",
+const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
+  lead: { bg: "oklch(0.97 0.01 260)", text: "oklch(0.45 0.04 260)" },
+  scheduled: { bg: "oklch(0.92 0.06 250)", text: "oklch(0.42 0.15 262)" },
+  in_progress: { bg: "oklch(0.92 0.08 75)", text: "oklch(0.5 0.15 75)" },
+  completed: { bg: "oklch(0.92 0.08 155)", text: "oklch(0.4 0.12 155)" },
+  paid: { bg: "oklch(0.92 0.1 145)", text: "oklch(0.38 0.12 145)" },
+  canceled: { bg: "oklch(0.95 0.03 25)", text: "oklch(0.5 0.15 25)" },
 };
 
+const defaultStyle = { bg: "oklch(0.97 0.01 260)", text: "oklch(0.45 0.04 260)" };
+
 export function JobStatusBadge({ status }: { status: JobStatus }) {
-  const className = STATUS_STYLES[status] ?? "bg-zinc-100 text-zinc-700";
+  const style = STATUS_STYLES[status] ?? defaultStyle;
 
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${className}`}
+      className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize"
+      style={{ backgroundColor: style.bg, color: style.text }}
     >
       {status.replace("_", " ")}
     </span>

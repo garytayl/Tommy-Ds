@@ -31,60 +31,47 @@ export default async function CustomersPage() {
 
   return (
     <div className="space-y-6">
-      <section className="card p-4">
-        <h1 className="text-lg font-semibold">Customers</h1>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--foreground)" }}>
+          Customers
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
+          Add and manage customer records.
+        </p>
+      </div>
+      <section className="card p-5">
+        <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>Add customer</h2>
         <form action={createCustomer} className="mt-4 grid gap-3 sm:grid-cols-4">
-          <input
-            type="text"
-            name="name"
-            required
-            placeholder="Customer name"
-            className="field"
-          />
-          <input
-            type="text"
-            name="phone"
-            placeholder="Phone"
-            className="field"
-          />
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            className="field"
-          />
-          <button type="submit" className="btn-primary">
-            Add customer
-          </button>
+          <input type="text" name="name" required placeholder="Customer name" className="field" />
+          <input type="text" name="phone" placeholder="Phone" className="field" />
+          <input type="email" name="email" placeholder="Email" className="field" />
+          <button type="submit" className="btn-primary">Add customer</button>
         </form>
       </section>
 
-      <section className="card p-4">
+      <section className="card overflow-hidden p-0">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-zinc-500">
-                <th className="py-2 pr-4">Name</th>
-                <th className="py-2 pr-4">Phone</th>
-                <th className="py-2 pr-4">Email</th>
-                <th className="py-2 pr-4">Created</th>
-                <th className="py-2 pr-4">Action</th>
+              <tr className="border-b bg-[var(--muted-bg)]" style={{ borderColor: "var(--border)" }}>
+                <th className="table-header py-3 pl-5 pr-4">Name</th>
+                <th className="table-header py-3 pr-4">Phone</th>
+                <th className="table-header py-3 pr-4">Email</th>
+                <th className="table-header py-3 pr-4">Created</th>
+                <th className="table-header py-3 pr-5">Action</th>
               </tr>
             </thead>
             <tbody>
               {(customers ?? []).map((customer) => (
-                <tr key={customer.id} className="border-b last:border-none">
-                  <td className="py-2 pr-4 font-medium">{customer.name}</td>
-                  <td className="py-2 pr-4">{customer.phone ?? "-"}</td>
-                  <td className="py-2 pr-4">{customer.email ?? "-"}</td>
-                  <td className="py-2 pr-4">
+                <tr key={customer.id} className="border-b transition hover:bg-[var(--muted-bg)]/50" style={{ borderColor: "var(--border)" }}>
+                  <td className="py-3 pl-5 pr-4 font-medium">{customer.name}</td>
+                  <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>{customer.phone ?? "-"}</td>
+                  <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>{customer.email ?? "-"}</td>
+                  <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>
                     {new Date(customer.created_at).toLocaleDateString()}
                   </td>
-                  <td className="py-2 pr-4">
-                    <Link
-                      href={`/admin/customers/${customer.id}`}
-                      className="text-blue-700 hover:underline"
-                    >
+                  <td className="py-3 pr-5">
+                    <Link href={`/admin/customers/${customer.id}`} className="link">
                       Open
                     </Link>
                   </td>

@@ -1,50 +1,144 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f7fb;
-  --foreground: #111827;
-  --surface: #ffffff;
-  --border: #e4e4e7;
-  --muted: #64748b;
+  --background: oklch(0.985 0.002 247);
+  --foreground: oklch(0.21 0.02 260);
+  --surface: oklch(1 0 0);
+  --surface-elevated: oklch(1 0 0);
+  --border: oklch(0.91 0.008 256);
+  --muted: oklch(0.55 0.02 260);
+  --muted-bg: oklch(0.965 0.005 247);
+  --primary: oklch(0.45 0.18 262);
+  --primary-hover: oklch(0.38 0.18 262);
+  --primary-foreground: oklch(0.99 0 0);
+  --accent: oklch(0.92 0.03 262);
+  --accent-foreground: oklch(0.28 0.05 262);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-hover: oklch(0.48 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.45 0.18 262);
+  --radius: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --shadow-sm: 0 1px 2px oklch(0.2 0.02 260 / 0.06);
+  --shadow: 0 4px 6px -1px oklch(0.2 0.02 260 / 0.08), 0 2px 4px -2px oklch(0.2 0.02 260 / 0.04);
+  --shadow-md: 0 10px 15px -3px oklch(0.2 0.02 260 / 0.08), 0 4px 6px -4px oklch(0.2 0.02 260 / 0.04);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+* {
+  border-color: var(--border);
 }
 
 body {
   color-scheme: light;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  line-height: 1.5;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
   color: inherit;
 }
 
+/* Focus visible for accessibility */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
 @layer components {
   .card {
-    @apply rounded-xl border border-zinc-200 bg-white p-5 shadow-sm;
+    @apply rounded-xl border bg-white p-5 shadow-sm;
+    border-color: var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .card-elevated {
+    @apply rounded-xl border bg-white p-5;
+    border-color: var(--border);
+    box-shadow: var(--shadow);
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:cursor-not-allowed disabled:opacity-50;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--primary-hover);
+  }
+  .btn-primary:focus-visible {
+    @apply outline-none ring-2 ring-offset-2;
+    --tw-ring-color: var(--ring);
+  }
+  .btn-primary:disabled {
+    @apply cursor-not-allowed opacity-60;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:cursor-not-allowed disabled:opacity-50;
+    background: var(--surface);
+    color: var(--accent-foreground);
+    border: 1px solid var(--border);
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--accent);
+  }
+  .btn-secondary:focus-visible {
+    @apply outline-none ring-2 ring-offset-2;
+    --tw-ring-color: var(--ring);
+  }
+  .btn-secondary:disabled {
+    @apply cursor-not-allowed opacity-60;
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:cursor-not-allowed disabled:opacity-50;
+    background: oklch(0.98 0.02 25);
+    color: var(--destructive);
+    border: 1px solid oklch(0.9 0.06 25);
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition;
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: var(--destructive);
+    color: var(--destructive-foreground);
+  }
+  .btn-danger:focus-visible {
+    @apply outline-none ring-2 ring-offset-2;
+    --tw-ring-color: var(--destructive);
+  }
+  .btn-danger:disabled {
+    @apply cursor-not-allowed opacity-60;
   }
 
   .field {
-    @apply rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-300;
+    @apply w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-[var(--foreground)] shadow-sm transition;
+    border-color: var(--border);
+  }
+  .field::placeholder {
+    color: var(--muted);
+  }
+  .field:focus {
+    @apply outline-none ring-2 ring-offset-0;
+    border-color: var(--ring);
+    --tw-ring-color: var(--ring);
+  }
+
+  .table-header {
+    @apply text-left text-xs font-semibold uppercase tracking-wider;
+    color: var(--muted);
+  }
+
+  .link {
+    color: var(--primary);
+    @apply font-medium underline-offset-4 hover:underline;
   }
 }

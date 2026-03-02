@@ -12,7 +12,7 @@ export default async function InstallerJobsTodayPage() {
 
   if (!user) {
     return (
-      <div className="card p-4 text-sm text-zinc-600">
+      <div className="card p-5 text-center" style={{ color: "var(--muted)" }}>
         Sign in as an installer to view assigned jobs.
       </div>
     );
@@ -51,54 +51,60 @@ export default async function InstallerJobsTodayPage() {
   const rows = (jobs ?? []) as InstallerJob[];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">My Jobs Today</h1>
-        <p className="mt-1 text-sm text-zinc-600">
+        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--foreground)" }}>
+          My Jobs Today
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
           Assigned jobs for the current day.
         </p>
       </div>
       {rows.length === 0 ? (
-        <div className="card p-4 text-sm text-zinc-600">
+        <div className="card p-8 text-center" style={{ color: "var(--muted)" }}>
           No jobs scheduled today.
         </div>
       ) : (
-        rows.map((job) => {
-          const invoice = Array.isArray(job.invoices)
-            ? job.invoices[0]
-            : job.invoices;
+        <ul className="space-y-3">
+          {rows.map((job) => {
+            const invoice = Array.isArray(job.invoices)
+              ? job.invoices[0]
+              : job.invoices;
 
-          return (
-            <Link
-              key={job.id}
-              href={`/m/jobs/${job.id}`}
-              className="card block p-4 transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <h2 className="font-medium">{job.title}</h2>
-                <JobStatusBadge status={job.status} />
-              </div>
-              <p className="text-sm text-zinc-600">
-                {job.address_line1}, {job.city}, {job.state} {job.zip}
-              </p>
-              <div className="mt-2 flex items-center justify-between text-sm">
-                <p>
-                  {job.scheduled_start
-                    ? new Date(job.scheduled_start).toLocaleTimeString([], {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })
-                    : "No time set"}
-                </p>
-                <p className="font-medium">
-                  {invoice
-                    ? `Balance: ${formatCents(invoice.balance_due_cents)}`
-                    : "No invoice"}
-                </p>
-              </div>
-            </Link>
-          );
-        })
+            return (
+              <li key={job.id}>
+                <Link
+                  href={`/m/jobs/${job.id}`}
+                  className="card block p-4 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <h2 className="font-semibold" style={{ color: "var(--foreground)" }}>{job.title}</h2>
+                    <JobStatusBadge status={job.status} />
+                  </div>
+                  <p className="text-sm" style={{ color: "var(--muted)" }}>
+                    {job.address_line1}, {job.city}, {job.state} {job.zip}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between text-sm">
+                    <p style={{ color: "var(--muted)" }}>
+                      {job.scheduled_start
+                        ? new Date(job.scheduled_start).toLocaleTimeString([], {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })
+                        : "No time set"}
+                    </p>
+                    <p className="font-semibold tabular-nums" style={{ color: "var(--foreground)" }}>
+                      {invoice
+                        ? `Balance: ${formatCents(invoice.balance_due_cents)}`
+                        : "No invoice"}
+                    </p>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );

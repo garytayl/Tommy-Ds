@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/jobs", label: "Jobs" },
+  { href: "/admin/invoices", label: "Invoices" },
 ];
 
 export default async function AdminLayout({
@@ -20,10 +21,10 @@ export default async function AdminLayout({
 
   if (!isSupabaseConfigured) {
     return (
-      <div className="min-h-screen bg-zinc-50 p-6">
+      <div className="min-h-screen p-6" style={{ background: "var(--background)" }}>
         <div className="card mx-auto max-w-2xl">
-          <h1 className="text-lg font-semibold">Supabase Not Configured</h1>
-          <p className="mt-2 text-sm text-zinc-600">
+          <h1 className="text-lg font-semibold" style={{ color: "var(--foreground)" }}>Supabase Not Configured</h1>
+          <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
             Add <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
             <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in Vercel Project Settings
             → Environment Variables, then redeploy.
@@ -53,23 +54,31 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white/95 backdrop-blur">
+    <div className="min-h-screen" style={{ background: "var(--background)" }}>
+      <header
+        className="sticky top-0 z-20 border-b backdrop-blur-md"
+        style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+      >
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link href="/admin" className="text-sm font-semibold text-zinc-900">
+          <Link
+            href="/admin"
+            className="text-sm font-semibold"
+            style={{ color: "var(--foreground)" }}
+          >
             Field Service Scheduler
           </Link>
-          <nav className="flex items-center gap-2">
+          <nav className="flex items-center gap-1">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
+                className="rounded-lg px-3 py-2 text-sm font-medium transition hover:opacity-90"
+                style={{ color: "var(--foreground)" }}
               >
                 {item.label}
               </Link>
             ))}
-            <Link href="/m" className="btn-primary px-3 py-1.5">
+            <Link href="/m" className="btn-primary ml-2 px-3 py-1.5 text-sm">
               Installer View
             </Link>
           </nav>

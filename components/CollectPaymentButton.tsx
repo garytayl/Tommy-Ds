@@ -51,9 +51,11 @@ export function CollectPaymentButton({
         disabled={disabled || isLoading}
         className="btn-primary w-full"
       >
-        {isLoading ? "Creating Pay Link..." : "Collect Payment (Send Pay Link)"}
+        {isLoading ? "Creating Pay Link…" : "Collect Payment (Send Pay Link)"}
       </button>
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {error ? (
+        <p className="text-xs font-medium" style={{ color: "var(--destructive)" }}>{error}</p>
+      ) : null}
     </div>
   );
 }
