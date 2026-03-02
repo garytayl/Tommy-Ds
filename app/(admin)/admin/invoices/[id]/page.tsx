@@ -1,0 +1,260 @@
+import Link from "next/link";
+import { revalidatePath } from "next/cache";
+import { notFound } from "next/navigation";
+
+import { InvoiceSummary } from "@/components/InvoiceSummary";
+import { formatCents, dollarsToCents } from "@/lib/money";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+const INVOICE_STATUSES = ["draft", "sent", "partially_paid", "paid", "void"];
+
+export default async function InvoiceDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await createSupabaseServerClient();
+
+  const [invoiceResult, itemsResult, paymentsResult] = await Promise.all([
+    supabase
+      .from("invoices")
+      .select(
+        "id,job_id,status,subtotal_cents,tax_cents,total_cents,deposit_paid_cents,balance_due_cents,jobs(id,title,customers(id,name))",
+      )
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("invoice_items")
+      .select("id,description,qty,unit_price_cents,line_total_cents,created_at")
+      .eq("invoice_id", id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("payments")
+      .select("id,amount_cents,status,provider,provider_payment_intent_id,created_at")
+      .eq("invoice_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const invoiceRecord = invoiceResult.data;
+  const items = itemsResult.data ?? [];
+  const payments = paymentsResult.data ?? [];
+
+  if (!invoiceRecord) {
+    notFound();
+  }
+  const invoice = invoiceRecord;
+  const invoiceJobId = invoice.job_id;
+
+  async function addInvoiceItem(formData: FormData) {
+    "use server";
+
+    const description = String(formData.get("description") ?? "").trim();
+    const qty = Number.parseFloat(String(formData.get("qty") ?? "1"));
+    const unitPriceCents = dollarsToCents(String(formData.get("unit_price") ?? "0"));
+
+    if (!description || !Number.isFinite(qty) || qty <= 0 || unitPriceCents <= 0) {
+      return;
+    }
+
+    const lineTotalCents = Math.round(qty * unitPriceCents);
+    const supabase = await createSupabaseServerClient();
+    await supabase.from("invoice_items").insert({
+      invoice_id: id,
+      description,
+      qty,
+      unit_price_cents: unitPriceCents,
+      line_total_cents: lineTotalCents,
+    });
+
+    revalidatePath(`/admin/invoices/${id}`);
+    revalidatePath(`/admin/jobs/${invoiceJobId}`);
+  }
+
+  async function updateTax(formData: FormData) {
+    "use server";
+
+    const taxCents = dollarsToCents(String(formData.get("tax") ?? "0"));
+    const supabase = await createSupabaseServerClient();
+    await supabase.from("invoices").update({ tax_cents: taxCents }).eq("id", id);
+    await supabase.rpc("recompute_invoice_totals", { p_invoice_id: id });
+
+    revalidatePath(`/admin/invoices/${id}`);
+    revalidatePath(`/admin/jobs/${invoiceJobId}`);
+  }
+
+  async function updateInvoiceStatus(formData: FormData) {
+    "use server";
+
+    const status = String(formData.get("status") ?? "draft");
+    if (!INVOICE_STATUSES.includes(status)) return;
+
+    const supabase = await createSupabaseServerClient();
+    await supabase.from("invoices").update({ status }).eq("id", id);
+    revalidatePath(`/admin/invoices/${id}`);
+    revalidatePath(`/admin/jobs/${invoiceJobId}`);
+  }
+
+  const invoiceJob = Array.isArray(invoice.jobs) ? invoice.jobs[0] : invoice.jobs;
+  const invoiceCustomer = Array.isArray(invoiceJob?.customers)
+    ? invoiceJob.customers[0]
+    : invoiceJob?.customers;
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+      <section className="space-y-6">
+        <div className="rounded-lg border bg-white p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h1 className="text-lg font-semibold">Invoice {invoice.id.slice(0, 8)}</h1>
+            <Link href={`/admin/jobs/${invoiceJobId}`} className="text-sm text-blue-700">
+              Back to job
+            </Link>
+          </div>
+
+          <p className="text-sm text-zinc-600">
+            Job: {invoiceJob?.title ?? "-"} | Customer: {invoiceCustomer?.name ?? "-"}
+          </p>
+
+          <form action={updateInvoiceStatus} className="mt-4 flex items-end gap-2">
+            <div>
+              <label className="mb-1 block text-xs text-zinc-500">Status</label>
+              <select
+                name="status"
+                defaultValue={invoice.status}
+                className="rounded border px-3 py-2 text-sm"
+              >
+                {INVOICE_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="submit"
+              className="rounded bg-black px-3 py-2 text-sm font-medium text-white"
+            >
+              Update
+            </button>
+          </form>
+        </div>
+
+        <div className="rounded-lg border bg-white p-4">
+          <h2 className="text-base font-semibold">Line Items</h2>
+          <form action={addInvoiceItem} className="mt-3 grid gap-2 sm:grid-cols-4">
+            <input
+              name="description"
+              type="text"
+              required
+              placeholder="Description"
+              className="sm:col-span-2 rounded border px-3 py-2 text-sm"
+            />
+            <input
+              name="qty"
+              type="number"
+              min="0.01"
+              step="0.01"
+              defaultValue="1"
+              className="rounded border px-3 py-2 text-sm"
+            />
+            <input
+              name="unit_price"
+              type="number"
+              min="0.01"
+              step="0.01"
+              placeholder="Unit price ($)"
+              className="rounded border px-3 py-2 text-sm"
+            />
+            <button
+              type="submit"
+              className="sm:col-span-4 rounded bg-black px-4 py-2 text-sm font-medium text-white"
+            >
+              Add item
+            </button>
+          </form>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-zinc-500">
+                  <th className="py-2 pr-4">Description</th>
+                  <th className="py-2 pr-4">Qty</th>
+                  <th className="py-2 pr-4">Unit Price</th>
+                  <th className="py-2 pr-4">Line Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id} className="border-b last:border-none">
+                    <td className="py-2 pr-4">{item.description}</td>
+                    <td className="py-2 pr-4">{item.qty}</td>
+                    <td className="py-2 pr-4">{formatCents(item.unit_price_cents)}</td>
+                    <td className="py-2 pr-4 font-medium">
+                      {formatCents(item.line_total_cents)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-white p-4">
+          <h2 className="text-base font-semibold">Payments</h2>
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-zinc-500">
+                  <th className="py-2 pr-4">Date</th>
+                  <th className="py-2 pr-4">Amount</th>
+                  <th className="py-2 pr-4">Status</th>
+                  <th className="py-2 pr-4">Provider Ref</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((payment) => (
+                  <tr key={payment.id} className="border-b last:border-none">
+                    <td className="py-2 pr-4">
+                      {new Date(payment.created_at).toLocaleString()}
+                    </td>
+                    <td className="py-2 pr-4">{formatCents(payment.amount_cents)}</td>
+                    <td className="py-2 pr-4">{payment.status}</td>
+                    <td className="py-2 pr-4">
+                      {payment.provider_payment_intent_id ?? "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <InvoiceSummary invoice={invoice} />
+        <div className="rounded-lg border bg-white p-4">
+          <h3 className="text-sm font-semibold">Tax</h3>
+          <form action={updateTax} className="mt-3 flex items-end gap-2">
+            <div className="grow">
+              <label className="mb-1 block text-xs text-zinc-500">Tax amount ($)</label>
+              <input
+                type="number"
+                name="tax"
+                min="0"
+                step="0.01"
+                defaultValue={(invoice.tax_cents / 100).toFixed(2)}
+                className="w-full rounded border px-3 py-2 text-sm"
+              />
+            </div>
+            <button
+              type="submit"
+              className="rounded bg-black px-4 py-2 text-sm font-medium text-white"
+            >
+              Save
+            </button>
+          </form>
+        </div>
+      </section>
+    </div>
+  );
+}
