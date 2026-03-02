@@ -14,6 +14,25 @@ const NAV_ITEMS = [
 export default async function AdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const isSupabaseConfigured =
+    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
+    Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="min-h-screen bg-zinc-50 p-6">
+        <div className="mx-auto max-w-2xl rounded-lg border bg-white p-5">
+          <h1 className="text-lg font-semibold">Supabase Not Configured</h1>
+          <p className="mt-2 text-sm text-zinc-600">
+            Add <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
+            <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in Vercel Project Settings
+            → Environment Variables, then redeploy.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
