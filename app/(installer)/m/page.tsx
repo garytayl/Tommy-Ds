@@ -12,7 +12,7 @@ export default async function InstallerJobsTodayPage() {
 
   if (!user) {
     return (
-      <div className="rounded-lg border bg-white p-4 text-sm text-zinc-600">
+      <div className="card p-4 text-sm text-zinc-600">
         Sign in as an installer to view assigned jobs.
       </div>
     );
@@ -52,9 +52,14 @@ export default async function InstallerJobsTodayPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">My Jobs Today</h1>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">My Jobs Today</h1>
+        <p className="mt-1 text-sm text-zinc-600">
+          Assigned jobs for the current day.
+        </p>
+      </div>
       {rows.length === 0 ? (
-        <div className="rounded-lg border bg-white p-4 text-sm text-zinc-600">
+        <div className="card p-4 text-sm text-zinc-600">
           No jobs scheduled today.
         </div>
       ) : (
@@ -67,7 +72,7 @@ export default async function InstallerJobsTodayPage() {
             <Link
               key={job.id}
               href={`/m/jobs/${job.id}`}
-              className="block rounded-lg border bg-white p-4"
+              className="card block p-4 transition hover:-translate-y-0.5 hover:shadow-md"
             >
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="font-medium">{job.title}</h2>

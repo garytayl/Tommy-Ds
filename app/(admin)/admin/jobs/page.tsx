@@ -80,10 +80,10 @@ export default async function JobsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border bg-white p-4">
+      <section className="card p-4">
         <h1 className="text-lg font-semibold">Jobs</h1>
         <form action={createJob} className="mt-4 grid gap-3 sm:grid-cols-2">
-          <select name="customer_id" required className="rounded border px-3 py-2 text-sm">
+          <select name="customer_id" required className="field">
             <option value="">Select customer</option>
             {(customersResult.data ?? []).map((customer) => (
               <option key={customer.id} value={customer.id}>
@@ -96,42 +96,42 @@ export default async function JobsPage() {
             type="text"
             required
             placeholder="Job title"
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
           <input
             name="address_line1"
             type="text"
             required
             placeholder="Address line 1"
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
           <input
             name="address_line2"
             type="text"
             placeholder="Address line 2"
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
           <input
             name="city"
             type="text"
             required
             placeholder="City"
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
           <input
             name="state"
             type="text"
             defaultValue="IN"
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
           <input
             name="zip"
             type="text"
             required
             placeholder="Zip"
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
-          <select name="assigned_installer_id" className="rounded border px-3 py-2 text-sm">
+          <select name="assigned_installer_id" className="field">
             <option value="">Unassigned installer</option>
             {(installersResult.data ?? []).map((installer) => (
               <option key={installer.user_id} value={installer.user_id}>
@@ -142,14 +142,14 @@ export default async function JobsPage() {
           <input
             name="scheduled_start"
             type="datetime-local"
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
           <input
             name="scheduled_end"
             type="datetime-local"
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
-          <select name="status" defaultValue="lead" className="rounded border px-3 py-2 text-sm">
+          <select name="status" defaultValue="lead" className="field">
             {JOB_STATUSES.map((status) => (
               <option key={status} value={status}>
                 {status}
@@ -160,18 +160,15 @@ export default async function JobsPage() {
             name="notes"
             placeholder="Notes"
             rows={3}
-            className="sm:col-span-2 rounded border px-3 py-2 text-sm"
+            className="field sm:col-span-2"
           />
-          <button
-            type="submit"
-            className="sm:col-span-2 rounded bg-black px-4 py-2 text-sm font-medium text-white"
-          >
+          <button type="submit" className="btn-primary sm:col-span-2">
             Create job
           </button>
         </form>
       </section>
 
-      <section className="rounded-lg border bg-white p-4">
+      <section className="card p-4">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>

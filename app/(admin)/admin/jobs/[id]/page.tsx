@@ -124,7 +124,7 @@ export default async function JobDetailPage({
   return (
     <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
       <section className="space-y-6">
-        <div className="rounded-lg border bg-white p-4">
+        <div className="card p-4">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h1 className="text-lg font-semibold">{job.title}</h1>
@@ -151,7 +151,7 @@ export default async function JobDetailPage({
             <select
               name="status"
               defaultValue={job.status}
-              className="rounded border px-3 py-2 text-sm"
+              className="field"
             >
               {JOB_STATUSES.map((status) => (
                 <option key={status} value={status}>
@@ -163,7 +163,7 @@ export default async function JobDetailPage({
             <select
               name="assigned_installer_id"
               defaultValue={job.assigned_installer_id ?? ""}
-              className="rounded border px-3 py-2 text-sm"
+              className="field"
             >
               <option value="">Unassigned installer</option>
               {installers.map((installer) => (
@@ -177,26 +177,23 @@ export default async function JobDetailPage({
               name="scheduled_start"
               type="datetime-local"
               defaultValue={toLocalInputDate(job.scheduled_start)}
-              className="rounded border px-3 py-2 text-sm"
+              className="field"
             />
             <input
               name="scheduled_end"
               type="datetime-local"
               defaultValue={toLocalInputDate(job.scheduled_end)}
-              className="rounded border px-3 py-2 text-sm"
+              className="field"
             />
 
             <textarea
               name="notes"
               defaultValue={job.notes ?? ""}
-              className="sm:col-span-2 rounded border px-3 py-2 text-sm"
+              className="field sm:col-span-2"
               rows={4}
             />
 
-            <button
-              type="submit"
-              className="sm:col-span-2 rounded bg-black px-4 py-2 text-sm font-medium text-white"
-            >
+            <button type="submit" className="btn-primary sm:col-span-2">
               Save job
             </button>
           </form>
@@ -208,16 +205,13 @@ export default async function JobDetailPage({
         {invoice ? (
           <Link
             href={`/admin/invoices/${invoice.id}`}
-            className="block rounded bg-black px-4 py-2 text-center text-sm font-medium text-white"
+            className="btn-primary block w-full text-center"
           >
             Open invoice
           </Link>
         ) : (
           <form action={createInvoice}>
-            <button
-              type="submit"
-              className="w-full rounded bg-black px-4 py-2 text-sm font-medium text-white"
-            >
+            <button type="submit" className="btn-primary w-full">
               Create invoice
             </button>
           </form>

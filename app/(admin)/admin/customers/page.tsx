@@ -31,7 +31,7 @@ export default async function CustomersPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border bg-white p-4">
+      <section className="card p-4">
         <h1 className="text-lg font-semibold">Customers</h1>
         <form action={createCustomer} className="mt-4 grid gap-3 sm:grid-cols-4">
           <input
@@ -39,30 +39,27 @@ export default async function CustomersPage() {
             name="name"
             required
             placeholder="Customer name"
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
           <input
             type="text"
             name="phone"
             placeholder="Phone"
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
           <input
             type="email"
             name="email"
             placeholder="Email"
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
-          <button
-            type="submit"
-            className="rounded bg-black px-4 py-2 text-sm font-medium text-white"
-          >
+          <button type="submit" className="btn-primary">
             Add customer
           </button>
         </form>
       </section>
 
-      <section className="rounded-lg border bg-white p-4">
+      <section className="card p-4">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>

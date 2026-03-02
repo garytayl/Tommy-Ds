@@ -21,7 +21,7 @@ export default async function AdminLayout({
   if (!isSupabaseConfigured) {
     return (
       <div className="min-h-screen bg-zinc-50 p-6">
-        <div className="mx-auto max-w-2xl rounded-lg border bg-white p-5">
+        <div className="card mx-auto max-w-2xl">
           <h1 className="text-lg font-semibold">Supabase Not Configured</h1>
           <p className="mt-2 text-sm text-zinc-600">
             Add <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
@@ -54,9 +54,9 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-zinc-50">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/admin" className="text-sm font-semibold">
+      <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+          <Link href="/admin" className="text-sm font-semibold text-zinc-900">
             Field Service Scheduler
           </Link>
           <nav className="flex items-center gap-2">
@@ -64,21 +64,18 @@ export default async function AdminLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded px-3 py-1 text-sm text-zinc-700 hover:bg-zinc-100"
+                className="rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
               >
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/m"
-              className="rounded bg-black px-3 py-1 text-sm text-white"
-            >
+            <Link href="/m" className="btn-primary px-3 py-1.5">
               Installer View
             </Link>
           </nav>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl p-4">{children}</main>
+      <main className="mx-auto w-full max-w-6xl p-4 sm:p-6">{children}</main>
     </div>
   );
 }

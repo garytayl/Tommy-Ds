@@ -15,7 +15,7 @@ type InvoiceSummaryProps = {
 export function InvoiceSummary({ invoice }: InvoiceSummaryProps) {
   if (!invoice) {
     return (
-      <div className="rounded-lg border bg-white p-4">
+      <div className="card p-4">
         <h3 className="text-sm font-semibold">Invoice</h3>
         <p className="mt-2 text-sm text-zinc-500">No invoice created yet.</p>
       </div>
@@ -23,10 +23,10 @@ export function InvoiceSummary({ invoice }: InvoiceSummaryProps) {
   }
 
   return (
-    <div className="rounded-lg border bg-white p-4">
+    <div className="card p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold">Invoice</h3>
-        <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs">
+        <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
           {invoice.status}
         </span>
       </div>

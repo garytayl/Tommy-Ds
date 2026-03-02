@@ -12,7 +12,7 @@ export default function InstallerLayout({
   if (!isSupabaseConfigured) {
     return (
       <div className="min-h-screen bg-zinc-50 p-6">
-        <div className="mx-auto max-w-2xl rounded-lg border bg-white p-5">
+        <div className="card mx-auto max-w-2xl">
           <h1 className="text-lg font-semibold">Supabase Not Configured</h1>
           <p className="mt-2 text-sm text-zinc-600">
             Add <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
@@ -26,17 +26,17 @@ export default function InstallerLayout({
 
   return (
     <div className="min-h-screen bg-zinc-50">
-      <header className="border-b bg-white">
+      <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-3">
-          <Link href="/m" className="text-sm font-semibold">
+          <Link href="/m" className="text-sm font-semibold text-zinc-900">
             Installer View
           </Link>
-          <Link href="/admin" className="text-sm text-blue-700 hover:underline">
+          <Link href="/admin" className="text-sm font-medium text-blue-700 hover:underline">
             Office Admin
           </Link>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-3xl p-4">{children}</main>
+      <main className="mx-auto w-full max-w-3xl p-4 sm:p-6">{children}</main>
     </div>
   );
 }

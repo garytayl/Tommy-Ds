@@ -36,22 +36,25 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <p className="mt-1 text-sm text-zinc-600">
+          Live snapshot of customers, jobs, and invoices.
+        </p>
+      </div>
       <section className="grid gap-3 sm:grid-cols-3">
         {cards.map((card) => (
-          <div key={card.label} className="rounded-lg border bg-white p-4">
+          <div key={card.label} className="card p-4">
             <p className="text-sm text-zinc-600">{card.label}</p>
             <p className="text-2xl font-semibold">{card.value}</p>
           </div>
         ))}
       </section>
 
-      <section className="rounded-lg border bg-white p-4">
+      <section className="card p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Recent Jobs</h2>
-          <Link
-            href="/admin/jobs"
-            className="rounded bg-black px-3 py-1 text-sm text-white"
-          >
+          <Link href="/admin/jobs" className="btn-primary px-3 py-1.5">
             View all jobs
           </Link>
         </div>

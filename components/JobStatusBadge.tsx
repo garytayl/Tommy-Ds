@@ -20,7 +20,9 @@ export function JobStatusBadge({ status }: { status: JobStatus }) {
   const className = STATUS_STYLES[status] ?? "bg-zinc-100 text-zinc-700";
 
   return (
-    <span className={`inline-flex rounded-full px-2 py-1 text-xs ${className}`}>
+    <span
+      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${className}`}
+    >
       {status.replace("_", " ")}
     </span>
   );

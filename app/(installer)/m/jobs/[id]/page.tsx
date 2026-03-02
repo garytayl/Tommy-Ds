@@ -28,7 +28,7 @@ export default async function InstallerJobDetailPage({
 
   if (!user) {
     return (
-      <div className="rounded-lg border bg-white p-4 text-sm text-zinc-600">
+      <div className="card p-4 text-sm text-zinc-600">
         Sign in as installer.
       </div>
     );
@@ -182,7 +182,7 @@ export default async function InstallerJobDetailPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border bg-white p-4">
+      <section className="card p-4">
         <div className="mb-3 flex items-center justify-between">
           <h1 className="text-lg font-semibold">{job.title}</h1>
           <JobStatusBadge status={job.status} />
@@ -204,7 +204,7 @@ export default async function InstallerJobDetailPage({
 
       <section className="grid gap-4 sm:grid-cols-2">
         <InvoiceSummary invoice={invoice} />
-        <div className="rounded-lg border bg-white p-4">
+        <div className="card p-4">
           <h3 className="text-sm font-semibold">Collect Payment</h3>
           <p className="mt-1 text-xs text-zinc-600">
             Sends customer to Stripe hosted checkout.
@@ -222,25 +222,22 @@ export default async function InstallerJobDetailPage({
         </div>
       </section>
 
-      <section className="rounded-lg border bg-white p-4">
+      <section className="card p-4">
         <h3 className="text-sm font-semibold">Field Notes</h3>
         <form action={updateFieldNotes} className="mt-3 space-y-3">
           <textarea
             name="notes"
             defaultValue={job.notes ?? ""}
             rows={4}
-            className="w-full rounded border px-3 py-2 text-sm"
+            className="field w-full"
           />
-          <button
-            type="submit"
-            className="rounded border px-4 py-2 text-sm font-medium"
-          >
+          <button type="submit" className="btn-secondary">
             Save notes
           </button>
         </form>
       </section>
 
-      <section className="rounded-lg border bg-white p-4">
+      <section className="card p-4">
         <h3 className="text-sm font-semibold">Upload Photos</h3>
         <form action={uploadPhoto} className="mt-3 grid gap-2 sm:grid-cols-3">
           <input
@@ -248,18 +245,15 @@ export default async function InstallerJobDetailPage({
             name="photo"
             accept="image/*"
             required
-            className="sm:col-span-2 rounded border px-3 py-2 text-sm"
+            className="field sm:col-span-2"
           />
           <input
             type="text"
             name="caption"
             placeholder="Caption (optional)"
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
-          <button
-            type="submit"
-            className="sm:col-span-3 rounded border px-4 py-2 text-sm font-medium"
-          >
+          <button type="submit" className="btn-secondary sm:col-span-3">
             Upload photo
           </button>
         </form>
@@ -271,7 +265,7 @@ export default async function InstallerJobDetailPage({
               href={photo.signed_url ?? "#"}
               target="_blank"
               rel="noreferrer"
-              className="rounded border p-3 text-sm"
+              className="rounded-lg border border-zinc-200 bg-white p-3 text-sm shadow-sm"
             >
               <p className="font-medium">{photo.caption ?? "Job photo"}</p>
               <p className="mt-1 text-xs text-zinc-500">{photo.storage_path}</p>
@@ -284,10 +278,7 @@ export default async function InstallerJobDetailPage({
       </section>
 
       <form action={markComplete}>
-        <button
-          type="submit"
-          className="w-full rounded bg-black px-4 py-3 text-sm font-medium text-white"
-        >
+        <button type="submit" className="btn-primary w-full py-3">
           Mark Job Complete
         </button>
       </form>

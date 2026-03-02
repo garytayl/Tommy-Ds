@@ -49,7 +49,7 @@ export function CollectPaymentButton({
         type="button"
         onClick={onCollectPayment}
         disabled={disabled || isLoading}
-        className="w-full rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="btn-primary w-full"
       >
         {isLoading ? "Creating Pay Link..." : "Collect Payment (Send Pay Link)"}
       </button>

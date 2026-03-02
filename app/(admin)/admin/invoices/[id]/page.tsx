@@ -103,7 +103,7 @@ export default async function InvoiceDetailPage({
   return (
     <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
       <section className="space-y-6">
-        <div className="rounded-lg border bg-white p-4">
+        <div className="card p-4">
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-lg font-semibold">Invoice {invoice.id.slice(0, 8)}</h1>
             <Link href={`/admin/jobs/${invoiceJobId}`} className="text-sm text-blue-700">
@@ -121,7 +121,7 @@ export default async function InvoiceDetailPage({
               <select
                 name="status"
                 defaultValue={invoice.status}
-                className="rounded border px-3 py-2 text-sm"
+                className="field"
               >
                 {INVOICE_STATUSES.map((status) => (
                   <option key={status} value={status}>
@@ -130,16 +130,13 @@ export default async function InvoiceDetailPage({
                 ))}
               </select>
             </div>
-            <button
-              type="submit"
-              className="rounded bg-black px-3 py-2 text-sm font-medium text-white"
-            >
+            <button type="submit" className="btn-primary">
               Update
             </button>
           </form>
         </div>
 
-        <div className="rounded-lg border bg-white p-4">
+        <div className="card p-4">
           <h2 className="text-base font-semibold">Line Items</h2>
           <form action={addInvoiceItem} className="mt-3 grid gap-2 sm:grid-cols-4">
             <input
@@ -147,7 +144,7 @@ export default async function InvoiceDetailPage({
               type="text"
               required
               placeholder="Description"
-              className="sm:col-span-2 rounded border px-3 py-2 text-sm"
+              className="field sm:col-span-2"
             />
             <input
               name="qty"
@@ -155,7 +152,7 @@ export default async function InvoiceDetailPage({
               min="0.01"
               step="0.01"
               defaultValue="1"
-              className="rounded border px-3 py-2 text-sm"
+              className="field"
             />
             <input
               name="unit_price"
@@ -163,12 +160,9 @@ export default async function InvoiceDetailPage({
               min="0.01"
               step="0.01"
               placeholder="Unit price ($)"
-              className="rounded border px-3 py-2 text-sm"
+              className="field"
             />
-            <button
-              type="submit"
-              className="sm:col-span-4 rounded bg-black px-4 py-2 text-sm font-medium text-white"
-            >
+            <button type="submit" className="btn-primary sm:col-span-4">
               Add item
             </button>
           </form>
@@ -199,7 +193,7 @@ export default async function InvoiceDetailPage({
           </div>
         </div>
 
-        <div className="rounded-lg border bg-white p-4">
+        <div className="card p-4">
           <h2 className="text-base font-semibold">Payments</h2>
           <div className="mt-3 overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -232,7 +226,7 @@ export default async function InvoiceDetailPage({
 
       <section className="space-y-4">
         <InvoiceSummary invoice={invoice} />
-        <div className="rounded-lg border bg-white p-4">
+        <div className="card p-4">
           <h3 className="text-sm font-semibold">Tax</h3>
           <form action={updateTax} className="mt-3 flex items-end gap-2">
             <div className="grow">
@@ -243,13 +237,10 @@ export default async function InvoiceDetailPage({
                 min="0"
                 step="0.01"
                 defaultValue={(invoice.tax_cents / 100).toFixed(2)}
-                className="w-full rounded border px-3 py-2 text-sm"
+                className="field w-full"
               />
             </div>
-            <button
-              type="submit"
-              className="rounded bg-black px-4 py-2 text-sm font-medium text-white"
-            >
+            <button type="submit" className="btn-primary">
               Save
             </button>
           </form>

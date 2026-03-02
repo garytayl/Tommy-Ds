@@ -63,7 +63,7 @@ export default async function CustomerDetailPage({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border bg-white p-4">
+      <section className="card p-4">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-lg font-semibold">Customer Detail</h1>
           <Link href="/admin/customers" className="text-sm text-blue-700">
@@ -76,40 +76,34 @@ export default async function CustomerDetailPage({
             name="name"
             required
             defaultValue={customer.name}
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
           <input
             type="text"
             name="phone"
             defaultValue={customer.phone ?? ""}
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
           <input
             type="email"
             name="email"
             defaultValue={customer.email ?? ""}
-            className="rounded border px-3 py-2 text-sm"
+            className="field"
           />
           <div className="sm:col-span-3 flex items-center gap-2">
-            <button
-              type="submit"
-              className="rounded bg-black px-4 py-2 text-sm font-medium text-white"
-            >
+            <button type="submit" className="btn-primary">
               Save customer
             </button>
           </div>
         </form>
         <form action={deleteCustomer} className="mt-3">
-          <button
-            type="submit"
-            className="rounded border border-red-300 px-4 py-2 text-sm text-red-700"
-          >
+          <button type="submit" className="btn-danger">
             Delete customer
           </button>
         </form>
       </section>
 
-      <section className="rounded-lg border bg-white p-4">
+      <section className="card p-4">
         <h2 className="text-base font-semibold">Customer Jobs</h2>
         <div className="mt-3 overflow-x-auto">
           <table className="min-w-full text-sm">
