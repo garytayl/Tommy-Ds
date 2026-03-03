@@ -1,15 +1,13 @@
 import Link from "next/link";
 
+import { features } from "@/lib/config";
+
 export const dynamic = "force-dynamic";
 
 export default function InstallerLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const isSupabaseConfigured =
-    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
-    Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-
-  if (!isSupabaseConfigured) {
+  if (!features.supabase) {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="card mx-auto max-w-2xl">

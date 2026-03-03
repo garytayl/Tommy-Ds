@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getAppUrl } from "@/lib/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getStripeClient } from "@/lib/stripe";
 
@@ -103,10 +104,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      request.headers.get("origin") ||
-      "http://localhost:3000";
+    const appUrl = getAppUrl(request.headers.get("origin") ?? undefined);
 
     // Customer-facing: after paying (or cancelling) on Stripe they land on our public thank-you page.
     const successUrl = `${appUrl}/payment/thank-you?payment=success`;
