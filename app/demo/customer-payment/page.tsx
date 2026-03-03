@@ -13,13 +13,13 @@ export default function CustomerPaymentDemoPage() {
           Customer payment flow
         </h1>
         <p className="mt-2 text-muted-foreground">
-          What the customer sees when they pay — e.g. tap to pay from the installer&apos;s phone.
+          What the customer sees when they pay. The installer copies the pay link and can send it by text, email, or open it for the customer to pay in person.
         </p>
         <ol className="mt-8 list-decimal list-inside space-y-4 text-muted-foreground">
-          <li>Installer taps &quot;Collect payment&quot; on their phone and sends the link to the customer (text, email, or in person).</li>
-          <li>Customer opens the link on their phone.</li>
-          <li>Customer pays on Stripe Checkout (card or tap to pay).</li>
-          <li>Customer sees the thank-you page.</li>
+          <li>Installer taps &quot;Copy pay link&quot; — the link is copied to the clipboard. They can send it (text, email) or tap &quot;Open pay page&quot; to show it on their device.</li>
+          <li>Customer opens the link (on their phone or the installer&apos;s).</li>
+          <li>Customer pays on Stripe Checkout: card, Apple Pay, or Google Pay. <strong className="text-foreground">Tap to pay (Apple Pay / Google Pay) works automatically</strong> when the customer opens the link on a supported device (e.g. iPhone in Safari, Android in Chrome) — no extra setup.</li>
+          <li>Customer sees the thank-you page; the job balance updates.</li>
         </ol>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <Link
