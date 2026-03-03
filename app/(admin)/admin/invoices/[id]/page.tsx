@@ -169,7 +169,7 @@ export default async function InvoiceDetailPage({
             </button>
           </form>
 
-          <div className="mt-4 overflow-x-auto">
+          <div className="table-wrap mt-4 overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
@@ -199,7 +199,7 @@ export default async function InvoiceDetailPage({
           <div className="border-b border-border bg-muted/50 px-4 py-3">
             <h2 className="text-base font-semibold text-foreground">Payments</h2>
           </div>
-          <div className="overflow-x-auto">
+          <div className="table-wrap overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">

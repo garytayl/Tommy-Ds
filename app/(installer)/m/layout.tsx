@@ -25,19 +25,19 @@ export default function InstallerLayout({
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 border-b border-border bg-primary backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-3">
-          <Link href="/m" className="text-sm font-semibold text-primary-foreground">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3">
+          <Link href="/m" className="min-w-0 truncate text-sm font-semibold text-primary-foreground touch-manipulation">
             Tommy D&apos;s · Field
           </Link>
           <Link
             href="/admin"
-            className="text-sm font-medium text-primary-foreground/90 transition hover:text-accent-gold"
+            className="shrink-0 text-sm font-medium text-primary-foreground/90 transition hover:text-accent-gold touch-manipulation"
           >
             Office Admin
           </Link>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-3xl p-4 sm:p-6">{children}</main>
+      <main className="mx-auto w-full max-w-3xl px-3 py-4 sm:px-6 sm:py-6">{children}</main>
     </div>
   );
 }

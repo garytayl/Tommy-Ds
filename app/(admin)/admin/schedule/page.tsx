@@ -1,17 +1,20 @@
 import Link from "next/link";
 
 import { JobStatusBadge } from "@/components/JobStatusBadge";
+import { ScheduleCalendar } from "@/components/ScheduleCalendar";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const DAYS_AHEAD = 14;
+const DAYS_AHEAD = 90;
+const DAYS_PAST = 7;
 
 export default async function SchedulePage() {
   const supabase = await createSupabaseServerClient();
 
   const start = new Date();
   start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - DAYS_PAST);
   const end = new Date(start);
-  end.setDate(end.getDate() + DAYS_AHEAD);
+  end.setDate(end.getDate() + DAYS_PAST + DAYS_AHEAD);
 
   const { data: jobs } = await supabase
     .from("jobs")
@@ -35,23 +38,28 @@ export default async function SchedulePage() {
   const rows = (jobs ?? []) as JobRow[];
 
   const byDate: Record<string, JobRow[]> = {};
-  for (let d = 0; d < DAYS_AHEAD; d++) {
+  const jobsByDateCount: Record<string, number> = {};
+  for (let d = 0; d < DAYS_PAST + DAYS_AHEAD; d++) {
     const date = new Date(start);
     date.setDate(date.getDate() + d);
     const key = date.toISOString().slice(0, 10);
     byDate[key] = [];
+    jobsByDateCount[key] = 0;
   }
   for (const job of rows) {
     if (!job.scheduled_start) continue;
     const key = job.scheduled_start.slice(0, 10);
     if (!byDate[key]) byDate[key] = [];
     byDate[key].push(job);
+    jobsByDateCount[key] = (jobsByDateCount[key] ?? 0) + 1;
   }
 
+  const startDateStr = start.toISOString().slice(0, 10);
+  const endDateStr = end.toISOString().slice(0, 10);
   const sortedDates = Object.keys(byDate).sort();
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div>
         <p className="text-xs uppercase tracking-widest text-muted-foreground">
           Admin
@@ -60,26 +68,32 @@ export default async function SchedulePage() {
           Schedule
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Jobs for the next {DAYS_AHEAD} days. Set times when creating or editing a job.
+          Tap a date on the calendar to jump to that day. Set times when creating or editing a job.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2 sm:gap-3">
         <Link
           href="/admin/jobs#create"
-          className="inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-95"
+          className="inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-95 touch-manipulation"
         >
           New job
         </Link>
         <Link
           href="/admin/jobs"
-          className="inline-flex items-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
+          className="inline-flex items-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted touch-manipulation"
         >
           All jobs
         </Link>
       </div>
 
-      <section className="space-y-6">
+      <ScheduleCalendar
+        jobsByDate={jobsByDateCount}
+        startDate={startDateStr}
+        endDate={endDateStr}
+      />
+
+      <section className="space-y-4" aria-label="Jobs by day">
         {sortedDates.map((dateKey) => {
           const dayJobs = byDate[dateKey];
           const date = new Date(dateKey + "T12:00:00");
@@ -91,14 +105,15 @@ export default async function SchedulePage() {
           return (
             <div
               key={dateKey}
-              className="rounded-xl border border-border bg-card overflow-hidden shadow-sm"
+              id={`day-${dateKey}`}
+              className="scroll-mt-4 rounded-xl border border-border bg-card overflow-hidden shadow-sm"
             >
-              <div className="border-b border-border bg-muted/30 px-4 py-2.5 sm:px-5">
+              <div className="border-b border-border bg-muted/30 px-3 py-2.5 sm:px-5">
                 <h2 className="text-sm font-semibold text-foreground">{label}</h2>
               </div>
               <ul className="divide-y divide-border">
                 {dayJobs.length === 0 ? (
-                  <li className="px-4 py-4 text-sm text-muted-foreground sm:px-5">
+                  <li className="px-3 py-4 text-sm text-muted-foreground sm:px-5">
                     No jobs scheduled
                   </li>
                 ) : (
@@ -113,7 +128,7 @@ export default async function SchedulePage() {
                       <li key={job.id}>
                         <Link
                           href={`/admin/jobs/${job.id}`}
-                          className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 transition hover:bg-muted/30 sm:px-5"
+                          className="flex flex-col gap-1 px-3 py-3 transition hover:bg-muted/30 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-1 sm:px-5"
                         >
                           <span className="font-medium text-foreground">
                             {job.title}
@@ -138,7 +153,9 @@ export default async function SchedulePage() {
                               {installer}
                             </span>
                           )}
-                          <JobStatusBadge status={job.status} />
+                          <span className="mt-1 sm:mt-0 sm:ml-auto">
+                            <JobStatusBadge status={job.status} />
+                          </span>
                         </Link>
                       </li>
                     );

@@ -236,6 +236,13 @@
     @apply text-left text-xs font-semibold uppercase tracking-wider;
     color: var(--muted-foreground);
   }
+  /* Responsive tables: scroll horizontally on small screens, keep tap targets */
+  .table-wrap {
+    @apply -mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0;
+  }
+  .table-wrap table {
+    @apply min-w-[480px];
+  }
   .link {
     color: var(--primary);
     @apply font-medium underline-offset-4 hover:underline;

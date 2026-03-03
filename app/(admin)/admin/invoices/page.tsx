@@ -37,7 +37,7 @@ export default async function InvoicesListPage() {
       </div>
 
       <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+        <div className="table-wrap overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">

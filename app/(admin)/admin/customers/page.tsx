@@ -57,7 +57,7 @@ export default async function CustomersPage() {
         <div className="border-b border-border bg-muted/50 px-4 py-3 sm:px-5">
           <h2 className="text-base font-semibold text-foreground">All customers</h2>
         </div>
-        <div className="overflow-x-auto">
+        <div className="table-wrap overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">

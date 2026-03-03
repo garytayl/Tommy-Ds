@@ -94,7 +94,7 @@ export default async function AdminDashboardPage() {
             View all jobs
           </Link>
         </div>
-        <div className="overflow-x-auto">
+        <div className="table-wrap overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">
