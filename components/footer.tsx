@@ -3,87 +3,44 @@ import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="py-16 md:py-24 border-t border-border">
-      <div className="container mx-auto px-6 md:px-12">
-        <div className="grid md:grid-cols-4 gap-12 mb-16">
-          <div className="md:col-span-2">
-            <Link href="/" className="inline-block mb-6">
-              <Image
-                src="/images/tommyds-logo.png"
-                alt="Tommy D's Windows, Doors, & More"
-                width={200}
-                height={56}
-                className="w-auto h-8"
-              />
+    <footer className="mt-auto border-t border-border py-8">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <Link href="/" className="inline-block">
+            <Image
+              src="/images/tommyds-logo.png"
+              alt="Tommy D's"
+              width={160}
+              height={45}
+              className="h-6 w-auto"
+            />
+          </Link>
+          <nav className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+            <Link href="/" className="hover:text-foreground transition-colors">
+              Home
             </Link>
-            <p className="text-muted-foreground leading-relaxed max-w-sm">
-              Internal scheduling and billing for Tommy D&apos;s. One dashboard
-              for the office, one view for the field. Customers pay via the link
-              we send them.
-            </p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium mb-4">App</h4>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li>
-                <Link href="#projects" className="hover:text-foreground transition-colors">
-                  Features
-                </Link>
-              </li>
-              <li>
-                <Link href="#about" className="hover:text-foreground transition-colors">
-                  Approach
-                </Link>
-              </li>
-              <li>
-                <Link href="#services" className="hover:text-foreground transition-colors">
-                  Capabilities
-                </Link>
-              </li>
-              <li>
-                <Link href="#contact" className="hover:text-foreground transition-colors">
-                  Get started
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin" className="hover:text-foreground transition-colors">
-                  Admin Dashboard
-                </Link>
-              </li>
-              <li>
-                <Link href="/m" className="hover:text-foreground transition-colors">
-                  Installer View
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium mb-4">Contact (main site)</h4>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li>
-                <a href="tel:812-330-8898" className="hover:text-foreground transition-colors">
-                  812-330-8898
-                </a>
-              </li>
-              <li>
-                <a href="mailto:mikec@tommyds.us" className="hover:text-foreground transition-colors">
-                  mikec@tommyds.us
-                </a>
-              </li>
-              <li>
-                3148 S. State Road 446, Bloomington, IN 47401
-              </li>
-              <li>
-                <a href="https://tommyds.us" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
-                  Visit our main website
-                </a>
-              </li>
-            </ul>
-          </div>
+            <Link href="/admin" className="hover:text-foreground transition-colors">
+              Admin
+            </Link>
+            <Link href="/m" className="hover:text-foreground transition-colors">
+              Installer
+            </Link>
+            <Link href="/demo/customer-payment" className="hover:text-foreground transition-colors">
+              Customer pay (demo)
+            </Link>
+            <a
+              href="https://tommyds.us"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Main website
+            </a>
+          </nav>
         </div>
-        <div className="pt-8 border-t border-border flex flex-col md:flex-row md:items-center justify-between gap-4 text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Tommy D&apos;s Windows, Doors, & More, Inc.</p>
-        </div>
+        <p className="mt-4 text-xs text-muted-foreground">
+          © {new Date().getFullYear()} Tommy D&apos;s Windows, Doors, & More, Inc. — Internal PoC.
+        </p>
       </div>
     </footer>
   );

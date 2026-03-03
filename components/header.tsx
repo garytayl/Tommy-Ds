@@ -1,66 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
+const NAV_ITEMS = [
+  { label: "Home", href: "/" },
+  { label: "Admin", href: "/admin" },
+  { label: "Installer", href: "/m" },
+  { label: "Customer pay (demo)", href: "/demo/customer-payment" },
+];
+
 export function Header() {
-  const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const closeMobileMenu = () => setMobileMenuOpen(false);
-
-  const scrollToTop = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const navItems = [
-    { label: "Home", href: "#hero" },
-    { label: "Approach", href: "#about" },
-    { label: "Features", href: "#projects" },
-    { label: "Capabilities", href: "#services" },
-    { label: "FAQ", href: "#faq" },
-  ];
-
   return (
-    <header
-      className={cn(
-        "fixed z-50 transition-all duration-500 my-0 py-0 rounded-none",
-        scrolled || mobileMenuOpen
-          ? "bg-primary backdrop-blur-md py-4 top-4 left-4 right-4 rounded-2xl"
-          : "bg-transparent py-4 top-0 left-0 right-0",
-      )}
-    >
-      <nav className="container mx-auto px-6 flex items-center justify-between md:px-12">
-        <Link
-          href="/"
-          className="flex items-center gap-2 group"
-          onClick={scrollToTop}
-        >
+    <header className="sticky top-0 z-50 border-b border-border bg-primary">
+      <nav className="container mx-auto flex items-center justify-between px-4 py-3 md:px-6">
+        <Link href="/" className="flex items-center gap-2">
           <Image
             src="/images/tommyds-logo.png"
-            alt="Tommy D's Windows, Doors, & More"
+            alt="Tommy D's"
             width={200}
             height={56}
-            className="w-auto h-8 md:h-9"
+            className="h-7 w-auto md:h-8"
           />
         </Link>
 
-        <ul className="hidden md:flex items-center gap-10 text-sm tracking-wide">
-          {navItems.map((item) => (
-            <li key={item.label}>
+        <ul className="hidden md:flex items-center gap-6 text-sm font-medium">
+          {NAV_ITEMS.map((item) => (
+            <li key={item.href}>
               <Link
                 href={item.href}
-                className="text-primary-foreground/90 hover:text-accent-gold transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 hover:after:w-full after:bg-accent-gold after:transition-all after:duration-300"
-                onClick={closeMobileMenu}
+                className="text-primary-foreground/90 hover:text-accent-gold transition-colors"
               >
                 {item.label}
               </Link>
@@ -68,44 +41,19 @@ export function Header() {
           ))}
         </ul>
 
-        <Link
-          href="#contact"
-          className={cn(
-            "hidden md:inline-flex items-center gap-2 text-sm px-5 py-2.5 transition-all duration-300",
-            "bg-primary-foreground text-foreground border border-foreground/20 hover:bg-foreground hover:text-primary-foreground",
-          )}
-          onClick={closeMobileMenu}
-        >
-          Get in touch
-        </Link>
-
         <button
           type="button"
-          className="md:hidden z-50 transition-colors duration-300 text-primary-foreground"
+          className="md:hidden p-2 text-primary-foreground"
           aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           {mobileMenuOpen ? (
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           ) : (
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <line x1="4" y1="8" x2="20" y2="8" />
               <line x1="4" y1="16" x2="20" y2="16" />
             </svg>
@@ -113,35 +61,23 @@ export function Header() {
         </button>
       </nav>
 
-      <div
-        className={cn(
-          "md:hidden overflow-hidden transition-all duration-300 ease-in-out",
-          mobileMenuOpen ? "max-h-[600px] opacity-100 mt-8" : "max-h-0 opacity-0",
-        )}
-      >
-        <div className="container mx-auto px-6">
-          <ul className="flex flex-col gap-6 mb-8">
-            {navItems.map((item) => (
-              <li key={item.label}>
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-primary-foreground/20 bg-primary px-4 py-4">
+          <ul className="flex flex-col gap-3">
+            {NAV_ITEMS.map((item) => (
+              <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="text-primary-foreground/90 hover:text-accent-gold transition-colors duration-300 text-4xl font-light block"
-                  onClick={closeMobileMenu}
+                  className="block py-2 text-primary-foreground/90 hover:text-accent-gold font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   {item.label}
                 </Link>
               </li>
             ))}
           </ul>
-          <Link
-            href="#contact"
-            className="inline-flex items-center justify-center gap-2 text-sm px-5 py-2.5 bg-primary-foreground text-foreground border border-foreground/20 hover:bg-foreground hover:text-primary-foreground transition-all duration-300 mb-4"
-            onClick={closeMobileMenu}
-          >
-            Get in touch
-          </Link>
         </div>
-      </div>
+      )}
     </header>
   );
 }
