@@ -43,6 +43,10 @@ export function CollectPaymentButton({
     }
   }
 
+  const isTestMode =
+    typeof process !== "undefined" &&
+    process.env.NEXT_PUBLIC_STRIPE_TEST_MODE === "true";
+
   return (
     <div className="space-y-2">
       <button
@@ -53,6 +57,11 @@ export function CollectPaymentButton({
       >
         {isLoading ? "Creating Pay Link…" : "Collect Payment (Send Pay Link)"}
       </button>
+      {isTestMode ? (
+        <p className="text-xs text-muted-foreground">
+          Test mode — no real charges. Use Stripe test card 4242 4242 4242 4242.
+        </p>
+      ) : null}
       {error ? (
         <p className="text-xs font-medium" style={{ color: "var(--destructive)" }}>{error}</p>
       ) : null}

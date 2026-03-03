@@ -9,10 +9,18 @@ export default async function PaymentThankYouPage({
 }) {
   const { payment } = await searchParams;
   const success = payment === "success";
+  const isTestMode =
+    process.env.NEXT_PUBLIC_STRIPE_TEST_MODE === "true" ||
+    process.env.NEXT_PUBLIC_STRIPE_TEST_MODE === "1";
 
   return (
     <main className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-16">
       <div className="max-w-md w-full text-center space-y-6">
+        {isTestMode && success ? (
+          <p className="text-sm font-medium text-muted-foreground rounded-md bg-muted/80 px-3 py-1.5 inline-block">
+            Test payment — no real charge
+          </p>
+        ) : null}
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">
           {success
             ? "Thank you for your payment"

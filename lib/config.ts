@@ -20,6 +20,8 @@ export const publicEnv = {
   appUrl: env("NEXT_PUBLIC_APP_URL"),
   supabaseUrl: env("NEXT_PUBLIC_SUPABASE_URL"),
   supabaseAnonKey: env("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+  /** Set when using Stripe test keys so UI can show "Test mode". */
+  stripeTestMode: envBool("NEXT_PUBLIC_STRIPE_TEST_MODE"),
 } as const;
 
 /** Server-only env. Do not import publicEnv + serverEnv in client components. */
