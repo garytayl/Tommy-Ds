@@ -12,6 +12,7 @@ const ADMIN_NAV = [
   { href: "/admin/jobs", label: "Jobs" },
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/invoices", label: "Money" },
+  { href: "/admin/future-features", label: "Future features" },
 ] as const;
 
 const FIELD_NAV = [
