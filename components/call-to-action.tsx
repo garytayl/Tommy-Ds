@@ -13,16 +13,16 @@ export function CallToAction() {
       <div className="container mx-auto px-6 md:px-12">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-primary-foreground/60 text-sm tracking-[0.3em] uppercase mb-8">
-            Start a Project
+            Get started
           </p>
           <h2 className="text-3xl md:text-4xl lg:text-6xl font-medium leading-[1.1] tracking-tight mb-8 text-balance">
-            Ready to create
+            Ready to run your
             <br />
-            something <HighlightedText>extraordinary</HighlightedText>?
+            <HighlightedText>field operations</HighlightedText>?
           </h2>
           <p className="text-primary-foreground/70 text-lg md:text-xl leading-relaxed mb-12 max-w-2xl mx-auto">
-            Get started with the admin dashboard to manage customers and jobs, or
-            open the installer view on your phone for the field.
+            Use the admin dashboard in the office to manage customers, jobs, and
+            invoices. Open the installer view on a phone for the field.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

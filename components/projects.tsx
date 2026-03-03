@@ -3,37 +3,37 @@
 import { useState, useEffect, useRef } from "react";
 import { ArrowUpRight } from "lucide-react";
 
-const projects = [
+const features = [
   {
     id: 1,
-    title: "Villa Serena",
-    category: "Residential",
-    location: "Malibu, California",
-    year: "2024",
+    title: "Admin Dashboard",
+    category: "Office",
+    location: "Customers, jobs, invoices",
+    year: "Manage",
     image: "/images/hously-1.png",
   },
   {
     id: 2,
-    title: "The Glass Pavilion",
-    category: "Commercial",
-    location: "Tokyo, Japan",
-    year: "2023",
+    title: "Installer View",
+    category: "Mobile",
+    location: "Today's jobs, pay link, photos",
+    year: "Field",
     image: "/images/hously-2.png",
   },
   {
     id: 3,
-    title: "Casa Terra",
-    category: "Residential",
-    location: "Lisbon, Portugal",
-    year: "2023",
+    title: "Invoicing",
+    category: "Per job",
+    location: "Line items, tax, status",
+    year: "Billing",
     image: "/images/hously-3.png",
   },
   {
     id: 4,
-    title: "Nordic Retreat",
-    category: "Hospitality",
-    location: "Oslo, Norway",
-    year: "2024",
+    title: "Payment collection",
+    category: "Stripe",
+    location: "Send link, get paid",
+    year: "Checkout",
     image: "/images/hously-4.png",
   },
 ];
@@ -50,7 +50,7 @@ export function Projects() {
           if (entry.isIntersecting) {
             const index = imageRefs.current.indexOf(entry.target as HTMLDivElement);
             if (index !== -1) {
-              setRevealedImages((prev) => new Set(prev).add(projects[index].id));
+              setRevealedImages((prev) => new Set(prev).add(features[index].id));
             }
           }
         });
@@ -69,26 +69,26 @@ export function Projects() {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-16">
           <div>
             <p className="text-muted-foreground text-sm tracking-[0.3em] uppercase mb-6">
-              Selected Works
+              What’s included
             </p>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight">
-              Featured Projects
+              Features
             </h2>
           </div>
           <a
             href="#contact"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
           >
-            Get in touch
+            Get started
             <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </a>
         </div>
         <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-          {projects.map((project, index) => (
+          {features.map((feature, index) => (
             <article
-              key={project.id}
+              key={feature.id}
               className="group cursor-pointer"
-              onMouseEnter={() => setHoveredId(project.id)}
+              onMouseEnter={() => setHoveredId(feature.id)}
               onMouseLeave={() => setHoveredId(null)}
             >
               <div
@@ -98,16 +98,16 @@ export function Projects() {
                 className="relative overflow-hidden aspect-[4/3] mb-6"
               >
                 <img
-                  src={project.image || "/placeholder.svg"}
-                  alt={project.title}
+                  src={feature.image || "/placeholder.svg"}
+                  alt=""
                   className={`w-full h-full object-cover transition-transform duration-700 ${
-                    hoveredId === project.id ? "scale-105" : "scale-100"
+                    hoveredId === feature.id ? "scale-105" : "scale-100"
                   }`}
                 />
                 <div
                   className="absolute inset-0 bg-primary origin-top"
                   style={{
-                    transform: revealedImages.has(project.id)
+                    transform: revealedImages.has(feature.id)
                       ? "scaleY(0)"
                       : "scaleY(1)",
                     transition:
@@ -118,14 +118,14 @@ export function Projects() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-medium mb-2 group-hover:underline underline-offset-4">
-                    {project.title}
+                    {feature.title}
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    {project.category} · {project.location}
+                    {feature.category} · {feature.location}
                   </p>
                 </div>
                 <span className="text-muted-foreground/60 text-sm">
-                  {project.year}
+                  {feature.year}
                 </span>
               </div>
             </article>

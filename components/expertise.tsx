@@ -1,33 +1,33 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Home, Building, Armchair, Trees } from "lucide-react";
+import { CalendarCheck, FileText, CreditCard, Smartphone } from "lucide-react";
 import { HighlightedText } from "./highlighted-text";
 
 const expertiseAreas = [
   {
-    title: "Residential Design",
+    title: "Scheduling",
     description:
-      "Creating homes that balance beauty with livability, where every space serves both form and function.",
-    icon: Home,
+      "Assign jobs to installers, set start and end times, and see today's run at a glance. Filter by date and status from the dashboard.",
+    icon: CalendarCheck,
   },
   {
-    title: "Commercial Architecture",
+    title: "Invoicing",
     description:
-      "Designing workspaces that inspire productivity and reflect the values of forward-thinking organizations.",
-    icon: Building,
+      "Create an invoice per job with line items, quantity, and unit price. Add tax and track status from draft to sent to paid.",
+    icon: FileText,
   },
   {
-    title: "Interior Architecture",
+    title: "Payment collection",
     description:
-      "Curating interiors that harmonize with their architectural shells, creating cohesive spatial experiences.",
-    icon: Armchair,
+      "Send a Stripe checkout link from the field. Customers pay by card; balance due updates automatically. No chasing checks.",
+    icon: CreditCard,
   },
   {
-    title: "Urban Planning",
+    title: "Mobile installer view",
     description:
-      "Shaping communities through thoughtful integration of public spaces, structures, and natural elements.",
-    icon: Trees,
+      "Installers see their assigned jobs for the day, open addresses in Maps, update notes, upload photos, and mark jobs complete.",
+    icon: Smartphone,
   },
 ];
 
@@ -59,16 +59,16 @@ export function Expertise() {
       <div className="container mx-auto px-6 md:px-12">
         <div className="max-w-3xl mb-20">
           <p className="text-muted-foreground text-sm tracking-[0.3em] uppercase mb-6">
-            What We Do
+            What you get
           </p>
           <h2 className="text-6xl font-medium leading-[1.15] tracking-tight mb-6 text-balance lg:text-8xl">
-            <HighlightedText>Expertise</HighlightedText> refined
+            <HighlightedText>Capabilities</HighlightedText> that
             <br />
-            through practice
+            fit how you work
           </h2>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            Every project draws from decades of collective experience, resulting
-            in architecture that is both innovative and timeless.
+            One system for the office and the field: manage customers and jobs,
+            send invoices, and collect payment without the back-and-forth.
           </p>
         </div>
         <div className="grid md:grid-cols-2 gap-x-12 gap-y-16">

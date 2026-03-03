@@ -24,9 +24,9 @@ export function Header() {
 
   const navItems = [
     { label: "Home", href: "#hero" },
-    { label: "Philosophy", href: "#about" },
-    { label: "Projects", href: "#projects" },
-    { label: "What we do", href: "#services" },
+    { label: "Approach", href: "#about" },
+    { label: "Features", href: "#projects" },
+    { label: "Capabilities", href: "#services" },
     { label: "FAQ", href: "#faq" },
   ];
 
@@ -47,7 +47,7 @@ export function Header() {
         >
           <Image
             src="/images/hously-logo.svg"
-            alt="Hously"
+            alt="Field Service Scheduler"
             width={120}
             height={32}
             className="w-auto h-6"

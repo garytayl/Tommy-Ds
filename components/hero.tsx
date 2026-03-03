@@ -124,7 +124,7 @@ export function Hero() {
       <div className="absolute inset-0 z-0">
         <img
           src="/images/hously-background.png"
-          alt="Minimalist architectural interior"
+          alt=""
           className="w-full h-full object-cover object-center"
         />
       </div>
@@ -141,15 +141,17 @@ export function Hero() {
       >
         <div className="mb-72 md:mb-60 lg:mb-80">
           <p className="text-sm tracking-[0.3em] uppercase text-center text-secondary mb-0">
-            Architecture Studio
+            Field Service Scheduler
           </p>
           <h1
             ref={titleRef}
             className="text-7xl font-medium text-balance text-center text-white mb-0 tracking-tight leading-[0.9] lg:text-8xl"
           >
-            We design spaces
+            Scheduling, invoicing,
             <br />
-            <span className="text-orange-200">that elevate living</span>
+            <span className="text-orange-200">and payments</span>
+            <br />
+            <span className="text-white/90 text-6xl lg:text-7xl">that work in the field</span>
           </h1>
         </div>
       </div>
@@ -157,7 +159,7 @@ export function Hero() {
       <div className="absolute inset-0 z-20 pointer-events-none">
         <img
           src="/images/hously-foreground.png"
-          alt="Marble kitchen island detail"
+          alt=""
           className="w-full h-full object-cover object-center"
         />
       </div>

@@ -5,24 +5,24 @@ import { HighlightedText } from "./highlighted-text";
 
 const philosophyItems = [
   {
-    title: "Minimal, not empty",
+    title: "Simple by design",
     description:
-      "Every element has purpose and space to breathe. We remove the unnecessary to reveal what truly matters.",
+      "One place for customers, jobs, and invoices. No clutter—just what your team needs to run the day.",
   },
   {
-    title: "Architecture-led design",
+    title: "Built for the field",
     description:
-      "Layouts inspired by structure, rhythm, and materiality. Buildings that speak through proportion and light.",
+      "Installers get today's jobs on their phone, with addresses, notes, and a one-tap payment link. Office stays in control.",
   },
   {
-    title: "Subtle motion",
+    title: "Jobs and payments together",
     description:
-      "Motion supports the experience, never distracts. Movement that feels natural, like light shifting through a room.",
+      "Create an invoice from a job, add line items and tax, then send a Stripe pay link from the field. Balance due updates in real time.",
   },
   {
-    title: "Timeless aesthetic",
+    title: "Mobile-first for installers",
     description:
-      "Elegant, calm, and enduring visual language. Designs that transcend trends and age with grace.",
+      "View schedule, update notes, upload photos, and mark jobs complete. Collect payment without chasing checks.",
   },
 ];
 
@@ -54,25 +54,26 @@ export function Philosophy() {
         <div className="grid lg:grid-cols-2 gap-16 lg:gap-24">
           <div className="lg:sticky lg:top-32 lg:self-start">
             <p className="text-muted-foreground text-sm tracking-[0.3em] uppercase mb-6">
-              Our Philosophy
+              Our approach
             </p>
             <h2 className="text-6xl md:text-6xl font-medium leading-[1.15] tracking-tight mb-6 text-balance lg:text-8xl">
-              Design with
+              Built for
               <br />
-              <HighlightedText>intention</HighlightedText>
+              <HighlightedText>field teams</HighlightedText>
             </h2>
             <div className="relative hidden lg:block">
               <img
                 src="/images/exterior.png"
-                alt="Architectural sketch of home office workspace"
+                alt=""
                 className="opacity-90 relative z-10 w-auto"
               />
             </div>
           </div>
           <div className="space-y-6 lg:pt-48">
             <p className="text-muted-foreground text-lg leading-relaxed max-w-md mb-12">
-              Architecture is more than structure — it&apos;s how we experience
-              the world. We create spaces that nurture the human spirit.
+              Field Service Scheduler keeps office and field in sync. Manage
+              customers and jobs from the dashboard; installers see their day,
+              collect payment, and update notes from their phone.
             </p>
             {philosophyItems.map((item, index) => (
               <div

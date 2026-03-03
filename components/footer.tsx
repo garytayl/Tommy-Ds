@@ -10,43 +10,43 @@ export function Footer() {
             <Link href="/" className="inline-block mb-6">
               <Image
                 src="/images/hously-logo.svg"
-                alt="Hously"
+                alt="Field Service Scheduler"
                 width={120}
                 height={32}
                 className="w-auto h-6"
               />
             </Link>
             <p className="text-muted-foreground leading-relaxed max-w-sm">
-              We design spaces that elevate living. A refined architectural
-              experience where form, light, and intention meet.
+              Scheduling, invoicing, and payment collection for field installer
+              teams. One dashboard for the office, one view for the field.
             </p>
           </div>
           <div>
-            <h4 className="text-sm font-medium mb-4">Studio</h4>
+            <h4 className="text-sm font-medium mb-4">App</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li>
                 <Link href="#projects" className="hover:text-foreground transition-colors">
-                  Projects
+                  Features
                 </Link>
               </li>
               <li>
                 <Link href="#about" className="hover:text-foreground transition-colors">
-                  About
+                  Approach
                 </Link>
               </li>
               <li>
                 <Link href="#services" className="hover:text-foreground transition-colors">
-                  Services
+                  Capabilities
                 </Link>
               </li>
               <li>
                 <Link href="#contact" className="hover:text-foreground transition-colors">
-                  Contact
+                  Get started
                 </Link>
               </li>
               <li>
                 <Link href="/admin" className="hover:text-foreground transition-colors">
-                  Admin
+                  Admin Dashboard
                 </Link>
               </li>
               <li>
@@ -57,33 +57,28 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h4 className="text-sm font-medium mb-4">Connect</h4>
+            <h4 className="text-sm font-medium mb-4">Resources</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li>
-                <a href="mailto:hello@hously.com" className="hover:text-foreground transition-colors">
-                  hello@hously.com
-                </a>
+                <Link href="/admin/invoices" className="hover:text-foreground transition-colors">
+                  Invoices
+                </Link>
               </li>
               <li>
-                <a href="tel:+1234567890" className="hover:text-foreground transition-colors">
-                  +1 (234) 567-890
-                </a>
+                <Link href="/admin/customers" className="hover:text-foreground transition-colors">
+                  Customers
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">
-                  Instagram
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-foreground transition-colors">
-                  LinkedIn
-                </a>
+                <Link href="/admin/jobs" className="hover:text-foreground transition-colors">
+                  Jobs
+                </Link>
               </li>
             </ul>
           </div>
         </div>
         <div className="pt-8 border-t border-border flex flex-col md:flex-row md:items-center justify-between gap-4 text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Hously. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Field Service Scheduler.</p>
           <div className="flex gap-6">
             <Link href="#" className="hover:text-foreground transition-colors">
               Privacy

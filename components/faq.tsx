@@ -5,34 +5,34 @@ import { Plus } from "lucide-react";
 
 const faqs = [
   {
-    question: "Where are your projects located?",
+    question: "How do installers see their jobs?",
     answer:
-      "While our studio is based in San Francisco, we work on projects throughout Northern California and select locations nationwide. We believe in creating architecture that responds to its specific context and community.",
+      "Installers sign in and open the Installer View (or bookmark /m on their phone). They see only jobs assigned to them for the current day, with address, time, notes, and invoice balance. They can open the address in Maps, update notes, upload photos, and mark the job complete.",
   },
   {
-    question: "What is your design process timeline?",
+    question: "How do I create an invoice?",
     answer:
-      "Project timelines vary based on scope and complexity. A typical residential project takes 6-12 months from initial concept to construction documentation. We work closely with clients to establish realistic timelines that allow for thoughtful design development.",
+      "From a job's detail page in the Admin Dashboard, click Create invoice. Then open the invoice to add line items (description, qty, unit price), set tax, and update status. The system recomputes subtotal, total, and balance due automatically.",
   },
   {
-    question: "How do you approach sustainable design?",
+    question: "How does payment collection work?",
     answer:
-      "Sustainability is integral to our practice, not an add-on. We prioritize passive design strategies, material selection, energy efficiency, and longevity. Every project is designed to minimize environmental impact while maximizing occupant comfort and connection to nature.",
+      "From the job (admin or installer view), use Collect Payment to create a Stripe Checkout link. Send that link to the customer; they pay by card on Stripe's hosted page. When payment succeeds, the invoice balance updates and you can see the payment in the invoice's Payments table.",
   },
   {
-    question: "What services do you offer?",
+    question: "Can I assign jobs to installers?",
     answer:
-      "We provide comprehensive architectural services including master planning, schematic design, design development, construction documentation, and construction administration. We can tailor our services to meet your project's specific needs.",
+      "Yes. When creating or editing a job, choose an installer from the Assigned installer dropdown. Only installers with the installer role in your Supabase profiles table appear. Assigned installers see that job in their Installer View for the scheduled date.",
   },
   {
-    question: "Do you work with existing structures?",
+    question: "Do installers need to log in?",
     answer:
-      "Absolutely. We enjoy the challenge of adaptive reuse and renovation projects. Whether it's a historic preservation or a modern addition, we approach existing structures with respect while bringing them into dialogue with contemporary living.",
+      "Yes. Installers must be signed in (via your Supabase auth) to see their assigned jobs. The app checks the user's role and shows the installer view for installer/manager roles and redirects others as needed.",
   },
   {
     question: "How do we get started?",
     answer:
-      "Begin with an initial consultation where we discuss your vision, site, budget, and timeline. This helps us understand if we're the right fit for your project. From there, we'll outline a customized scope of work and fee proposal.",
+      "Use the Admin Dashboard to add customers and create jobs, then assign installers and create invoices as needed. Open the Installer View on a phone to see the field experience. Configure Supabase and Stripe in your environment so auth and payments work in production.",
   },
 ];
 
