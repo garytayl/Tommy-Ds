@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
 import { JobStatusBadge } from "@/components/JobStatusBadge";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 export default async function CustomerDetailPage({
   params,
@@ -11,7 +11,7 @@ export default async function CustomerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClientForData();
 
   const [{ data: customer }, { data: jobs }] = await Promise.all([
     supabase
@@ -39,7 +39,7 @@ export default async function CustomerDetailPage({
 
     if (!name) return;
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClientForData();
     await supabase
       .from("customers")
       .update({
@@ -55,7 +55,7 @@ export default async function CustomerDetailPage({
 
   async function deleteCustomer() {
     "use server";
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClientForData();
     await supabase.from("customers").delete().eq("id", id);
     revalidatePath("/admin/customers");
     redirect("/admin/customers");
@@ -120,7 +120,7 @@ export default async function CustomerDetailPage({
               {(jobs ?? []).map((job) => (
                 <tr key={job.id} className="border-b border-border transition hover:bg-muted/30">
                   <td className="py-3 pl-5 pr-4">
-                    <Link href={`/admin/jobs/${job.id}`} className="link font-medium">
+                    <Link href={`/jobs/${job.id}`} className="link font-medium">
                       {job.title}
                     </Link>
                   </td>

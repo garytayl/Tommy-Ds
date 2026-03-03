@@ -1,10 +1,10 @@
 import Link from "next/link";
 
 import { formatCents } from "@/lib/money";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 export default async function InvoicesListPage() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClientForData();
   const { data: invoices } = await supabase
     .from("invoices")
     .select(

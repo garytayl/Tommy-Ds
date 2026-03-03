@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { InvoiceSummary } from "@/components/InvoiceSummary";
 import { formatCents, dollarsToCents } from "@/lib/money";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 const INVOICE_STATUSES = ["draft", "sent", "partially_paid", "paid", "void"];
 
@@ -14,7 +14,7 @@ export default async function InvoiceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClientForData();
 
   const [invoiceResult, itemsResult, paymentsResult] = await Promise.all([
     supabase
@@ -58,7 +58,7 @@ export default async function InvoiceDetailPage({
     }
 
     const lineTotalCents = Math.round(qty * unitPriceCents);
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClientForData();
     await supabase.from("invoice_items").insert({
       invoice_id: id,
       description,
@@ -68,6 +68,7 @@ export default async function InvoiceDetailPage({
     });
 
     revalidatePath(`/admin/invoices/${id}`);
+    revalidatePath(`/jobs/${invoiceJobId}`);
     revalidatePath(`/admin/jobs/${invoiceJobId}`);
   }
 
@@ -75,11 +76,12 @@ export default async function InvoiceDetailPage({
     "use server";
 
     const taxCents = dollarsToCents(String(formData.get("tax") ?? "0"));
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClientForData();
     await supabase.from("invoices").update({ tax_cents: taxCents }).eq("id", id);
     await supabase.rpc("recompute_invoice_totals", { p_invoice_id: id });
 
     revalidatePath(`/admin/invoices/${id}`);
+    revalidatePath(`/jobs/${invoiceJobId}`);
     revalidatePath(`/admin/jobs/${invoiceJobId}`);
   }
 
@@ -89,9 +91,10 @@ export default async function InvoiceDetailPage({
     const status = String(formData.get("status") ?? "draft");
     if (!INVOICE_STATUSES.includes(status)) return;
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClientForData();
     await supabase.from("invoices").update({ status }).eq("id", id);
     revalidatePath(`/admin/invoices/${id}`);
+    revalidatePath(`/jobs/${invoiceJobId}`);
     revalidatePath(`/admin/jobs/${invoiceJobId}`);
   }
 
@@ -106,7 +109,7 @@ export default async function InvoiceDetailPage({
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-xl font-semibold text-foreground">Invoice {invoice.id.slice(0, 8)}</h1>
-            <Link href={`/admin/jobs/${invoiceJobId}`} className="link text-sm">
+            <Link href={`/jobs/${invoiceJobId}`} className="link text-sm">
               Back to job
             </Link>
           </div>

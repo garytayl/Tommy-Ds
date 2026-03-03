@@ -3,7 +3,7 @@ import { AppShell } from "@/components/AppShell";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminLayout({
+export default function JobWorkspaceLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   if (!features.supabase) {

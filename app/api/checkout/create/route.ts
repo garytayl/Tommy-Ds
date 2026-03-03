@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getAppUrl } from "@/lib/config";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { getStripeClient } from "@/lib/stripe";
 
 type InvoiceRow = {
@@ -24,7 +24,7 @@ type CustomerRow = {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClientForData();
     const body = (await request.json()) as { invoiceId?: string };
     const invoiceId = body?.invoiceId?.trim();
     if (!invoiceId) {

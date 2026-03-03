@@ -1,22 +1,107 @@
 import Link from "next/link";
 
 import { JobStatusBadge } from "@/components/JobStatusBadge";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
-export default async function AdminDashboardPage() {
-  const supabase = await createSupabaseServerClient();
+export default async function TodayCommandCenterPage() {
+  const supabase = await createSupabaseServerClientForData();
 
-  const [customersResult, jobsResult, invoicesResult, recentJobsResult] =
-    await Promise.all([
-      supabase.from("customers").select("id", { count: "exact", head: true }),
-      supabase.from("jobs").select("id", { count: "exact", head: true }),
-      supabase.from("invoices").select("id", { count: "exact", head: true }),
-      supabase
-        .from("jobs")
-        .select("id,title,status,scheduled_start,customers(name)")
-        .order("scheduled_start", { ascending: true, nullsFirst: false })
-        .limit(10),
-    ]);
+  const now = new Date();
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(todayStart);
+  todayEnd.setDate(todayEnd.getDate() + 1);
+  const tomorrowEnd = new Date(todayStart);
+  tomorrowEnd.setDate(tomorrowEnd.getDate() + 2);
+  const weekEnd = new Date(todayStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+
+  const [
+    customersResult,
+    jobsResult,
+    invoicesResult,
+    todayJobsResult,
+    tomorrowJobsResult,
+    weekJobsResult,
+    noScheduleResult,
+    recentJobsResult,
+    invoicesDraftResult,
+    completedJobsResult,
+  ] = await Promise.all([
+    supabase.from("customers").select("id", { count: "exact", head: true }),
+    supabase.from("jobs").select("id", { count: "exact", head: true }),
+    supabase.from("invoices").select("id", { count: "exact", head: true }),
+    supabase
+      .from("jobs")
+      .select("id,title,status,scheduled_start,scheduled_end,customers(name),profiles(full_name)")
+      .gte("scheduled_start", todayStart.toISOString())
+      .lt("scheduled_start", todayEnd.toISOString())
+      .order("scheduled_start", { ascending: true, nullsFirst: false }),
+    supabase
+      .from("jobs")
+      .select("id,title,status,scheduled_start,customers(name)")
+      .gte("scheduled_start", todayEnd.toISOString())
+      .lt("scheduled_start", tomorrowEnd.toISOString())
+      .order("scheduled_start", { ascending: true })
+      .limit(5),
+    supabase
+      .from("jobs")
+      .select("id,title,status,scheduled_start,customers(name)")
+      .gte("scheduled_start", todayStart.toISOString())
+      .lt("scheduled_start", weekEnd.toISOString())
+      .order("scheduled_start", { ascending: true })
+      .limit(20),
+    supabase
+      .from("jobs")
+      .select("id,title,status,customers(name)")
+      .is("scheduled_start", null)
+      .neq("status", "canceled")
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("jobs")
+      .select("id,title,status,scheduled_start,customers(name)")
+      .order("scheduled_start", { ascending: true, nullsFirst: false })
+      .limit(10),
+    supabase.from("invoices").select("job_id").eq("status", "draft"),
+    supabase
+      .from("jobs")
+      .select("id,title,status,customers(name)")
+      .eq("status", "completed")
+      .order("updated_at", { ascending: false })
+      .limit(30),
+  ]);
+
+  const draftJobIds = new Set((invoicesDraftResult.data ?? []).map((i) => i.job_id));
+  const completedJobs = completedJobsResult.data ?? [];
+  const completedWithBalance = await Promise.all(
+    completedJobs.map(async (job: { id: string; title: string; status: string; customers: unknown }) => {
+      const { data: inv } = await supabase
+        .from("invoices")
+        .select("balance_due_cents")
+        .eq("job_id", job.id)
+        .limit(1)
+        .maybeSingle();
+      return { ...job, balance_due_cents: inv?.balance_due_cents ?? 0 };
+    }),
+  );
+  const completedUnpaid = completedWithBalance.filter((j: { balance_due_cents: number }) => j.balance_due_cents > 0);
+  const noSchedule = (noScheduleResult.data ?? []) as { id: string; title: string; status: string; customers: unknown }[];
+
+  type JobRow = {
+    id: string;
+    title: string;
+    status: string;
+    scheduled_start: string | null;
+    scheduled_end?: string | null;
+    customers: { name: string } | { name: string }[] | null;
+    profiles?: { full_name: string | null } | { full_name: string | null }[] | null;
+  };
+
+  const todayJobs = (todayJobsResult.data ?? []) as JobRow[];
+  const tomorrowJobs = (tomorrowJobsResult.data ?? []) as JobRow[];
+  const weekJobs = (weekJobsResult.data ?? []) as JobRow[];
+  const recentJobs = (recentJobsResult.data ?? []) as JobRow[];
 
   const cards = [
     { label: "Customers", value: customersResult.count ?? 0 },
@@ -24,27 +109,17 @@ export default async function AdminDashboardPage() {
     { label: "Invoices", value: invoicesResult.count ?? 0 },
   ];
 
-  type RecentJobRow = {
-    id: string;
-    title: string;
-    status: string;
-    scheduled_start: string | null;
-    customers: { name: string } | { name: string }[] | null;
-  };
-
-  const recentJobs = (recentJobsResult.data ?? []) as RecentJobRow[];
-
   return (
     <div className="space-y-8">
       <div>
         <p className="text-xs uppercase tracking-widest text-muted-foreground">
-          Admin
+          Command center
         </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-          Dashboard
+          Today
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Live snapshot of customers, jobs, and invoices.
+          Schedule, crew, and what needs attention.
         </p>
       </div>
 
@@ -59,15 +134,110 @@ export default async function AdminDashboardPage() {
           href="/admin/schedule"
           className="inline-flex items-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
         >
-          View schedule
+          Schedule
         </Link>
         <Link
-          href="/admin/customers"
+          href="/admin/jobs"
           className="inline-flex items-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
         >
-          Customers
+          All jobs
         </Link>
       </div>
+
+      {/* Schedule strip: Today / Tomorrow / This week */}
+      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+        <div className="flex border-b border-border bg-muted/30">
+          <div className="flex-1 border-r border-border px-4 py-2.5">
+            <span className="text-xs font-medium text-muted-foreground">Today</span>
+            <p className="text-lg font-semibold tabular-nums text-foreground">{todayJobs.length}</p>
+          </div>
+          <div className="flex-1 border-r border-border px-4 py-2.5">
+            <span className="text-xs font-medium text-muted-foreground">Tomorrow</span>
+            <p className="text-lg font-semibold tabular-nums text-foreground">{tomorrowJobs.length}</p>
+          </div>
+          <div className="flex-1 px-4 py-2.5">
+            <span className="text-xs font-medium text-muted-foreground">This week</span>
+            <p className="text-lg font-semibold tabular-nums text-foreground">{weekJobs.length}</p>
+          </div>
+        </div>
+        <div className="divide-y divide-border">
+          {todayJobs.length === 0 ? (
+            <p className="px-4 py-4 text-sm text-muted-foreground">No jobs scheduled today.</p>
+          ) : (
+            todayJobs.map((job) => {
+              const customer = Array.isArray(job.customers) ? job.customers[0]?.name : job.customers?.name;
+              const installer = Array.isArray(job.profiles) ? job.profiles[0]?.full_name : job.profiles?.full_name;
+              return (
+                <Link
+                  key={job.id}
+                  href={`/jobs/${job.id}`}
+                  className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 transition hover:bg-muted/30"
+                >
+                  <span className="font-medium text-foreground">{job.title}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {job.scheduled_start
+                      ? new Date(job.scheduled_start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+                      : "—"}
+                  </span>
+                  {customer && <span className="text-sm text-muted-foreground">{customer}</span>}
+                  {installer && <span className="text-xs text-muted-foreground">{installer}</span>}
+                  <span className="ml-auto">
+                    <JobStatusBadge status={job.status} />
+                  </span>
+                </Link>
+              );
+            })
+          )}
+        </div>
+      </section>
+
+      {/* Hot list */}
+      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+        <div className="border-b border-border bg-muted/30 px-4 py-3 sm:px-5">
+          <h2 className="text-lg font-semibold text-foreground">Need attention</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            No schedule, invoice draft, or completed but not paid.
+          </p>
+        </div>
+        <div className="grid gap-4 p-4 sm:grid-cols-3">
+          <div className="rounded-lg border border-border bg-muted/20 p-4">
+            <Link href="/admin/jobs" className="font-medium text-foreground hover:underline">
+              No schedule
+            </Link>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{noSchedule.length}</p>
+            <ul className="mt-2 space-y-1">
+              {noSchedule.slice(0, 3).map((j) => (
+                <li key={j.id}>
+                  <Link href={`/jobs/${j.id}`} className="text-sm text-muted-foreground hover:text-foreground">
+                    {j.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-lg border border-border bg-muted/20 p-4">
+            <Link href="/admin/invoices" className="font-medium text-foreground hover:underline">
+              Invoice draft
+            </Link>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{draftJobIds.size}</p>
+          </div>
+          <div className="rounded-lg border border-border bg-muted/20 p-4">
+            <Link href="/admin/jobs" className="font-medium text-foreground hover:underline">
+              Completed, unpaid
+            </Link>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{completedUnpaid.length}</p>
+            <ul className="mt-2 space-y-1">
+              {completedUnpaid.slice(0, 3).map((j) => (
+                <li key={j.id}>
+                  <Link href={`/jobs/${j.id}`} className="text-sm text-muted-foreground hover:text-foreground">
+                    {j.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
         {cards.map((card) => (
@@ -86,7 +256,7 @@ export default async function AdminDashboardPage() {
 
       <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/30 px-4 py-3 sm:px-5">
-          <h2 className="text-lg font-semibold text-foreground">Recent Jobs</h2>
+          <h2 className="text-lg font-semibold text-foreground">Recent jobs</h2>
           <Link
             href="/admin/jobs"
             className="inline-flex items-center rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition hover:opacity-95"
@@ -115,7 +285,7 @@ export default async function AdminDashboardPage() {
                     <Link href="/admin/jobs#create" className="link">
                       Create a job
                     </Link>{" "}
-                    to get started. Then open the job to add an invoice and set prices.
+                    to get started.
                   </td>
                 </tr>
               ) : (
@@ -129,10 +299,7 @@ export default async function AdminDashboardPage() {
                       className="border-b border-border transition hover:bg-muted/30"
                     >
                       <td className="py-3 pl-5 pr-4">
-                        <Link
-                          href={`/admin/jobs/${job.id}`}
-                          className="link font-medium"
-                        >
+                        <Link href={`/jobs/${job.id}`} className="link font-medium">
                           {job.title}
                         </Link>
                       </td>

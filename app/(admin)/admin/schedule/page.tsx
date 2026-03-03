@@ -2,13 +2,13 @@ import Link from "next/link";
 
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { ScheduleCalendar } from "@/components/ScheduleCalendar";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 const DAYS_AHEAD = 90;
 const DAYS_PAST = 7;
 
 export default async function SchedulePage() {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClientForData();
 
   const start = new Date();
   start.setHours(0, 0, 0, 0);
@@ -127,7 +127,7 @@ export default async function SchedulePage() {
                     return (
                       <li key={job.id}>
                         <Link
-                          href={`/admin/jobs/${job.id}`}
+                          href={`/jobs/${job.id}`}
                           className="flex flex-col gap-1 px-3 py-3 transition hover:bg-muted/30 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-1 sm:px-5"
                         >
                           <span className="font-medium text-foreground">

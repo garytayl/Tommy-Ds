@@ -2,7 +2,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
 import { JobStatusBadge } from "@/components/JobStatusBadge";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 const JOB_STATUSES = [
   "lead",
@@ -33,7 +33,7 @@ export default async function JobsPage() {
 
     if (!customerId || !title || !address1 || !city || !zip) return;
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClientForData();
     await supabase.from("jobs").insert({
       customer_id: customerId,
       title,
@@ -52,9 +52,10 @@ export default async function JobsPage() {
 
     revalidatePath("/admin/jobs");
     revalidatePath("/admin/schedule");
+    revalidatePath("/admin");
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClientForData();
   const [jobsResult, customersResult, installersResult] = await Promise.all([
     supabase
       .from("jobs")
@@ -199,7 +200,15 @@ export default async function JobsPage() {
               </tr>
             </thead>
             <tbody>
-              {jobs.map((job) => {
+              {jobs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                    No jobs in the database yet. Create one above (select a customer first—you need at least one in{" "}
+                    <Link href="/admin/customers" className="link">Customers</Link>).
+                  </td>
+                </tr>
+              ) : (
+                jobs.map((job) => {
                 const customer = Array.isArray(job.customers)
                   ? job.customers[0]?.name
                   : job.customers?.name;
@@ -221,13 +230,14 @@ export default async function JobsPage() {
                       <JobStatusBadge status={job.status} />
                     </td>
                     <td className="py-3 pr-5">
-                      <Link href={`/admin/jobs/${job.id}`} className="link">
+                      <Link href={`/jobs/${job.id}`} className="link">
                         Open
                       </Link>
                     </td>
                   </tr>
                 );
-              })}
+              })
+              )}
             </tbody>
           </table>
         </div>
