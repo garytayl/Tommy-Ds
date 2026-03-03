@@ -15,14 +15,12 @@ MVP for a local installer business:
 
 ## Required Environment Variables
 
-Copy `.env.example` to `.env.local` and fill in:
+Copy `.env.example` to `.env.local` and fill in. **You must set `SUPABASE_SERVICE_ROLE_KEY`** (Supabase Dashboard → Project Settings → API → service_role) or the app will show no data (RLS blocks reads when not logged in).
 
 ```bash
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=   # required for data to show
 
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
