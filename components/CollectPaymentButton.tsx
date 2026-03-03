@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DevHint } from "@/components/DevHint";
 
 type CollectPaymentButtonProps = {
   invoiceId: string;
@@ -88,14 +89,16 @@ export function CollectPaymentButton({
         </div>
       ) : (
         <>
-          <button
-            type="button"
-            onClick={onCollectPayment}
-            disabled={disabled || isLoading}
-            className="btn-primary w-full"
-          >
-            {isLoading ? "Creating link…" : "Copy pay link"}
-          </button>
+          <DevHint message="POST /api/checkout/create → Stripe Checkout session. Link copied to clipboard; customer can pay with card, Apple Pay, or Google Pay.">
+            <button
+              type="button"
+              onClick={onCollectPayment}
+              disabled={disabled || isLoading}
+              className="btn-primary w-full"
+            >
+              {isLoading ? "Creating link…" : "Copy pay link"}
+            </button>
+          </DevHint>
           {isTestMode ? (
             <p className="text-xs text-muted-foreground">
               Test mode — no real charges. Use Stripe test card 4242 4242 4242 4242. Customer can also use Apple Pay / Google Pay on the checkout page.

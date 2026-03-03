@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { DevHint } from "@/components/DevHint";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
@@ -139,12 +140,14 @@ export default async function TodayCommandCenterPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Link
-          href="/admin/jobs#create"
-          className="inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-95"
-        >
-          New job
-        </Link>
+        <DevHint message="Creates a job in public.jobs (customer_id, address, schedule). Form at /admin/jobs#create.">
+          <Link
+            href="/admin/jobs#create"
+            className="inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-95"
+          >
+            New job
+          </Link>
+        </DevHint>
         <Link
           href="/admin/schedule"
           className="inline-flex items-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
