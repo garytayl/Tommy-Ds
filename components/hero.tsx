@@ -119,16 +119,8 @@ export function Hero() {
     <section
       id="hero"
       ref={heroRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-primary"
     >
-      <div className="absolute inset-0 z-0">
-        <img
-          src="/images/hously-background.png"
-          alt=""
-          className="w-full h-full object-cover object-center"
-        />
-      </div>
-
       <div
         ref={contentRef}
         className="container mx-auto px-6 md:px-12 lg:pt-0 relative z-10 pb-0 pl-1 pr-1 pt-8 md:pt-0"
@@ -139,29 +131,21 @@ export function Hero() {
           transformStyle: "preserve-3d",
         }}
       >
-        <div className="mb-72 md:mb-60 lg:mb-80">
-          <p className="text-sm tracking-[0.3em] uppercase text-center text-secondary mb-0">
+        <div className="mb-24 md:mb-20 lg:mb-28">
+          <p className="text-sm tracking-[0.3em] uppercase text-center text-primary-foreground/80 mb-0">
             Tommy D&apos;s Windows, Doors, & More
           </p>
           <h1
             ref={titleRef}
-            className="text-7xl font-medium text-balance text-center text-white mb-0 tracking-tight leading-[0.9] lg:text-8xl"
+            className="text-6xl font-medium text-balance text-center text-primary-foreground mb-0 tracking-tight leading-[0.95] md:text-7xl lg:text-8xl"
           >
             Scheduling, invoicing,
             <br />
             <span className="text-accent-gold">and payments</span>
             <br />
-            <span className="text-white/90 text-6xl lg:text-7xl">for our team</span>
+            <span className="text-primary-foreground/90 text-5xl md:text-6xl lg:text-7xl">for our team</span>
           </h1>
         </div>
-      </div>
-
-      <div className="absolute inset-0 z-20 pointer-events-none">
-        <img
-          src="/images/hously-foreground.png"
-          alt=""
-          className="w-full h-full object-cover object-center"
-        />
       </div>
 
       {animationComplete && (

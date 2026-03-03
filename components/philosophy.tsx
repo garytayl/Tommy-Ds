@@ -61,15 +61,8 @@ export function Philosophy() {
               <br />
               <HighlightedText>our team</HighlightedText>
             </h2>
-            <div className="relative hidden lg:block">
-              <img
-                src="/images/exterior.png"
-                alt=""
-                className="opacity-90 relative z-10 w-auto"
-              />
-            </div>
           </div>
-          <div className="space-y-6 lg:pt-48">
+          <div className="space-y-6 lg:pt-8">
             <p className="text-muted-foreground text-lg leading-relaxed max-w-md mb-12">
               This app is for Tommy D&apos;s staff only. Office uses the dashboard
               for customers, jobs, and invoices; field uses the installer view for
