@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { formatCents } from "@/lib/money";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
@@ -87,13 +88,20 @@ export default async function InvoicesListPage() {
                       <td className="py-3 pr-4 text-right font-medium tabular-nums">
                         {formatCents(inv.balance_due_cents)}
                       </td>
-                      <td className="py-3 pr-5">
+                      <td className="py-3 pr-5 flex flex-wrap items-center gap-2">
                         <Link
                           href={`/admin/invoices/${inv.id}`}
                           className="link text-sm"
                         >
                           Open
                         </Link>
+                        {inv.balance_due_cents > 0 && (
+                          <CollectPaymentButton
+                            invoiceId={inv.id}
+                            disabled={false}
+                            compact
+                          />
+                        )}
                       </td>
                     </tr>
                   );

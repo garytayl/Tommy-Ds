@@ -6,11 +6,14 @@ import { DevHint } from "@/components/DevHint";
 type CollectPaymentButtonProps = {
   invoiceId: string;
   disabled?: boolean;
+  /** Inline/small variant for tables and cards */
+  compact?: boolean;
 };
 
 export function CollectPaymentButton({
   invoiceId,
   disabled,
+  compact,
 }: CollectPaymentButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +59,45 @@ export function CollectPaymentButton({
   const isTestMode =
     typeof process !== "undefined" &&
     process.env.NEXT_PUBLIC_STRIPE_TEST_MODE === "true";
+
+  if (compact) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        {payLink ? (
+          <>
+            <span className="text-xs text-muted-foreground">Copied.</span>
+            <a
+              href={payLink}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Open
+            </a>
+            <button
+              type="button"
+              onClick={() => setPayLink(null)}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              ×
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={onCollectPayment}
+              disabled={disabled || isLoading}
+              className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
+            >
+              {isLoading ? "…" : "Pay link"}
+            </button>
+            {error && <span className="text-xs text-destructive">{error}</span>}
+          </>
+        )}
+      </span>
+    );
+  }
 
   return (
     <div className="space-y-2">

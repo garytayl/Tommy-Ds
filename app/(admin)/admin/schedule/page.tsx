@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { ScheduleCalendar } from "@/components/ScheduleCalendar";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
@@ -19,7 +20,7 @@ export default async function SchedulePage() {
   const { data: jobs } = await supabase
     .from("jobs")
     .select(
-      "id,title,status,scheduled_start,scheduled_end,customers(name),profiles(full_name)",
+      "id,title,status,scheduled_start,scheduled_end,customers(name),profiles(full_name),invoices(id,balance_due_cents)",
     )
     .gte("scheduled_start", start.toISOString())
     .lt("scheduled_start", end.toISOString())
@@ -33,6 +34,7 @@ export default async function SchedulePage() {
     scheduled_end: string | null;
     customers: { name: string } | { name: string }[] | null;
     profiles: { full_name: string | null } | { full_name: string | null }[] | null;
+    invoices: { id: string; balance_due_cents: number }[] | { id: string; balance_due_cents: number } | null;
   };
 
   const rows = (jobs ?? []) as JobRow[];
@@ -124,11 +126,13 @@ export default async function SchedulePage() {
                     const installer = Array.isArray(job.profiles)
                       ? job.profiles[0]?.full_name
                       : job.profiles?.full_name;
+                    const invoice = Array.isArray(job.invoices) ? job.invoices[0] : job.invoices;
+                    const hasBalanceDue = invoice && invoice.balance_due_cents > 0;
                     return (
-                      <li key={job.id}>
+                      <li key={job.id} className="flex flex-wrap items-center gap-2 px-3 py-3 sm:px-5">
                         <Link
                           href={`/jobs/${job.id}`}
-                          className="flex flex-col gap-1 px-3 py-3 transition hover:bg-muted/30 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-1 sm:px-5"
+                          className="flex flex-1 min-w-0 flex-col gap-1 transition hover:bg-muted/30 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-1 -mx-3 px-3 py-1 sm:-mx-5 sm:px-5 sm:py-1"
                         >
                           <span className="font-medium text-foreground">
                             {job.title}
@@ -157,6 +161,13 @@ export default async function SchedulePage() {
                             <JobStatusBadge status={job.status} />
                           </span>
                         </Link>
+                        {hasBalanceDue && (
+                          <CollectPaymentButton
+                            invoiceId={invoice!.id}
+                            disabled={false}
+                            compact
+                          />
+                        )}
                       </li>
                     );
                   })

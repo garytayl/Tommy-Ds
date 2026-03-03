@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
+import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
@@ -59,7 +60,7 @@ export default async function JobsPage() {
   const [jobsResult, customersResult, installersResult] = await Promise.all([
     supabase
       .from("jobs")
-      .select("id,title,status,scheduled_start,customers(name),profiles(full_name)")
+      .select("id,title,status,scheduled_start,customers(name),profiles(full_name),invoices(id,balance_due_cents)")
       .order("created_at", { ascending: false }),
     supabase.from("customers").select("id,name").order("name", { ascending: true }),
     supabase
@@ -76,6 +77,7 @@ export default async function JobsPage() {
     scheduled_start: string | null;
     customers: { name: string } | { name: string }[] | null;
     profiles: { full_name: string | null } | { full_name: string | null }[] | null;
+    invoices: { id: string; balance_due_cents: number }[] | { id: string; balance_due_cents: number } | null;
   };
 
   const jobs = (jobsResult.data ?? []) as JobRow[];
@@ -216,6 +218,8 @@ export default async function JobsPage() {
                   ? job.profiles[0]?.full_name
                   : job.profiles?.full_name;
 
+                const invoice = Array.isArray(job.invoices) ? job.invoices[0] : job.invoices;
+                const hasBalanceDue = invoice && invoice.balance_due_cents > 0;
                 return (
                   <tr key={job.id} className="border-b border-border transition hover:bg-muted/30">
                     <td className="py-3 pl-5 pr-4 font-medium text-foreground">{job.title}</td>
@@ -229,10 +233,17 @@ export default async function JobsPage() {
                     <td className="py-3 pr-4">
                       <JobStatusBadge status={job.status} />
                     </td>
-                    <td className="py-3 pr-5">
+                    <td className="py-3 pr-5 flex flex-wrap items-center gap-2">
                       <Link href={`/jobs/${job.id}`} className="link">
                         Open
                       </Link>
+                      {hasBalanceDue && (
+                        <CollectPaymentButton
+                          invoiceId={invoice!.id}
+                          disabled={false}
+                          compact
+                        />
+                      )}
                     </td>
                   </tr>
                 );

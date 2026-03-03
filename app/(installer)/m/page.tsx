@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { formatCents } from "@/lib/money";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
@@ -111,12 +112,16 @@ export default async function InstallerTodayPage() {
                     Navigate
                   </a>
                   {invoice && invoice.balance_due_cents > 0 && (
-                    <Link
-                      href={`/jobs/${nextJob.id}?tab=payments`}
-                      className="inline-flex rounded-lg border border-primary bg-primary/10 px-4 py-2.5 text-sm font-medium text-primary"
-                    >
-                      Collect {formatCents(invoice.balance_due_cents)}
-                    </Link>
+                    <span className="inline-flex items-center gap-2 flex-wrap">
+                      <span className="text-sm text-muted-foreground">
+                        {formatCents(invoice.balance_due_cents)} due
+                      </span>
+                      <CollectPaymentButton
+                        invoiceId={invoice.id}
+                        disabled={false}
+                        compact
+                      />
+                    </span>
                   )}
                 </div>
               </>
@@ -137,11 +142,12 @@ export default async function InstallerTodayPage() {
           <ul className="space-y-3">
             {rows.map((job) => {
               const invoice = Array.isArray(job.invoices) ? job.invoices[0] : job.invoices;
+              const hasBalanceDue = invoice && invoice.balance_due_cents > 0;
               return (
-                <li key={job.id}>
+                <li key={job.id} className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
                   <Link
                     href={`/jobs/${job.id}`}
-                    className="block rounded-xl border border-border bg-card p-4 shadow-sm transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="block p-4 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <div className="mb-2 flex items-center justify-between">
                       <h3 className="font-semibold text-foreground">{job.title}</h3>
@@ -166,6 +172,15 @@ export default async function InstallerTodayPage() {
                       </p>
                     </div>
                   </Link>
+                  {hasBalanceDue && (
+                    <div className="border-t border-border px-4 py-2 bg-muted/20">
+                      <CollectPaymentButton
+                        invoiceId={invoice!.id}
+                        disabled={false}
+                        compact
+                      />
+                    </div>
+                  )}
                 </li>
               );
             })}
