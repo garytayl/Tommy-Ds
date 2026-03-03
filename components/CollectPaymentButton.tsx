@@ -63,7 +63,7 @@ export function CollectPaymentButton({
         </p>
       ) : null}
       {error ? (
-        <p className="text-xs font-medium" style={{ color: "var(--destructive)" }}>{error}</p>
+        <p className="text-xs font-medium text-destructive">{error}</p>
       ) : null}
     </div>
   );

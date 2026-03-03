@@ -30,17 +30,21 @@ export default async function CustomersPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--foreground)" }}>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">
+          Admin
+        </p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
           Customers
         </h1>
-        <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
-          Add and manage customer records.
+        <p className="mt-1 text-sm text-muted-foreground">
+          Add and manage customer records. Select a customer when creating a job.
         </p>
       </div>
-      <section className="card p-5">
-        <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>Add customer</h2>
+      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <span className="block h-1 w-12 rounded-full bg-primary/80" />
+        <h2 className="mt-3 text-base font-semibold text-foreground">Add customer</h2>
         <form action={createCustomer} className="mt-4 grid gap-3 sm:grid-cols-4">
           <input type="text" name="name" required placeholder="Customer name" className="field" />
           <input type="text" name="phone" placeholder="Phone" className="field" />
@@ -49,11 +53,14 @@ export default async function CustomersPage() {
         </form>
       </section>
 
-      <section className="card overflow-hidden p-0">
+      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+        <div className="border-b border-border bg-muted/50 px-4 py-3 sm:px-5">
+          <h2 className="text-base font-semibold text-foreground">All customers</h2>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b bg-[var(--muted-bg)]" style={{ borderColor: "var(--border)" }}>
+              <tr className="border-b border-border bg-muted/50">
                 <th className="table-header py-3 pl-5 pr-4">Name</th>
                 <th className="table-header py-3 pr-4">Phone</th>
                 <th className="table-header py-3 pr-4">Email</th>
@@ -63,11 +70,11 @@ export default async function CustomersPage() {
             </thead>
             <tbody>
               {(customers ?? []).map((customer) => (
-                <tr key={customer.id} className="border-b transition hover:bg-[var(--muted-bg)]/50" style={{ borderColor: "var(--border)" }}>
-                  <td className="py-3 pl-5 pr-4 font-medium">{customer.name}</td>
-                  <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>{customer.phone ?? "-"}</td>
-                  <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>{customer.email ?? "-"}</td>
-                  <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>
+                <tr key={customer.id} className="border-b border-border transition hover:bg-muted/30">
+                  <td className="py-3 pl-5 pr-4 font-medium text-foreground">{customer.name}</td>
+                  <td className="py-3 pr-4 text-muted-foreground">{customer.phone ?? "-"}</td>
+                  <td className="py-3 pr-4 text-muted-foreground">{customer.email ?? "-"}</td>
+                  <td className="py-3 pr-4 text-muted-foreground">
                     {new Date(customer.created_at).toLocaleDateString()}
                   </td>
                   <td className="py-3 pr-5">

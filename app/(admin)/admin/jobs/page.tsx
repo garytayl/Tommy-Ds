@@ -51,6 +51,7 @@ export default async function JobsPage() {
     });
 
     revalidatePath("/admin/jobs");
+    revalidatePath("/admin/schedule");
   }
 
   const supabase = await createSupabaseServerClient();
@@ -79,17 +80,22 @@ export default async function JobsPage() {
   const jobs = (jobsResult.data ?? []) as JobRow[];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--foreground)" }}>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">
+          Admin
+        </p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
           Jobs
         </h1>
-        <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
-          Create and manage jobs, scheduling, and assign installers.
+        <p className="mt-1 text-sm text-muted-foreground">
+          Create and manage jobs, set schedule, assign installers. Open a job to add an invoice and set prices.
         </p>
       </div>
-      <section className="card p-5">
-        <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>Create job</h2>
+      <section id="create" className="rounded-xl border border-border bg-card p-5 shadow-sm scroll-mt-4">
+        <span className="block h-1 w-12 rounded-full bg-primary/80" />
+        <h2 className="mt-3 text-base font-semibold text-foreground">Create job</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Add to schedule with date/time below. Then open the job to create an invoice and add line items (price).</p>
         <form action={createJob} className="mt-4 grid gap-3 sm:grid-cols-2">
           <select name="customer_id" required className="field">
             <option value="">Select customer</option>
@@ -176,11 +182,14 @@ export default async function JobsPage() {
         </form>
       </section>
 
-      <section className="card overflow-hidden p-0">
+      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+        <div className="border-b border-border bg-muted/50 px-4 py-3 sm:px-5">
+          <h2 className="text-base font-semibold text-foreground">All jobs</h2>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b bg-[var(--muted-bg)]" style={{ borderColor: "var(--border)" }}>
+              <tr className="border-b border-border bg-muted/50">
                 <th className="table-header py-3 pl-5 pr-4">Title</th>
                 <th className="table-header py-3 pr-4">Customer</th>
                 <th className="table-header py-3 pr-4">Installer</th>
@@ -199,11 +208,11 @@ export default async function JobsPage() {
                   : job.profiles?.full_name;
 
                 return (
-                  <tr key={job.id} className="border-b transition hover:bg-[var(--muted-bg)]/50" style={{ borderColor: "var(--border)" }}>
-                    <td className="py-3 pl-5 pr-4 font-medium">{job.title}</td>
-                    <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>{customer ?? "-"}</td>
-                    <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>{installer ?? "Unassigned"}</td>
-                    <td className="py-3 pr-4" style={{ color: "var(--muted)" }}>
+                  <tr key={job.id} className="border-b border-border transition hover:bg-muted/30">
+                    <td className="py-3 pl-5 pr-4 font-medium text-foreground">{job.title}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{customer ?? "-"}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{installer ?? "Unassigned"}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">
                       {job.scheduled_start
                         ? new Date(job.scheduled_start).toLocaleString()
                         : "Unscheduled"}

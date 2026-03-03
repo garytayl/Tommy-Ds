@@ -106,6 +106,7 @@ export default async function JobDetailPage({
 
     revalidatePath(`/admin/jobs/${id}`);
     revalidatePath("/admin/jobs");
+    revalidatePath("/admin/schedule");
   }
 
   async function createInvoice() {
@@ -124,11 +125,11 @@ export default async function JobDetailPage({
   return (
     <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
       <section className="space-y-6">
-        <div className="card p-5">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold" style={{ color: "var(--foreground)" }}>{job.title}</h1>
-              <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
+              <h1 className="text-xl font-semibold text-foreground">{job.title}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Customer:{" "}
                 <Link
                   href={customer?.id ? `/admin/customers/${customer.id}` : "/admin/customers"}
@@ -141,7 +142,7 @@ export default async function JobDetailPage({
             <JobStatusBadge status={job.status} />
           </div>
 
-          <p className="text-sm" style={{ color: "var(--muted)" }}>
+          <p className="text-sm text-muted-foreground">
             {job.address_line1}
             {job.address_line2 ? `, ${job.address_line2}` : ""}
             {`, ${job.city}, ${job.state} ${job.zip}`}
@@ -201,13 +202,18 @@ export default async function JobDetailPage({
       </section>
 
       <section className="space-y-4">
-        <InvoiceSummary invoice={invoice} />
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <span className="block h-1 w-12 rounded-full bg-primary/80" />
+          <h3 className="mt-3 text-sm font-semibold text-foreground">Price & invoice</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Create an invoice, then add line items and tax to set the price.</p>
+          <InvoiceSummary invoice={invoice} />
+        </div>
         {invoice ? (
           <Link
             href={`/admin/invoices/${invoice.id}`}
             className="btn-primary block w-full text-center py-2.5"
           >
-            Open invoice
+            Open invoice (add line items & price)
           </Link>
         ) : (
           <form action={createInvoice}>

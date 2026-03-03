@@ -144,12 +144,12 @@ export default async function InstallerJobDetailPage({
 
   return (
     <div className="space-y-6">
-      <section className="card p-5">
+      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
-          <h1 className="text-xl font-semibold" style={{ color: "var(--foreground)" }}>{job.title}</h1>
+          <h1 className="text-xl font-semibold text-foreground">{job.title}</h1>
           <JobStatusBadge status={job.status} />
         </div>
-        <p className="text-sm" style={{ color: "var(--muted)" }}>
+        <p className="text-sm text-muted-foreground">
           {job.address_line1}
           {job.address_line2 ? `, ${job.address_line2}` : ""}
           {`, ${job.city}, ${job.state} ${job.zip}`}
@@ -166,9 +166,9 @@ export default async function InstallerJobDetailPage({
 
       <section className="grid gap-4 sm:grid-cols-2">
         <InvoiceSummary invoice={invoice} />
-        <div className="card p-5">
-          <h3 className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>Collect Payment</h3>
-          <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <h3 className="text-sm font-semibold text-foreground">Collect Payment</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
             Sends customer to Stripe hosted checkout.
           </p>
           {invoice ? (
@@ -179,13 +179,13 @@ export default async function InstallerJobDetailPage({
               />
             </div>
           ) : (
-            <p className="mt-3 text-sm" style={{ color: "var(--muted)" }}>No invoice available.</p>
+            <p className="mt-3 text-sm text-muted-foreground">No invoice available.</p>
           )}
         </div>
       </section>
 
-      <section className="card p-5">
-        <h3 className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>Field Notes</h3>
+      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <h3 className="text-sm font-semibold text-foreground">Field Notes</h3>
         <form action={updateFieldNotes} className="mt-3 space-y-3">
           <textarea
             name="notes"
@@ -199,8 +199,8 @@ export default async function InstallerJobDetailPage({
         </form>
       </section>
 
-      <section className="card p-5">
-        <h3 className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>Upload Photos</h3>
+      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <h3 className="text-sm font-semibold text-foreground">Upload Photos</h3>
         <form action={uploadPhoto} className="mt-3 grid gap-2 sm:grid-cols-3">
           <input
             type="file"
@@ -227,15 +227,14 @@ export default async function InstallerJobDetailPage({
               href={photo.signed_url ?? "#"}
               target="_blank"
               rel="noreferrer"
-              className="rounded-xl border bg-white p-3 text-sm shadow-sm transition hover:shadow"
-              style={{ borderColor: "var(--border)" }}
+              className="rounded-xl border border-border bg-card p-3 text-sm shadow-sm transition hover:shadow"
             >
-              <p className="font-medium" style={{ color: "var(--foreground)" }}>{photo.caption ?? "Job photo"}</p>
-              <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>{photo.storage_path}</p>
+              <p className="font-medium text-foreground">{photo.caption ?? "Job photo"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{photo.storage_path}</p>
             </a>
           ))}
           {photosWithUrls.length === 0 ? (
-            <p className="text-sm" style={{ color: "var(--muted)" }}>No photos uploaded yet.</p>
+            <p className="text-sm text-muted-foreground">No photos uploaded yet.</p>
           ) : null}
         </div>
       </section>

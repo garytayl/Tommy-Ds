@@ -103,21 +103,21 @@ export default async function InvoiceDetailPage({
   return (
     <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
       <section className="space-y-6">
-        <div className="card p-5">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-xl font-semibold" style={{ color: "var(--foreground)" }}>Invoice {invoice.id.slice(0, 8)}</h1>
+            <h1 className="text-xl font-semibold text-foreground">Invoice {invoice.id.slice(0, 8)}</h1>
             <Link href={`/admin/jobs/${invoiceJobId}`} className="link text-sm">
               Back to job
             </Link>
           </div>
 
-          <p className="text-sm" style={{ color: "var(--muted)" }}>
+          <p className="text-sm text-muted-foreground">
             Job: {invoiceJob?.title ?? "-"} | Customer: {invoiceCustomer?.name ?? "-"}
           </p>
 
           <form action={updateInvoiceStatus} className="mt-4 flex items-end gap-2">
             <div>
-              <label className="mb-1 block text-xs font-medium" style={{ color: "var(--muted)" }}>Status</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Status</label>
               <select
                 name="status"
                 defaultValue={invoice.status}
@@ -136,8 +136,10 @@ export default async function InvoiceDetailPage({
           </form>
         </div>
 
-        <div className="card p-5">
-          <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>Line Items</h2>
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <span className="block h-1 w-12 rounded-full bg-primary/80" />
+          <h2 className="mt-3 text-base font-semibold text-foreground">Line items (price)</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Add description, quantity, and unit price. Totals update automatically.</p>
           <form action={addInvoiceItem} className="mt-3 grid gap-2 sm:grid-cols-4">
             <input
               name="description"
@@ -170,7 +172,7 @@ export default async function InvoiceDetailPage({
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b bg-[var(--muted-bg)]" style={{ borderColor: "var(--border)" }}>
+                <tr className="border-b border-border bg-muted/50">
                   <th className="table-header py-3 pl-5 pr-4">Description</th>
                   <th className="table-header py-3 pr-4">Qty</th>
                   <th className="table-header py-3 pr-4">Unit Price</th>
@@ -179,7 +181,7 @@ export default async function InvoiceDetailPage({
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={item.id} className="border-b transition hover:bg-[var(--muted-bg)]/50" style={{ borderColor: "var(--border)" }}>
+                  <tr key={item.id} className="border-b border-border transition hover:bg-muted/30">
                     <td className="py-3 pl-5 pr-4">{item.description}</td>
                     <td className="py-3 pr-4 tabular-nums">{item.qty}</td>
                     <td className="py-3 pr-4 tabular-nums">{formatCents(item.unit_price_cents)}</td>
@@ -193,14 +195,14 @@ export default async function InvoiceDetailPage({
           </div>
         </div>
 
-        <div className="card overflow-hidden p-0">
-          <div className="border-b p-4" style={{ borderColor: "var(--border)" }}>
-            <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>Payments</h2>
+        <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+          <div className="border-b border-border bg-muted/50 px-4 py-3">
+            <h2 className="text-base font-semibold text-foreground">Payments</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b bg-[var(--muted-bg)]" style={{ borderColor: "var(--border)" }}>
+                <tr className="border-b border-border bg-muted/50">
                   <th className="table-header py-3 pl-5 pr-4">Date</th>
                   <th className="table-header py-3 pr-4">Amount</th>
                   <th className="table-header py-3 pr-4">Status</th>
@@ -209,13 +211,13 @@ export default async function InvoiceDetailPage({
               </thead>
               <tbody>
                 {payments.map((payment) => (
-                  <tr key={payment.id} className="border-b transition hover:bg-[var(--muted-bg)]/50" style={{ borderColor: "var(--border)" }}>
-                    <td className="py-3 pl-5 pr-4" style={{ color: "var(--muted)" }}>
+                  <tr key={payment.id} className="border-b border-border transition hover:bg-muted/30">
+                    <td className="py-3 pl-5 pr-4 text-muted-foreground">
                       {new Date(payment.created_at).toLocaleString()}
                     </td>
                     <td className="py-3 pr-4 tabular-nums">{formatCents(payment.amount_cents)}</td>
                     <td className="py-3 pr-4">{payment.status}</td>
-                    <td className="py-3 pr-5 font-mono text-xs" style={{ color: "var(--muted)" }}>
+                    <td className="py-3 pr-5 font-mono text-xs text-muted-foreground">
                       {payment.provider_payment_intent_id ?? "-"}
                     </td>
                   </tr>
@@ -228,11 +230,11 @@ export default async function InvoiceDetailPage({
 
       <section className="space-y-4">
         <InvoiceSummary invoice={invoice} />
-        <div className="card p-5">
-          <h3 className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>Tax</h3>
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <h3 className="text-sm font-semibold text-foreground">Tax</h3>
           <form action={updateTax} className="mt-3 flex items-end gap-2">
             <div className="grow">
-              <label className="mb-1 block text-xs font-medium" style={{ color: "var(--muted)" }}>Tax amount ($)</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">Tax amount ($)</label>
               <input
                 type="number"
                 name="tax"

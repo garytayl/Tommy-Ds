@@ -23,21 +23,24 @@ export default async function InvoicesListPage() {
   const rows: InvoiceRow[] = invoices ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">
+          Admin
+        </p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
           Invoices
         </h1>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          All invoices. Open to edit line items, tax, and status.
+        <p className="mt-1 text-sm text-muted-foreground">
+          All invoices. Open to add line items, set tax, and manage status.
         </p>
       </div>
 
-      <section className="card overflow-hidden p-0">
+      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b bg-[var(--muted-bg)]">
+              <tr className="border-b border-border bg-muted/50">
                 <th className="table-header py-3 pl-5 pr-4">Job</th>
                 <th className="table-header py-3 pr-4">Customer</th>
                 <th className="table-header py-3 pr-4">Status</th>
@@ -51,9 +54,9 @@ export default async function InvoicesListPage() {
                 <tr>
                   <td
                     colSpan={6}
-                    className="py-10 text-center text-[var(--muted)]"
+                    className="py-10 text-center text-sm text-muted-foreground"
                   >
-                    No invoices yet. Create one from a job.
+                    No invoices yet. Create a job, then create an invoice from the job page.
                   </td>
                 </tr>
               ) : (
@@ -65,16 +68,16 @@ export default async function InvoicesListPage() {
                   return (
                     <tr
                       key={inv.id}
-                      className="border-b border-[var(--border)] last:border-0 transition hover:bg-[var(--muted-bg)]/50"
+                      className="border-b border-border last:border-0 transition hover:bg-muted/30"
                     >
-                      <td className="py-3 pl-5 pr-4 font-medium">
+                      <td className="py-3 pl-5 pr-4 font-medium text-foreground">
                         {jobObj?.title ?? "-"}
                       </td>
-                      <td className="py-3 pr-4 text-[var(--muted)]">
+                      <td className="py-3 pr-4 text-muted-foreground">
                         {name ?? "-"}
                       </td>
                       <td className="py-3 pr-4">
-                        <span className="inline-flex rounded-full bg-[var(--muted-bg)] px-2.5 py-1 text-xs font-medium text-[var(--muted)] capitalize">
+                        <span className="inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground capitalize">
                           {inv.status.replace("_", " ")}
                         </span>
                       </td>
