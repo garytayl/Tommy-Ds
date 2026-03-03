@@ -7,47 +7,81 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col bg-background">
       <Header />
-      <div className="flex-1 container mx-auto px-4 py-12 md:py-16 md:px-6 max-w-4xl">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-          Internal scheduling & billing (PoC)
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          Use the links below or the menu to open each part of the system.
+      {/* Compact hero – template vibe without full scroll animation */}
+      <section className="relative flex min-h-[42vh] flex-col items-center justify-center overflow-hidden bg-primary px-4 py-16 md:min-h-[50vh] md:py-24">
+        <p className="text-xs tracking-[0.25em] uppercase text-primary-foreground/80 md:text-sm">
+          Tommy D&apos;s Windows, Doors, & More
         </p>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <h1 className="mt-3 max-w-2xl text-center font-medium tracking-tight text-primary-foreground md:text-4xl lg:text-5xl">
+          Scheduling, invoicing,{" "}
+          <span className="text-accent-gold">and payments</span>
+          <br />
+          <span className="text-primary-foreground/90 text-2xl md:text-3xl lg:text-4xl">
+            for our team
+          </span>
+        </h1>
+        <p className="mt-4 text-center text-sm text-primary-foreground/70">
+          Internal proof of concept — no sign-in required
+        </p>
+        <a
+          href="#hub"
+          className="mt-8 flex flex-col items-center gap-1 text-primary-foreground/80 transition hover:text-accent-gold"
+          aria-label="Scroll to get started"
+        >
+          <span className="text-xs uppercase tracking-widest">Get started</span>
+          <svg className="h-5 w-5 animate-bounce" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 5v14M5 12l7 7 7-7" />
+          </svg>
+        </a>
+      </section>
+
+      <div id="hub" className="flex-1 container mx-auto scroll-mt-8 px-4 py-12 md:py-16 md:px-6 max-w-4xl">
+        <h2 className="text-lg font-medium tracking-tight text-muted-foreground">
+          Open a view
+        </h2>
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <Link
             href="/admin"
-            className="rounded-xl border border-border bg-card p-6 shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="group rounded-xl border border-border bg-card p-6 shadow-sm transition hover:border-primary/30 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >
-            <h2 className="text-lg font-semibold text-foreground">Admin</h2>
+            <span className="block h-1 w-12 rounded-full bg-primary/80 group-hover:bg-primary" />
+            <h3 className="mt-4 text-lg font-semibold tracking-tight text-foreground">
+              Admin
+            </h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Dashboard, customers, jobs, invoices. Office view.
             </p>
-            <span className="mt-3 inline-block text-sm font-medium text-primary">
+            <span className="mt-4 inline-block text-sm font-medium text-primary">
               Open Admin →
             </span>
           </Link>
           <Link
             href="/m"
-            className="rounded-xl border border-border bg-card p-6 shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="group rounded-xl border border-border bg-card p-6 shadow-sm transition hover:border-primary/30 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >
-            <h2 className="text-lg font-semibold text-foreground">Installer</h2>
+            <span className="block h-1 w-12 rounded-full bg-primary/80 group-hover:bg-primary" />
+            <h3 className="mt-4 text-lg font-semibold tracking-tight text-foreground">
+              Installer
+            </h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Today&apos;s jobs, collect payment link, notes, photos. Field view.
             </p>
-            <span className="mt-3 inline-block text-sm font-medium text-primary">
+            <span className="mt-4 inline-block text-sm font-medium text-primary">
               Open Installer view →
             </span>
           </Link>
           <Link
             href="/demo/customer-payment"
-            className="rounded-xl border border-border bg-card p-6 shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="group rounded-xl border border-border bg-card p-6 shadow-sm transition hover:border-primary/30 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >
-            <h2 className="text-lg font-semibold text-foreground">Customer payment (demo)</h2>
+            <span className="block h-1 w-12 rounded-full bg-primary/80 group-hover:bg-primary" />
+            <h3 className="mt-4 text-lg font-semibold tracking-tight text-foreground">
+              Customer payment (demo)
+            </h3>
             <p className="mt-2 text-sm text-muted-foreground">
               What the customer sees: tap-to-pay / pay link flow.
             </p>
-            <span className="mt-3 inline-block text-sm font-medium text-primary">
+            <span className="mt-4 inline-block text-sm font-medium text-primary">
               See customer flow →
             </span>
           </Link>

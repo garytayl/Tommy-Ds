@@ -8,8 +8,9 @@ export default function CustomerPaymentDemoPage() {
     <main className="min-h-screen flex flex-col bg-background">
       <Header />
       <div className="flex-1 container mx-auto px-4 py-10 md:py-14 md:px-6 max-w-2xl">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Customer payment flow (demo)
+        <p className="text-xs tracking-[0.2em] uppercase text-muted-foreground">Demo</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+          Customer payment flow
         </h1>
         <p className="mt-2 text-muted-foreground">
           What the customer sees when they pay — e.g. tap to pay from the installer&apos;s phone.

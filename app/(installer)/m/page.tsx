@@ -6,17 +6,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function InstallerJobsTodayPage() {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return (
-      <div className="card p-5 text-center" style={{ color: "var(--muted)" }}>
-        Sign in as an installer to view assigned jobs.
-      </div>
-    );
-  }
 
   const start = new Date();
   start.setHours(0, 0, 0, 0);
@@ -28,7 +17,6 @@ export default async function InstallerJobsTodayPage() {
     .select(
       "id,title,status,address_line1,city,state,zip,scheduled_start,invoices(id,status,balance_due_cents)",
     )
-    .eq("assigned_installer_id", user.id)
     .gte("scheduled_start", start.toISOString())
     .lt("scheduled_start", end.toISOString())
     .order("scheduled_start", { ascending: true });
@@ -57,7 +45,7 @@ export default async function InstallerJobsTodayPage() {
           My Jobs Today
         </h1>
         <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
-          Assigned jobs for the current day.
+          Jobs scheduled for today (PoC: all jobs shown).
         </p>
       </div>
       {rows.length === 0 ? (

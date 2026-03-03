@@ -22,17 +22,6 @@ export default async function InstallerJobDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return (
-      <div className="card p-5 text-center" style={{ color: "var(--muted)" }}>
-        Sign in as installer.
-      </div>
-    );
-  }
 
   const [jobResult, invoiceResult, photosResult] = await Promise.all([
     supabase
@@ -41,7 +30,6 @@ export default async function InstallerJobDetailPage({
         "id,title,status,notes,address_line1,address_line2,city,state,zip,scheduled_start,assigned_installer_id",
       )
       .eq("id", id)
-      .eq("assigned_installer_id", user.id)
       .maybeSingle(),
     supabase
       .from("invoices")
@@ -71,17 +59,11 @@ export default async function InstallerJobDetailPage({
     "use server";
 
     const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
     const notes = String(formData.get("notes") ?? "").trim();
     await supabase
       .from("jobs")
       .update({ notes: notes || null })
-      .eq("id", id)
-      .eq("assigned_installer_id", user.id);
+      .eq("id", id);
 
     revalidatePath(`/m/jobs/${id}`);
   }
@@ -90,16 +72,10 @@ export default async function InstallerJobDetailPage({
     "use server";
 
     const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
     await supabase
       .from("jobs")
       .update({ status: "completed" })
-      .eq("id", id)
-      .eq("assigned_installer_id", user.id);
+      .eq("id", id);
 
     revalidatePath(`/m/jobs/${id}`);
     revalidatePath("/m");
@@ -110,20 +86,6 @@ export default async function InstallerJobDetailPage({
     "use server";
 
     const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: assignedJob } = await supabase
-      .from("jobs")
-      .select("id")
-      .eq("id", id)
-      .eq("assigned_installer_id", user.id)
-      .maybeSingle();
-
-    if (!assignedJob) return;
-
     const file = formData.get("photo");
     if (!(file instanceof File) || file.size === 0) return;
 
@@ -146,7 +108,7 @@ export default async function InstallerJobDetailPage({
 
     await supabase.from("job_photos").insert({
       job_id: id,
-      uploader_id: user.id,
+      uploader_id: null,
       storage_path: storagePath,
       caption: caption || null,
     });

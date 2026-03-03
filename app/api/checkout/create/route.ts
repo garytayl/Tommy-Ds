@@ -4,7 +4,6 @@ import { getAppUrl } from "@/lib/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getStripeClient } from "@/lib/stripe";
 
-type ProfileRow = { role: "admin" | "manager" | "installer" | string };
 type InvoiceRow = {
   id: string;
   job_id: string;
@@ -26,39 +25,19 @@ type CustomerRow = {
 export async function POST(request: Request) {
   try {
     const supabase = await createSupabaseServerClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = (await request.json()) as { invoiceId?: string };
     const invoiceId = body?.invoiceId?.trim();
     if (!invoiceId) {
       return NextResponse.json({ error: "invoiceId is required" }, { status: 400 });
     }
 
-    const [profileResult, invoiceResult] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle(),
-      supabase
-        .from("invoices")
-        .select("id,job_id,balance_due_cents,status")
-        .eq("id", invoiceId)
-        .maybeSingle(),
-    ]);
+    const invoiceResult = await supabase
+      .from("invoices")
+      .select("id,job_id,balance_due_cents,status")
+      .eq("id", invoiceId)
+      .maybeSingle();
 
-    const profile = profileResult.data as ProfileRow | null;
     const invoice = invoiceResult.data as InvoiceRow | null;
-
-    if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 403 });
-    }
     if (!invoice) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
@@ -94,14 +73,6 @@ export async function POST(request: Request) {
 
     if (!jobRow) {
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
-    }
-
-    const role = profile.role;
-    const isInstallerAssigned =
-      role === "installer" && jobRow.assigned_installer_id === user.id;
-    const canManage = role === "admin" || role === "manager";
-    if (!canManage && !isInstallerAssigned) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const appUrl = getAppUrl(request.headers.get("origin") ?? undefined);

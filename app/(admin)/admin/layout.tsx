@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { features } from "@/lib/config";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +11,7 @@ const NAV_ITEMS = [
   { href: "/admin/invoices", label: "Invoices" },
 ];
 
-export default async function AdminLayout({
+export default function AdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   if (!features.supabase) {
@@ -29,25 +27,6 @@ export default async function AdminLayout({
         </div>
       </div>
     );
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/");
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!profile || !["admin", "manager"].includes(profile.role)) {
-    redirect("/m");
   }
 
   return (
