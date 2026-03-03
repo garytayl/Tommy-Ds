@@ -76,13 +76,19 @@ supabase/
 2. Apply SQL migration in Supabase:
    - `supabase/migrations/20260302141000_mvp_schema.sql`
 
-3. Run app:
+3. **(Optional)** Seed placeholder data (customers, jobs, invoices):
+   - From the project root (with `.env.local` containing `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`):  
+     `npm run db:seed`
+   - Or open [Supabase Dashboard](https://supabase.com/dashboard) → your project → **SQL Editor**, paste and run the contents of `supabase/seed.sql`.
+   - Adds 10 customers, 15 jobs, invoices with line items, and a few payments so the app has data to show.
+
+4. Run app:
 
    ```bash
    npm run dev
    ```
 
-4. Open:
+5. Open:
    - Admin: `http://localhost:3000/admin`
    - Installer: `http://localhost:3000/m`
 
