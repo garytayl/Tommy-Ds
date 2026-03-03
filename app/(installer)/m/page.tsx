@@ -7,19 +7,33 @@ import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 export default async function InstallerTodayPage() {
   const supabase = await createSupabaseServerClientForData();
 
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
+  const now = new Date();
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(todayStart);
+  todayEnd.setDate(todayEnd.getDate() + 1);
+  const weekEnd = new Date(todayStart);
+  weekEnd.setDate(weekEnd.getDate() + 8);
 
-  const { data: jobs } = await supabase
-    .from("jobs")
-    .select(
-      "id,title,status,notes,address_line1,city,state,zip,scheduled_start,customers(name,phone),invoices(id,status,balance_due_cents)",
-    )
-    .gte("scheduled_start", start.toISOString())
-    .lt("scheduled_start", end.toISOString())
-    .order("scheduled_start", { ascending: true });
+  const [todayResult, upcomingResult] = await Promise.all([
+    supabase
+      .from("jobs")
+      .select(
+        "id,title,status,notes,address_line1,city,state,zip,scheduled_start,customers(name,phone),invoices(id,status,balance_due_cents)",
+      )
+      .gte("scheduled_start", todayStart.toISOString())
+      .lt("scheduled_start", todayEnd.toISOString())
+      .order("scheduled_start", { ascending: true }),
+    supabase
+      .from("jobs")
+      .select(
+        "id,title,status,notes,address_line1,city,state,zip,scheduled_start,customers(name,phone),invoices(id,status,balance_due_cents)",
+      )
+      .gte("scheduled_start", todayStart.toISOString())
+      .lt("scheduled_start", weekEnd.toISOString())
+      .order("scheduled_start", { ascending: true })
+      .limit(20),
+  ]);
 
   type InstallerJob = {
     id: string;
@@ -38,7 +52,9 @@ export default async function InstallerTodayPage() {
       | null;
   };
 
-  const rows = (jobs ?? []) as InstallerJob[];
+  const todayJobs = (todayResult.data ?? []) as InstallerJob[];
+  const upcomingJobs = (upcomingResult.data ?? []) as InstallerJob[];
+  const rows = todayJobs.length > 0 ? todayJobs : upcomingJobs;
   const nextJob = rows[0];
   const mapQuery = nextJob
     ? encodeURIComponent(`${nextJob.address_line1}, ${nextJob.city}, ${nextJob.state} ${nextJob.zip}`)
@@ -111,11 +127,13 @@ export default async function InstallerTodayPage() {
 
       {rows.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground shadow-sm">
-          No jobs scheduled today.
+          No jobs scheduled today or in the next week.
         </div>
       ) : (
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">All today&apos;s jobs</h2>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">
+            {todayJobs.length > 0 ? "All today's jobs" : "Upcoming (next 7 days)"}
+          </h2>
           <ul className="space-y-3">
             {rows.map((job) => {
               const invoice = Array.isArray(job.invoices) ? job.invoices[0] : job.invoices;
