@@ -59,7 +59,7 @@ export function Header() {
             <li key={item.label}>
               <Link
                 href={item.href}
-                className="text-primary-foreground/90 hover:text-[rgb(251,146,60)] transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 hover:after:w-full after:bg-[rgb(251,146,60)] after:transition-all after:duration-300"
+                className="text-primary-foreground/90 hover:text-accent-gold transition-colors duration-300 relative after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 hover:after:w-full after:bg-accent-gold after:transition-all after:duration-300"
                 onClick={closeMobileMenu}
               >
                 {item.label}
@@ -125,7 +125,7 @@ export function Header() {
               <li key={item.label}>
                 <Link
                   href={item.href}
-                  className="text-primary-foreground/90 hover:text-[rgb(251,146,60)] transition-colors duration-300 text-4xl font-light block"
+                  className="text-primary-foreground/90 hover:text-accent-gold transition-colors duration-300 text-4xl font-light block"
                   onClick={closeMobileMenu}
                 >
                   {item.label}

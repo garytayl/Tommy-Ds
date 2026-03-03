@@ -33,7 +33,7 @@ export default function InstallerLayout({
           </Link>
           <Link
             href="/admin"
-            className="text-sm font-medium text-primary-foreground/90 transition hover:text-[rgb(251,146,60)]"
+            className="text-sm font-medium text-primary-foreground/90 transition hover:text-accent-gold"
           >
             Office Admin
           </Link>

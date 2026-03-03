@@ -68,7 +68,7 @@ export default async function AdminLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-primary-foreground/90 transition hover:text-[rgb(251,146,60)]"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-primary-foreground/90 transition hover:text-accent-gold"
               >
                 {item.label}
               </Link>

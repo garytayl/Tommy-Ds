@@ -149,7 +149,7 @@ export function Hero() {
           >
             Scheduling, invoicing,
             <br />
-            <span className="text-orange-200">and payments</span>
+            <span className="text-accent-gold">and payments</span>
             <br />
             <span className="text-white/90 text-6xl lg:text-7xl">for our team</span>
           </h1>
@@ -168,7 +168,7 @@ export function Hero() {
         <div className="absolute bottom-12 left-1/2 -translate-x-1/2 animate-bounce z-30">
           <a
             href="#about"
-            className="block text-primary-foreground hover:text-orange-200 transition-colors"
+            className="block text-primary-foreground hover:text-accent-gold transition-colors"
             aria-label="Scroll to philosophy"
           >
             <ArrowDown className="w-5 h-5" />
