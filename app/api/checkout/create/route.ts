@@ -108,12 +108,9 @@ export async function POST(request: Request) {
       request.headers.get("origin") ||
       "http://localhost:3000";
 
-    const successUrl = canManage
-      ? `${appUrl}/admin/invoices/${invoice.id}?payment=success`
-      : `${appUrl}/m/jobs/${jobRow.id}?payment=success`;
-    const cancelUrl = canManage
-      ? `${appUrl}/admin/invoices/${invoice.id}?payment=cancel`
-      : `${appUrl}/m/jobs/${jobRow.id}?payment=cancel`;
+    // Customer-facing: after paying (or cancelling) on Stripe they land on our public thank-you page.
+    const successUrl = `${appUrl}/payment/thank-you?payment=success`;
+    const cancelUrl = `${appUrl}/payment/thank-you?payment=cancel`;
 
     const stripe = getStripeClient();
     const session = await stripe.checkout.sessions.create({
@@ -133,10 +130,10 @@ export async function POST(request: Request) {
             currency: "usd",
             unit_amount: invoice.balance_due_cents,
             product_data: {
-              name: `Invoice ${invoice.id.slice(0, 8)} - ${jobRow.title}`,
+              name: `Tommy D's Windows, Doors, & More — ${jobRow.title}`,
               description: customerRow
-                ? `Customer: ${customerRow.name}`
-                : "Field service payment",
+                ? `Invoice for ${customerRow.name}`
+                : "Payment for Tommy D's service",
             },
           },
         },

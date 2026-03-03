@@ -141,7 +141,7 @@ export function Hero() {
       >
         <div className="mb-72 md:mb-60 lg:mb-80">
           <p className="text-sm tracking-[0.3em] uppercase text-center text-secondary mb-0">
-            Field Service Scheduler
+            Tommy D&apos;s Windows, Doors, & More
           </p>
           <h1
             ref={titleRef}
@@ -151,7 +151,7 @@ export function Hero() {
             <br />
             <span className="text-orange-200">and payments</span>
             <br />
-            <span className="text-white/90 text-6xl lg:text-7xl">that work in the field</span>
+            <span className="text-white/90 text-6xl lg:text-7xl">for our team</span>
           </h1>
         </div>
       </div>

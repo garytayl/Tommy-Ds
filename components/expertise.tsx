@@ -59,16 +59,17 @@ export function Expertise() {
       <div className="container mx-auto px-6 md:px-12">
         <div className="max-w-3xl mb-20">
           <p className="text-muted-foreground text-sm tracking-[0.3em] uppercase mb-6">
-            What you get
+            For staff
           </p>
           <h2 className="text-6xl font-medium leading-[1.15] tracking-tight mb-6 text-balance lg:text-8xl">
-            <HighlightedText>Capabilities</HighlightedText> that
+            <HighlightedText>What the app does</HighlightedText>
             <br />
-            fit how you work
+            for office and field
           </h2>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            One system for the office and the field: manage customers and jobs,
-            send invoices, and collect payment without the back-and-forth.
+            Office: customers, jobs, invoices, and payment status. Field:
+            today’s jobs, payment link to send to the customer, notes, and
+            photos.
           </p>
         </div>
         <div className="grid md:grid-cols-2 gap-x-12 gap-y-16">

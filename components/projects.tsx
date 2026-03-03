@@ -69,10 +69,10 @@ export function Projects() {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-16">
           <div>
             <p className="text-muted-foreground text-sm tracking-[0.3em] uppercase mb-6">
-              What’s included
+              In the app
             </p>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight">
-              Features
+              What’s in the app
             </h2>
           </div>
           <a

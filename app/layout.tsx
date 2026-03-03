@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Field Service Scheduler — Scheduling & Payments for Field Teams",
+  title: "Tommy D's — Scheduling & Billing",
   description:
-    "Mobile-friendly scheduling, invoicing, and payment collection for field installer teams.",
+    "Internal scheduling, jobs, invoicing, and payment collection for Tommy D's Windows, Doors, & More.",
 };
 
 export default function RootLayout({

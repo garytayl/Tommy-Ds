@@ -61,7 +61,7 @@ export default async function AdminLayout({
             href="/admin"
             className="text-sm font-semibold text-primary-foreground"
           >
-            Field Service Scheduler
+            Tommy D&apos;s
           </Link>
           <nav className="flex items-center gap-1">
             {NAV_ITEMS.map((item) => (

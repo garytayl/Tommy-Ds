@@ -5,24 +5,24 @@ import { HighlightedText } from "./highlighted-text";
 
 const philosophyItems = [
   {
-    title: "Simple by design",
+    title: "One place for the day",
     description:
-      "One place for customers, jobs, and invoices. No clutter—just what your team needs to run the day.",
+      "Customers, jobs, and invoices in one app. Office runs the board; field sees only what’s assigned to them.",
   },
   {
-    title: "Built for the field",
+    title: "Field view on the phone",
     description:
-      "Installers get today's jobs on their phone, with addresses, notes, and a one-tap payment link. Office stays in control.",
+      "Installers open the installer view and get today’s jobs with address, notes, and a button to send the customer a payment link.",
   },
   {
-    title: "Jobs and payments together",
+    title: "Invoice → pay link",
     description:
-      "Create an invoice from a job, add line items and tax, then send a Stripe pay link from the field. Balance due updates in real time.",
+      "Create an invoice from a job, add line items and tax, then use “Collect payment” to get a Stripe link. Send that link to the customer; they pay by card. We see it when it’s paid.",
   },
   {
-    title: "Mobile-first for installers",
+    title: "No customer login here",
     description:
-      "View schedule, update notes, upload photos, and mark jobs complete. Collect payment without chasing checks.",
+      "Customers never log into this site. The only time they see us is when they click the payment link and complete checkout on Stripe.",
   },
 ];
 
@@ -54,12 +54,12 @@ export function Philosophy() {
         <div className="grid lg:grid-cols-2 gap-16 lg:gap-24">
           <div className="lg:sticky lg:top-32 lg:self-start">
             <p className="text-muted-foreground text-sm tracking-[0.3em] uppercase mb-6">
-              Our approach
+              How we use it
             </p>
             <h2 className="text-6xl md:text-6xl font-medium leading-[1.15] tracking-tight mb-6 text-balance lg:text-8xl">
               Built for
               <br />
-              <HighlightedText>field teams</HighlightedText>
+              <HighlightedText>our team</HighlightedText>
             </h2>
             <div className="relative hidden lg:block">
               <img
@@ -71,9 +71,9 @@ export function Philosophy() {
           </div>
           <div className="space-y-6 lg:pt-48">
             <p className="text-muted-foreground text-lg leading-relaxed max-w-md mb-12">
-              Field Service Scheduler keeps office and field in sync. Manage
-              customers and jobs from the dashboard; installers see their day,
-              collect payment, and update notes from their phone.
+              This app is for Tommy D&apos;s staff only. Office uses the dashboard
+              for customers, jobs, and invoices; field uses the installer view for
+              the day&apos;s runs and to send payment links to customers.
             </p>
             {philosophyItems.map((item, index) => (
               <div

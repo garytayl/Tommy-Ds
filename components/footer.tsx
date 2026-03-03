@@ -9,16 +9,17 @@ export function Footer() {
           <div className="md:col-span-2">
             <Link href="/" className="inline-block mb-6">
               <Image
-                src="/images/hously-logo.svg"
-                alt="Field Service Scheduler"
-                width={120}
-                height={32}
-                className="w-auto h-6"
+                src="/images/tommyds-logo.png"
+                alt="Tommy D's Windows, Doors, & More"
+                width={200}
+                height={56}
+                className="w-auto h-8"
               />
             </Link>
             <p className="text-muted-foreground leading-relaxed max-w-sm">
-              Scheduling, invoicing, and payment collection for field installer
-              teams. One dashboard for the office, one view for the field.
+              Internal scheduling and billing for Tommy D&apos;s. One dashboard
+              for the office, one view for the field. Customers pay via the link
+              we send them.
             </p>
           </div>
           <div>
@@ -57,36 +58,31 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h4 className="text-sm font-medium mb-4">Resources</h4>
+            <h4 className="text-sm font-medium mb-4">Contact (main site)</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li>
-                <Link href="/admin/invoices" className="hover:text-foreground transition-colors">
-                  Invoices
-                </Link>
+                <a href="tel:812-330-8898" className="hover:text-foreground transition-colors">
+                  812-330-8898
+                </a>
               </li>
               <li>
-                <Link href="/admin/customers" className="hover:text-foreground transition-colors">
-                  Customers
-                </Link>
+                <a href="mailto:mikec@tommyds.us" className="hover:text-foreground transition-colors">
+                  mikec@tommyds.us
+                </a>
               </li>
               <li>
-                <Link href="/admin/jobs" className="hover:text-foreground transition-colors">
-                  Jobs
-                </Link>
+                3148 S. State Road 446, Bloomington, IN 47401
+              </li>
+              <li>
+                <a href="https://tommyds.us" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+                  Visit our main website
+                </a>
               </li>
             </ul>
           </div>
         </div>
         <div className="pt-8 border-t border-border flex flex-col md:flex-row md:items-center justify-between gap-4 text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Field Service Scheduler.</p>
-          <div className="flex gap-6">
-            <Link href="#" className="hover:text-foreground transition-colors">
-              Privacy
-            </Link>
-            <Link href="#" className="hover:text-foreground transition-colors">
-              Terms
-            </Link>
-          </div>
+          <p>© {new Date().getFullYear()} Tommy D&apos;s Windows, Doors, & More, Inc.</p>
         </div>
       </div>
     </footer>

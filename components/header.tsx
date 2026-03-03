@@ -46,11 +46,11 @@ export function Header() {
           onClick={scrollToTop}
         >
           <Image
-            src="/images/hously-logo.svg"
-            alt="Field Service Scheduler"
-            width={120}
-            height={32}
-            className="w-auto h-6"
+            src="/images/tommyds-logo.png"
+            alt="Tommy D's Windows, Doors, & More"
+            width={200}
+            height={56}
+            className="w-auto h-8 md:h-9"
           />
         </Link>
 
