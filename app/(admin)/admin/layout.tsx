@@ -21,10 +21,10 @@ export default async function AdminLayout({
 
   if (!isSupabaseConfigured) {
     return (
-      <div className="min-h-screen p-6" style={{ background: "var(--background)" }}>
+      <div className="min-h-screen bg-background p-6">
         <div className="card mx-auto max-w-2xl">
-          <h1 className="text-lg font-semibold" style={{ color: "var(--foreground)" }}>Supabase Not Configured</h1>
-          <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
+          <h1 className="text-lg font-semibold text-foreground">Supabase Not Configured</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             Add <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
             <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in Vercel Project Settings
             → Environment Variables, then redeploy.
@@ -54,16 +54,12 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--background)" }}>
-      <header
-        className="sticky top-0 z-20 border-b backdrop-blur-md"
-        style={{ borderColor: "var(--border)", background: "var(--surface)" }}
-      >
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-20 border-b border-border bg-primary backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Link
             href="/admin"
-            className="text-sm font-semibold"
-            style={{ color: "var(--foreground)" }}
+            className="text-sm font-semibold text-primary-foreground"
           >
             Field Service Scheduler
           </Link>
@@ -72,13 +68,15 @@ export default async function AdminLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-lg px-3 py-2 text-sm font-medium transition hover:opacity-90"
-                style={{ color: "var(--foreground)" }}
+                className="rounded-lg px-3 py-2 text-sm font-medium text-primary-foreground/90 transition hover:text-[rgb(251,146,60)]"
               >
                 {item.label}
               </Link>
             ))}
-            <Link href="/m" className="btn-primary ml-2 px-3 py-1.5 text-sm">
+            <Link
+              href="/m"
+              className="ml-2 inline-flex items-center rounded-lg border border-primary-foreground/30 bg-primary-foreground px-3 py-1.5 text-sm font-medium text-foreground transition hover:bg-foreground hover:text-primary-foreground"
+            >
               Installer View
             </Link>
           </nav>

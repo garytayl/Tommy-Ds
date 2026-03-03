@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Field Service Scheduler MVP",
-  description: "Admin + installer scheduling, invoicing, and payments",
+  title: "Field Service Scheduler — Scheduling & Payments for Field Teams",
+  description:
+    "Mobile-friendly scheduling, invoicing, and payment collection for field installer teams.",
 };
 
 export default function RootLayout({
@@ -23,10 +24,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="en" className={geistSans.variable}>
+      <body className={`font-sans ${geistMono.variable} antialiased`}>
         {children}
       </body>
     </html>

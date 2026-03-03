@@ -11,10 +11,10 @@ export default function InstallerLayout({
 
   if (!isSupabaseConfigured) {
     return (
-      <div className="min-h-screen p-6" style={{ background: "var(--background)" }}>
+      <div className="min-h-screen bg-background p-6">
         <div className="card mx-auto max-w-2xl">
-          <h1 className="text-lg font-semibold" style={{ color: "var(--foreground)" }}>Supabase Not Configured</h1>
-          <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
+          <h1 className="text-lg font-semibold text-foreground">Supabase Not Configured</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             Add <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
             <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in Vercel Project Settings
             → Environment Variables, then redeploy.
@@ -25,16 +25,16 @@ export default function InstallerLayout({
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--background)" }}>
-      <header
-        className="sticky top-0 z-20 border-b backdrop-blur-md"
-        style={{ borderColor: "var(--border)", background: "var(--surface)" }}
-      >
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-20 border-b border-border bg-primary backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-3">
-          <Link href="/m" className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+          <Link href="/m" className="text-sm font-semibold text-primary-foreground">
             Installer View
           </Link>
-          <Link href="/admin" className="link text-sm">
+          <Link
+            href="/admin"
+            className="text-sm font-medium text-primary-foreground/90 transition hover:text-[rgb(251,146,60)]"
+          >
             Office Admin
           </Link>
         </div>
