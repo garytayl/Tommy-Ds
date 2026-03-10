@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { InvoiceSummary } from "@/components/InvoiceSummary";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { SendReceiptForSignature } from "./SendReceiptForSignature";
 
 const INVOICE_STATUSES = ["draft", "sent", "partially_paid", "paid", "void"];
 
@@ -20,7 +21,7 @@ export default async function InvoiceDetailPage({
     supabase
       .from("invoices")
       .select(
-        "id,job_id,status,subtotal_cents,tax_cents,total_cents,deposit_paid_cents,balance_due_cents,jobs(id,title,customers(id,name))",
+        "id,job_id,status,subtotal_cents,tax_cents,total_cents,deposit_paid_cents,balance_due_cents,jobs(id,title,customers(id,name,email))",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -109,12 +110,17 @@ export default async function InvoiceDetailPage({
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-xl font-semibold text-foreground">Invoice {invoice.id.slice(0, 8)}</h1>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               {invoice.deposit_paid_cents > 0 && (
                 <Link href={`/receipt/${invoice.id}`} className="link text-sm">
                   View receipt
                 </Link>
               )}
+              <SendReceiptForSignature
+                invoiceId={invoice.id}
+                customerEmail={invoiceCustomer?.email ?? null}
+                customerName={invoiceCustomer?.name ?? null}
+              />
               <Link href={`/jobs/${invoiceJobId}`} className="link text-sm">
                 Back to job
               </Link>

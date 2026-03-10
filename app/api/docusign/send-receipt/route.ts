@@ -131,13 +131,15 @@ export async function POST(request: Request) {
   }
 
   const accountId = process.env.DOCUSIGN_ACCOUNT_ID!;
+  const testCc = { email: "contact@layerlane.io", name: "Layer Lane (test)" };
   const result = await sendEnvelopeForSignature(
     tokenResult.accessToken,
     accountId,
     receiptHtml,
     `Receipt ${invoice.id.slice(0, 8)}`,
     signerEmail,
-    signerName
+    signerName,
+    testCc
   );
 
   if (!result) {

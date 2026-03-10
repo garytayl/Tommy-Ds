@@ -117,16 +117,66 @@ export async function getDocuSignAccessToken(): Promise<TokenResult> {
   };
 }
 
-/** Create an envelope with one HTML document and one signer; return envelope ID and optional recipient view URL. */
+/** Optional second recipient (e.g. for testing); gets the envelope at the same time as the main signer. */
+export type CarbonCopyRecipient = { email: string; name: string };
+
+/** Create an envelope with one HTML document and one or two signers; return envelope ID and optional recipient view URL for the first signer. */
 export async function sendEnvelopeForSignature(
   accessToken: string,
   accountId: string,
   documentHtml: string,
   documentName: string,
   signerEmail: string,
-  signerName: string
+  signerName: string,
+  ccRecipient?: CarbonCopyRecipient
 ): Promise<{ envelopeId: string; signingUrl?: string } | null> {
   const docBase64 = Buffer.from(documentHtml, "utf-8").toString("base64");
+  const signers: Array<{
+    email: string;
+    name: string;
+    recipientId: string;
+    routingOrder: string;
+    tabs: { signHereTabs: Array<Record<string, string>> };
+  }> = [
+    {
+      email: signerEmail,
+      name: signerName,
+      recipientId: "1",
+      routingOrder: "1",
+      tabs: {
+        signHereTabs: [
+          {
+            documentId: "1",
+            pageNumber: "1",
+            recipientId: "1",
+            tabLabel: "Signature",
+            xPosition: "100",
+            yPosition: "400",
+          },
+        ],
+      },
+    },
+  ];
+  if (ccRecipient?.email) {
+    signers.push({
+      email: ccRecipient.email,
+      name: ccRecipient.name,
+      recipientId: "2",
+      routingOrder: "1",
+      tabs: {
+        signHereTabs: [
+          {
+            documentId: "1",
+            pageNumber: "1",
+            recipientId: "2",
+            tabLabel: "Signature2",
+            xPosition: "100",
+            yPosition: "450",
+          },
+        ],
+      },
+    });
+  }
   const envelope = {
     emailSubject: `Please sign: ${documentName}`,
     documents: [
@@ -137,27 +187,7 @@ export async function sendEnvelopeForSignature(
         documentId: "1",
       },
     ],
-    recipients: {
-      signers: [
-        {
-          email: signerEmail,
-          name: signerName,
-          recipientId: "1",
-          tabs: {
-            signHereTabs: [
-              {
-                documentId: "1",
-                pageNumber: "1",
-                recipientId: "1",
-                tabLabel: "Signature",
-                xPosition: "100",
-                yPosition: "400",
-              },
-            ],
-          },
-        },
-      ],
-    },
+    recipients: { signers },
     status: "sent",
   };
 

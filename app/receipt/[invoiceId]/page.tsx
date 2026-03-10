@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { formatCents } from "@/lib/money";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
-import { ReceiptActions } from "./ReceiptActions";
+import { ReceiptPrintButton } from "./ReceiptPrintButton";
 
 export const dynamic = "force-dynamic";
 
@@ -53,17 +53,13 @@ export default async function ReceiptPage({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Screen-only actions */}
+      {/* Customer-facing header: back link + print only */}
       <div className="print:hidden border-b border-border bg-card px-4 py-3">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
           <Link href="/" className="text-sm font-medium text-primary hover:underline">
             ← Tommy D&apos;s
           </Link>
-          <ReceiptActions
-            invoiceId={invoiceId}
-            customerEmail={customer?.email ?? null}
-            customerName={customer?.name ?? null}
-          />
+          <ReceiptPrintButton />
         </div>
       </div>
 
@@ -71,10 +67,10 @@ export default async function ReceiptPage({
         <article className="rounded-xl border border-border bg-card p-6 shadow-sm print:shadow-none print:border-0">
           <header className="border-b border-border pb-4">
             <h1 className="text-2xl font-semibold text-foreground">
-              Payment receipt
+              Your receipt
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Invoice #{invoice.id.slice(0, 8)} ·{" "}
+              Thank you for your payment. Invoice #{invoice.id.slice(0, 8)} ·{" "}
               {new Date(invoice.created_at).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "long",
@@ -103,7 +99,7 @@ export default async function ReceiptPage({
             </div>
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Bill to
+                Your information
               </h2>
               <p className="mt-1 font-medium text-foreground">
                 {customer?.name ?? "—"}
@@ -129,7 +125,7 @@ export default async function ReceiptPage({
 
           <div className="mt-6">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Line items
+              What you paid for
             </h2>
             <table className="mt-2 w-full text-sm">
               <thead>
@@ -178,11 +174,11 @@ export default async function ReceiptPage({
 
           <section className="mt-6 border-t border-border pt-4">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Payments received
+              Your payments
             </h2>
             <ul className="mt-2 space-y-1">
               {payments.length === 0 ? (
-                <li className="text-sm text-muted-foreground">No payments recorded.</li>
+                <li className="text-sm text-muted-foreground">No payments on this receipt yet.</li>
               ) : (
                 payments.map((p) => (
                   <li
@@ -200,8 +196,7 @@ export default async function ReceiptPage({
               )}
             </ul>
             <p className="mt-2 text-xs text-muted-foreground">
-              Amount paid: {formatCents(invoice.deposit_paid_cents)} ·{" "}
-              Status: {invoice.status.replace("_", " ")}
+              We&apos;ve received {formatCents(invoice.deposit_paid_cents)} from you. Thank you for your business.
             </p>
           </section>
         </article>
