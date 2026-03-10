@@ -93,10 +93,13 @@ export default async function CrewsPage() {
         <h2 className="text-base font-semibold text-foreground">All crews</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           {(crews ?? []).map((crew) => {
-            const members = (crew.crew_members ?? []) as { user_id: string; profiles: { full_name: string | null } | null }[];
-            const memberNames = members.map(
-              (m) => (Array.isArray(m.profiles) ? m.profiles[0]?.full_name : m.profiles?.full_name) ?? m.user_id
-            );
+            const rawMembers = Array.isArray(crew.crew_members) ? crew.crew_members : [];
+            const members = rawMembers.map((m: { user_id: string; profiles?: unknown }) => {
+              const p = m.profiles;
+              const fullName = Array.isArray(p) ? (p[0] as { full_name?: string | null })?.full_name : (p as { full_name?: string | null } | null)?.full_name;
+              return { user_id: m.user_id, full_name: fullName ?? null };
+            });
+            const memberNames = members.map((m) => m.full_name ?? m.user_id);
             return (
               <div
                 key={crew.id}
@@ -110,11 +113,11 @@ export default async function CrewsPage() {
                   <p className="text-sm text-muted-foreground">
                     Members: {memberNames.length ? memberNames.join(", ") : "None"}
                   </p>
-                  {memberNames.length > 0 && (
+                  {members.length > 0 && (
                     <ul className="flex flex-wrap gap-2">
                       {members.map((m) => (
                         <li key={m.user_id} className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-sm">
-                          <span>{Array.isArray(m.profiles) ? m.profiles[0]?.full_name : m.profiles?.full_name ?? m.user_id}</span>
+                          <span>{m.full_name ?? m.user_id}</span>
                           <form action={removeMember} className="inline">
                             <input type="hidden" name="crew_id" value={crew.id} />
                             <input type="hidden" name="user_id" value={m.user_id} />
