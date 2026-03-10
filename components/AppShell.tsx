@@ -10,6 +10,7 @@ const ADMIN_NAV = [
   { href: "/admin", label: "Today" },
   { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/jobs", label: "Jobs" },
+  { href: "/admin/crews", label: "Crews" },
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/invoices", label: "Money" },
   { href: "/admin/future-features", label: "Future features" },

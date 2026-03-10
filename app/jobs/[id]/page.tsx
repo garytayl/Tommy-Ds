@@ -64,11 +64,12 @@ export default async function JobWorkspacePage({
     jobMaterialsResult,
     materialsResult,
     locationsResult,
+    crewsResult,
   ] = await Promise.all([
       supabase
         .from("jobs")
         .select(
-          "id,title,status,notes,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,customers(id,name,phone)",
+          "id,title,status,notes,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone)",
         )
         .eq("id", id)
         .maybeSingle(),
@@ -98,6 +99,7 @@ export default async function JobWorkspacePage({
         .order("created_at", { ascending: true }),
       supabase.from("materials").select("id,name,unit").order("name", { ascending: true }),
       supabase.from("locations").select("id,name,code").order("code", { ascending: true }),
+      supabase.from("crews").select("id,name,specialty").order("name", { ascending: true }),
     ]);
 
   const invoiceId = invoiceResult.data?.id ?? null;
@@ -131,6 +133,7 @@ export default async function JobWorkspacePage({
     scheduled_start: string | null;
     scheduled_end: string | null;
     assigned_installer_id: string | null;
+    assigned_crew_id: string | null;
     customers:
       | { id: string; name: string; phone: string | null }
       | { id: string; name: string; phone: string | null }[]
@@ -140,6 +143,7 @@ export default async function JobWorkspacePage({
   const jobRecord = jobResult.data as JobRow | null;
   const invoice = invoiceResult.data;
   const installers = installersResult.data ?? [];
+  const crews = crewsResult.data ?? [];
   const photos = photosResult.data ?? [];
   const jobMaterials = jobMaterialsResult.data ?? [];
   const allMaterials = materialsResult.data ?? [];
@@ -186,6 +190,8 @@ export default async function JobWorkspacePage({
         scheduled_end: toIsoOrNull(formData.get("scheduled_end")),
         assigned_installer_id:
           String(formData.get("assigned_installer_id") ?? "").trim() || null,
+        assigned_crew_id:
+          String(formData.get("assigned_crew_id") ?? "").trim() || null,
       })
       .eq("id", id);
     revalidatePath(`/jobs/${id}`);
@@ -383,6 +389,18 @@ export default async function JobWorkspacePage({
                 {JOB_STATUSES.map((s) => (
                   <option key={s} value={s}>
                     {STATUS_LABELS[s] ?? s}
+                  </option>
+                ))}
+              </select>
+              <select
+                name="assigned_crew_id"
+                defaultValue={job.assigned_crew_id ?? ""}
+                className="field"
+              >
+                <option value="">No crew</option>
+                {crews.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.specialty})
                   </option>
                 ))}
               </select>

@@ -8,7 +8,16 @@ import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 const DAYS_AHEAD = 90;
 const DAYS_PAST = 7;
 
-export default async function SchedulePage() {
+export default async function SchedulePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const { view: viewParam } = await searchParams;
+  const view = viewParam ?? "all";
+  const viewCrewId = view.startsWith("crew:") ? view.slice(5) : null;
+  const viewPersonId = view.startsWith("person:") ? view.slice(7) : null;
+
   const supabase = await createSupabaseServerClientForData();
 
   const start = new Date();
@@ -17,14 +26,29 @@ export default async function SchedulePage() {
   const end = new Date(start);
   end.setDate(end.getDate() + DAYS_PAST + DAYS_AHEAD);
 
-  const { data: jobs } = await supabase
-    .from("jobs")
-    .select(
-      "id,title,status,scheduled_start,scheduled_end,customers(name),profiles(full_name),invoices(id,balance_due_cents)",
-    )
-    .gte("scheduled_start", start.toISOString())
-    .lt("scheduled_start", end.toISOString())
-    .order("scheduled_start", { ascending: true, nullsFirst: false });
+  const [
+    { data: jobs },
+    { data: crews },
+    { data: installers },
+  ] = await Promise.all([
+    supabase
+      .from("jobs")
+      .select(
+        "id,title,status,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(name),profiles(full_name),crews(name,specialty),invoices(id,balance_due_cents)",
+      )
+      .gte("scheduled_start", start.toISOString())
+      .lt("scheduled_start", end.toISOString())
+      .order("scheduled_start", { ascending: true, nullsFirst: false }),
+    supabase
+      .from("crews")
+      .select("id,name,specialty,crew_members(user_id)")
+      .order("name", { ascending: true }),
+    supabase
+      .from("profiles")
+      .select("user_id,full_name")
+      .eq("role", "installer")
+      .order("full_name", { ascending: true }),
+  ]);
 
   type JobRow = {
     id: string;
@@ -32,12 +56,33 @@ export default async function SchedulePage() {
     status: string;
     scheduled_start: string | null;
     scheduled_end: string | null;
+    assigned_installer_id: string | null;
+    assigned_crew_id: string | null;
     customers: { name: string } | { name: string }[] | null;
     profiles: { full_name: string | null } | { full_name: string | null }[] | null;
+    crews: { name: string; specialty: string } | { name: string; specialty: string }[] | null;
     invoices: { id: string; balance_due_cents: number }[] | { id: string; balance_due_cents: number } | null;
   };
 
-  const rows = (jobs ?? []) as JobRow[];
+  const allRows = (jobs ?? []) as JobRow[];
+
+  const crewIdsForPerson = new Set<string>();
+  if (viewPersonId && crews) {
+    for (const crew of crews) {
+      const members = (crew.crew_members ?? []) as { user_id: string }[];
+      if (members.some((m) => m.user_id === viewPersonId)) crewIdsForPerson.add(crew.id);
+    }
+  }
+
+  const rows = allRows.filter((job) => {
+    if (viewCrewId) return job.assigned_crew_id === viewCrewId;
+    if (viewPersonId) {
+      if (job.assigned_installer_id === viewPersonId) return true;
+      if (job.assigned_crew_id && crewIdsForPerson.has(job.assigned_crew_id)) return true;
+      return false;
+    }
+    return true;
+  });
 
   const byDate: Record<string, JobRow[]> = {};
   const jobsByDateCount: Record<string, number> = {};
@@ -70,7 +115,7 @@ export default async function SchedulePage() {
           Schedule
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tap a date on the calendar to jump to that day. Set times when creating or editing a job.
+          View by crew or person to see everyone&apos;s schedule. Tap a date to jump to that day.
         </p>
       </div>
 
@@ -87,6 +132,46 @@ export default async function SchedulePage() {
         >
           All jobs
         </Link>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2.5 sm:px-4">
+        <span className="text-xs font-medium text-muted-foreground sm:text-sm">View:</span>
+        <Link
+          href="/admin/schedule"
+          className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
+            view === "all"
+              ? "bg-primary text-primary-foreground"
+              : "text-foreground hover:bg-muted"
+          }`}
+        >
+          All
+        </Link>
+        {(crews ?? []).map((crew) => (
+          <Link
+            key={crew.id}
+            href={viewCrewId === crew.id ? "/admin/schedule" : `/admin/schedule?view=crew:${crew.id}`}
+            className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
+              viewCrewId === crew.id
+                ? "bg-primary text-primary-foreground"
+                : "text-foreground hover:bg-muted"
+            }`}
+          >
+            {crew.name}
+          </Link>
+        ))}
+        {(installers ?? []).map((inst) => (
+          <Link
+            key={inst.user_id}
+            href={viewPersonId === inst.user_id ? "/admin/schedule" : `/admin/schedule?view=person:${inst.user_id}`}
+            className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
+              viewPersonId === inst.user_id
+                ? "bg-primary text-primary-foreground"
+                : "text-foreground hover:bg-muted"
+            }`}
+          >
+            {inst.full_name ?? inst.user_id}
+          </Link>
+        ))}
       </div>
 
       <ScheduleCalendar
@@ -123,6 +208,7 @@ export default async function SchedulePage() {
                     const customer = Array.isArray(job.customers)
                       ? job.customers[0]?.name
                       : job.customers?.name;
+                    const crew = Array.isArray(job.crews) ? job.crews[0] : job.crews;
                     const installer = Array.isArray(job.profiles)
                       ? job.profiles[0]?.full_name
                       : job.profiles?.full_name;
@@ -147,6 +233,11 @@ export default async function SchedulePage() {
                                 })
                               : "—"}
                           </span>
+                          {crew?.name && (
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {crew.name}
+                            </span>
+                          )}
                           {customer && (
                             <span className="text-sm text-muted-foreground">
                               {customer}

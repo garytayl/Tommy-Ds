@@ -21,7 +21,13 @@ function toIsoOrNull(value: FormDataEntryValue | null): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
-export default async function JobsPage() {
+export default async function JobsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ crew_id?: string }>;
+}) {
+  const { crew_id: filterCrewId } = await searchParams;
+
   async function createJob(formData: FormData) {
     "use server";
 
@@ -47,6 +53,7 @@ export default async function JobsPage() {
       scheduled_end: toIsoOrNull(formData.get("scheduled_end")),
       assigned_installer_id:
         String(formData.get("assigned_installer_id") ?? "").trim() || null,
+      assigned_crew_id: String(formData.get("assigned_crew_id") ?? "").trim() || null,
       status: String(formData.get("status") ?? "lead"),
       notes: String(formData.get("notes") ?? "").trim() || null,
     });
@@ -57,17 +64,21 @@ export default async function JobsPage() {
   }
 
   const supabase = await createSupabaseServerClientForData();
-  const [jobsResult, customersResult, installersResult] = await Promise.all([
-    supabase
-      .from("jobs")
-      .select("id,title,status,scheduled_start,customers(name),profiles(full_name),invoices(id,balance_due_cents)")
-      .order("created_at", { ascending: false }),
+  let jobsQuery = supabase
+    .from("jobs")
+    .select("id,title,status,scheduled_start,customers(name),profiles(full_name),crews(name,specialty),invoices(id,balance_due_cents)")
+    .order("created_at", { ascending: false });
+  if (filterCrewId) jobsQuery = jobsQuery.eq("assigned_crew_id", filterCrewId);
+
+  const [jobsResult, customersResult, installersResult, crewsResult] = await Promise.all([
+    jobsQuery,
     supabase.from("customers").select("id,name").order("name", { ascending: true }),
     supabase
       .from("profiles")
       .select("user_id,full_name")
       .eq("role", "installer")
       .order("full_name", { ascending: true }),
+    supabase.from("crews").select("id,name,specialty").order("name", { ascending: true }),
   ]);
 
   type JobRow = {
@@ -77,10 +88,12 @@ export default async function JobsPage() {
     scheduled_start: string | null;
     customers: { name: string } | { name: string }[] | null;
     profiles: { full_name: string | null } | { full_name: string | null }[] | null;
+    crews: { name: string; specialty: string } | { name: string; specialty: string }[] | null;
     invoices: { id: string; balance_due_cents: number }[] | { id: string; balance_due_cents: number } | null;
   };
 
   const jobs = (jobsResult.data ?? []) as JobRow[];
+  const crews = crewsResult.data ?? [];
 
   return (
     <div className="space-y-8">
@@ -92,13 +105,13 @@ export default async function JobsPage() {
           Jobs
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Create and manage jobs, set schedule, assign installers. Open a job to add an invoice and set prices.
+          Create and manage jobs, set schedule, assign crews and installers. Open a job to add an invoice and set prices.
         </p>
       </div>
       <section id="create" className="rounded-xl border border-border bg-card p-5 shadow-sm scroll-mt-4">
         <span className="block h-1 w-12 rounded-full bg-primary/80" />
         <h2 className="mt-3 text-base font-semibold text-foreground">Create job</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Add to schedule with date/time below. Then open the job to create an invoice and add line items (price).</p>
+        <p className="mt-1 text-sm text-muted-foreground">Add to schedule with date/time below. Assign a crew to organize the calendar. Then open the job to create an invoice and add line items (price).</p>
         <form action={createJob} className="mt-4 grid gap-3 sm:grid-cols-2">
           <select name="customer_id" required className="field">
             <option value="">Select customer</option>
@@ -148,6 +161,14 @@ export default async function JobsPage() {
             placeholder="Zip"
             className="field"
           />
+          <select name="assigned_crew_id" className="field">
+            <option value="">No crew</option>
+            {crews.map((crew) => (
+              <option key={crew.id} value={crew.id}>
+                {crew.name} ({crew.specialty})
+              </option>
+            ))}
+          </select>
           <select name="assigned_installer_id" className="field">
             <option value="">Unassigned installer</option>
             {(installersResult.data ?? []).map((installer) => (
@@ -186,8 +207,24 @@ export default async function JobsPage() {
       </section>
 
       <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-        <div className="border-b border-border bg-muted/50 px-4 py-3 sm:px-5">
+        <div className="border-b border-border bg-muted/50 px-4 py-3 sm:px-5 flex flex-wrap items-center gap-2">
           <h2 className="text-base font-semibold text-foreground">All jobs</h2>
+          <span className="text-muted-foreground">|</span>
+          <Link
+            href="/admin/jobs"
+            className={`text-sm ${!filterCrewId ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            All crews
+          </Link>
+          {crews.map((crew) => (
+            <Link
+              key={crew.id}
+              href={filterCrewId === crew.id ? "/admin/jobs" : `/admin/jobs?crew_id=${crew.id}`}
+              className={`text-sm ${filterCrewId === crew.id ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {crew.name}
+            </Link>
+          ))}
         </div>
         <div className="table-wrap overflow-x-auto">
           <table className="min-w-full text-sm">
@@ -195,6 +232,7 @@ export default async function JobsPage() {
               <tr className="border-b border-border bg-muted/50">
                 <th className="table-header py-3 pl-5 pr-4">Title</th>
                 <th className="table-header py-3 pr-4">Customer</th>
+                <th className="table-header py-3 pr-4">Crew</th>
                 <th className="table-header py-3 pr-4">Installer</th>
                 <th className="table-header py-3 pr-4">Scheduled</th>
                 <th className="table-header py-3 pr-4">Status</th>
@@ -204,9 +242,14 @@ export default async function JobsPage() {
             <tbody>
               {jobs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-                    No jobs in the database yet. Create one above (select a customer first—you need at least one in{" "}
-                    <Link href="/admin/customers" className="link">Customers</Link>).
+                  <td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                    {filterCrewId
+                      ? "No jobs for this crew. Create a job and assign this crew, or clear the filter."
+                      : "No jobs in the database yet. Create one above (select a customer first—you need at least one in "}
+                    {!filterCrewId && (
+                      <Link href="/admin/customers" className="link">Customers</Link>
+                    )}
+                    {!filterCrewId && ")."}
                   </td>
                 </tr>
               ) : (
@@ -214,6 +257,7 @@ export default async function JobsPage() {
                 const customer = Array.isArray(job.customers)
                   ? job.customers[0]?.name
                   : job.customers?.name;
+                const crew = Array.isArray(job.crews) ? job.crews[0] : job.crews;
                 const installer = Array.isArray(job.profiles)
                   ? job.profiles[0]?.full_name
                   : job.profiles?.full_name;
@@ -224,6 +268,7 @@ export default async function JobsPage() {
                   <tr key={job.id} className="border-b border-border transition hover:bg-muted/30">
                     <td className="py-3 pl-5 pr-4 font-medium text-foreground">{job.title}</td>
                     <td className="py-3 pr-4 text-muted-foreground">{customer ?? "-"}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{crew?.name ?? "—"}</td>
                     <td className="py-3 pr-4 text-muted-foreground">{installer ?? "Unassigned"}</td>
                     <td className="py-3 pr-4 text-muted-foreground">
                       {job.scheduled_start
