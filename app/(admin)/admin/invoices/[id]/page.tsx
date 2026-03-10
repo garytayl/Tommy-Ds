@@ -109,9 +109,16 @@ export default async function InvoiceDetailPage({
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-xl font-semibold text-foreground">Invoice {invoice.id.slice(0, 8)}</h1>
-            <Link href={`/jobs/${invoiceJobId}`} className="link text-sm">
-              Back to job
-            </Link>
+            <div className="flex items-center gap-3">
+              {invoice.deposit_paid_cents > 0 && (
+                <Link href={`/receipt/${invoice.id}`} className="link text-sm">
+                  View receipt
+                </Link>
+              )}
+              <Link href={`/jobs/${invoiceJobId}`} className="link text-sm">
+                Back to job
+              </Link>
+            </div>
           </div>
 
           <p className="text-sm text-muted-foreground">

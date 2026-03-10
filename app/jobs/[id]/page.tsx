@@ -694,11 +694,19 @@ export default async function JobWorkspacePage({
               Send customer to Stripe hosted checkout.
             </p>
             {invoice ? (
-              <div className="mt-3">
+              <div className="mt-3 flex flex-wrap items-center gap-3">
                 <CollectPaymentButton
                   invoiceId={invoice.id}
                   disabled={invoice.balance_due_cents <= 0}
                 />
+                {invoice.deposit_paid_cents > 0 && (
+                  <Link
+                    href={`/receipt/${invoice.id}`}
+                    className="inline-flex items-center rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                  >
+                    View receipt
+                  </Link>
+                )}
               </div>
             ) : (
               <p className="mt-3 text-sm text-muted-foreground">Create an invoice first.</p>

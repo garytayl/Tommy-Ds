@@ -29,6 +29,10 @@ export const serverEnv = {
   supabaseServiceRoleKey: env("SUPABASE_SERVICE_ROLE_KEY"),
   stripeSecretKey: env("STRIPE_SECRET_KEY"),
   stripeWebhookSecret: env("STRIPE_WEBHOOK_SECRET"),
+  docusignIntegrationKey: env("DOCUSIGN_INTEGRATION_KEY"),
+  docusignUserId: env("DOCUSIGN_USER_ID"),
+  docusignAccountId: env("DOCUSIGN_ACCOUNT_ID"),
+  docusignPrivateKey: env("DOCUSIGN_PRIVATE_KEY"),
 } as const;
 
 /**
@@ -59,6 +63,16 @@ export const features = {
   /** Payments fully on: Stripe + webhook. When false, collect payment can still create a session but we won't record completion. */
   get payments() {
     return features.stripe && features.stripeWebhook;
+  },
+
+  /** DocuSign eSignature: send receipts and other docs for signature when env vars set. */
+  get docusign() {
+    return Boolean(
+      serverEnv.docusignIntegrationKey &&
+        serverEnv.docusignUserId &&
+        serverEnv.docusignAccountId &&
+        serverEnv.docusignPrivateKey
+    );
   },
 } as const;
 

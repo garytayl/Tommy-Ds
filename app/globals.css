@@ -264,3 +264,10 @@
   stroke-dashoffset: 1000;
   animation: draw-stroke 1.5s ease-out forwards;
 }
+
+@media print {
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

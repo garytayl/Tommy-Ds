@@ -9,9 +9,28 @@ export default function FutureFeaturesPage() {
           Future features
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Ideas and programs to build next. Not yet implemented.
+          Ideas and programs to build next.
         </p>
       </div>
+
+      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+        <div className="border-b border-border bg-muted/30 px-4 py-3 sm:px-5">
+          <h2 className="text-lg font-semibold text-foreground">
+            Receipt &amp; DocuSign
+          </h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Payment receipt and optional DocuSign eSignature (receipt sign-off). Extend to work orders, contracts, change orders.
+          </p>
+        </div>
+        <div className="p-4 sm:p-5 space-y-2">
+          <p className="text-sm text-foreground">
+            <strong>Implemented:</strong> Receipt page (view/print), link from thank-you and invoice. Test payments: use Stripe test keys and card 4242 4242 4242 4242 for no real charge. DocuSign: set DOCUSIGN_* env vars and use &quot;Send for DocuSign signature&quot; on the receipt.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Future: DocuSign for work orders, estimates, contracts, and other generated documents.
+          </p>
+        </div>
+      </section>
 
       <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
         <div className="border-b border-border bg-muted/30 px-4 py-3 sm:px-5">

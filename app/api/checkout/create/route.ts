@@ -77,8 +77,8 @@ export async function POST(request: Request) {
 
     const appUrl = getAppUrl(request.headers.get("origin") ?? undefined);
 
-    // Customer-facing: after paying (or cancelling) on Stripe they land on our public thank-you page.
-    const successUrl = `${appUrl}/payment/thank-you?payment=success`;
+    // Customer-facing: after paying they land on thank-you with invoice_id so we can show receipt link.
+    const successUrl = `${appUrl}/payment/thank-you?payment=success&invoice_id=${encodeURIComponent(invoice.id)}`;
     const cancelUrl = `${appUrl}/payment/thank-you?payment=cancel`;
 
     const stripe = getStripeClient();

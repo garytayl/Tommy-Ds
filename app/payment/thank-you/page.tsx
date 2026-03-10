@@ -5,9 +5,9 @@ export const dynamic = "force-dynamic";
 export default async function PaymentThankYouPage({
   searchParams,
 }: {
-  searchParams: Promise<{ payment?: string }>;
+  searchParams: Promise<{ payment?: string; invoice_id?: string }>;
 }) {
-  const { payment } = await searchParams;
+  const { payment, invoice_id: invoiceId } = await searchParams;
   const success = payment === "success";
   const isTestMode =
     process.env.NEXT_PUBLIC_STRIPE_TEST_MODE === "true" ||
@@ -32,6 +32,14 @@ export default async function PaymentThankYouPage({
             : "You cancelled the payment. If you have questions or want to pay another way, please contact us."}
         </p>
         <div className="pt-4 space-y-3">
+          {success && invoiceId ? (
+            <Link
+              href={`/receipt/${invoiceId}`}
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
+            >
+              View your receipt
+            </Link>
+          ) : null}
           <p className="text-sm text-muted-foreground">
             Tommy D&apos;s Windows, Doors, & More, Inc.
             <br />
@@ -45,7 +53,7 @@ export default async function PaymentThankYouPage({
             href="https://tommyds.us"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
+            className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-6 py-3 text-sm font-medium text-foreground hover:bg-muted transition"
           >
             Visit our website
           </a>
