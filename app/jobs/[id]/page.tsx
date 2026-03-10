@@ -56,34 +56,49 @@ export default async function JobWorkspacePage({
   const { tab = "overview" } = await searchParams;
   const supabase = await createSupabaseServerClientForData();
 
-  const [jobResult, invoiceResult, installersResult, photosResult] = await Promise.all([
-    supabase
-      .from("jobs")
-      .select(
-        "id,title,status,notes,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,customers(id,name,phone)",
-      )
-      .eq("id", id)
-      .maybeSingle(),
-    supabase
-      .from("invoices")
-      .select(
-        "id,job_id,status,subtotal_cents,tax_cents,total_cents,deposit_paid_cents,balance_due_cents",
-      )
-      .eq("job_id", id)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("profiles")
-      .select("user_id,full_name")
-      .eq("role", "installer")
-      .order("full_name", { ascending: true }),
-    supabase
-      .from("job_photos")
-      .select("id,storage_path,caption,created_at")
-      .eq("job_id", id)
-      .order("created_at", { ascending: false }),
-  ]);
+  const [
+    jobResult,
+    invoiceResult,
+    installersResult,
+    photosResult,
+    jobMaterialsResult,
+    materialsResult,
+    locationsResult,
+  ] = await Promise.all([
+      supabase
+        .from("jobs")
+        .select(
+          "id,title,status,notes,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,customers(id,name,phone)",
+        )
+        .eq("id", id)
+        .maybeSingle(),
+      supabase
+        .from("invoices")
+        .select(
+          "id,job_id,status,subtotal_cents,tax_cents,total_cents,deposit_paid_cents,balance_due_cents",
+        )
+        .eq("job_id", id)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("user_id,full_name")
+        .eq("role", "installer")
+        .order("full_name", { ascending: true }),
+      supabase
+        .from("job_photos")
+        .select("id,storage_path,caption,created_at")
+        .eq("job_id", id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("job_materials")
+        .select("id,material_id,quantity,location_id,notes,materials(id,name,unit),locations(id,name,code)")
+        .eq("job_id", id)
+        .order("created_at", { ascending: true }),
+      supabase.from("materials").select("id,name,unit").order("name", { ascending: true }),
+      supabase.from("locations").select("id,name,code").order("code", { ascending: true }),
+    ]);
 
   const invoiceId = invoiceResult.data?.id ?? null;
   const [paymentsResult, itemsResult] = await Promise.all([
@@ -126,8 +141,9 @@ export default async function JobWorkspacePage({
   const invoice = invoiceResult.data;
   const installers = installersResult.data ?? [];
   const photos = photosResult.data ?? [];
-  const payments = paymentsResult.data ?? [];
-  const items = itemsResult.data ?? [];
+  const jobMaterials = jobMaterialsResult.data ?? [];
+  const allMaterials = materialsResult.data ?? [];
+  const allLocations = locationsResult.data ?? [];
 
   if (!jobRecord) notFound();
   const job = jobRecord;
@@ -261,6 +277,33 @@ export default async function JobWorkspacePage({
     await supabase.rpc("recompute_invoice_totals", { p_invoice_id: invoice.id });
     revalidatePath(`/jobs/${id}`);
     revalidatePath(`/admin/invoices/${invoice.id}`);
+  }
+
+  async function addJobMaterial(formData: FormData) {
+    "use server";
+    const materialId = String(formData.get("material_id") ?? "").trim();
+    const qty = Number.parseFloat(String(formData.get("quantity") ?? "1"));
+    const locationId = String(formData.get("location_id") ?? "").trim() || null;
+    const notes = String(formData.get("notes") ?? "").trim() || null;
+    if (!materialId || !Number.isFinite(qty) || qty <= 0) return;
+    const supabase = await createSupabaseServerClientForData();
+    await supabase.from("job_materials").insert({
+      job_id: id,
+      material_id: materialId,
+      quantity: qty,
+      location_id: locationId || null,
+      notes,
+    });
+    revalidatePath(`/jobs/${id}`);
+  }
+
+  async function removeJobMaterial(formData: FormData) {
+    "use server";
+    const rowId = String(formData.get("job_material_id") ?? "").trim();
+    if (!rowId) return;
+    const supabase = await createSupabaseServerClientForData();
+    await supabase.from("job_materials").delete().eq("id", rowId).eq("job_id", id);
+    revalidatePath(`/jobs/${id}`);
   }
 
   return (
@@ -432,6 +475,109 @@ export default async function JobWorkspacePage({
               </button>
             </form>
           )}
+        </div>
+      )}
+
+      {tab === "supplies" && (
+        <div className="mt-6 space-y-6">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-foreground">Supplies & parts for this job</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Pull from Door Shop (center), Lower Warehouse, or Upper Warehouse.
+            </p>
+            <form action={addJobMaterial} className="mt-4 grid gap-3 sm:grid-cols-4">
+              <select name="material_id" required className="field sm:col-span-2">
+                <option value="">Select material…</option>
+                {allMaterials.map((m: { id: string; name: string; unit: string }) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.unit})
+                  </option>
+                ))}
+              </select>
+              <input
+                name="quantity"
+                type="number"
+                min="0.01"
+                step="0.01"
+                defaultValue="1"
+                className="field"
+                placeholder="Qty"
+              />
+              <select name="location_id" className="field">
+                <option value="">Any location</option>
+                {allLocations.map((loc: { id: string; name: string; code: string }) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                name="notes"
+                type="text"
+                placeholder="Notes (optional)"
+                className="field sm:col-span-2"
+              />
+              <button type="submit" className="btn-primary">
+                Add supply
+              </button>
+            </form>
+          </div>
+          <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+            <div className="border-b border-border bg-muted/50 px-4 py-3 sm:px-5">
+              <h2 className="text-base font-semibold text-foreground">On this job</h2>
+            </div>
+            <div className="table-wrap overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="table-header py-3 pl-5 pr-4">Material</th>
+                    <th className="table-header py-3 pr-4">Qty</th>
+                    <th className="table-header py-3 pr-4">Pull from</th>
+                    <th className="table-header py-3 pr-4">Notes</th>
+                    <th className="table-header py-3 pr-5">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {jobMaterials.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-6 text-center text-muted-foreground">
+                        No supplies added yet. Add materials above.
+                      </td>
+                    </tr>
+                  ) : (
+                    jobMaterials.map((row: {
+                      id: string;
+                      quantity: number;
+                      notes: string | null;
+                      materials: { id: string; name: string; unit: string } | null;
+                      locations: { id: string; name: string; code: string } | null;
+                    }) => (
+                      <tr key={row.id} className="border-b border-border">
+                        <td className="py-3 pl-5 pr-4 font-medium text-foreground">
+                          {row.materials?.name ?? "—"}
+                        </td>
+                        <td className="py-3 pr-4 tabular-nums">{row.quantity}</td>
+                        <td className="py-3 pr-4 text-muted-foreground">
+                          {row.locations?.name ?? "—"}
+                        </td>
+                        <td className="py-3 pr-4 text-muted-foreground">
+                          {row.notes ?? "—"}
+                        </td>
+                        <td className="py-3 pr-5">
+                          <form action={removeJobMaterial} className="inline">
+                            <input type="hidden" name="job_material_id" value={row.id} />
+                            <button type="submit" className="link text-destructive">
+                              Remove
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 

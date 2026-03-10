@@ -34,6 +34,7 @@ export default function FutureFeaturesPage() {
             <li>Configurable follow-up delay (e.g. 1 year) per product type.</li>
             <li>List of customers due for follow-up; optional outreach (call, email, campaign).</li>
             <li>Cross-sell: garage door → window/door, or window/door → garage door.</li>
+            <li>Track customer response (yes, no, maybe, no response).</li>
           </ul>
           <p className="text-xs text-muted-foreground pt-2">
             This page is a placeholder. Implementation will add data model, scheduling, and
