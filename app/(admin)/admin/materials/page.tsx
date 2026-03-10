@@ -98,7 +98,8 @@ export default async function MaterialsPage() {
             </thead>
             <tbody>
               {(materials ?? []).map((m) => {
-                const loc = m.locations as { name: string; code: string } | null;
+                const locRaw = m.locations;
+                const loc = Array.isArray(locRaw) ? locRaw[0] : locRaw;
                 return (
                   <tr
                     key={m.id}
