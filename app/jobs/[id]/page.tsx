@@ -563,34 +563,32 @@ export default async function JobWorkspacePage({
                       </td>
                     </tr>
                   ) : (
-                    jobMaterials.map((row: {
-                      id: string;
-                      quantity: number;
-                      notes: string | null;
-                      materials: { id: string; name: string; unit: string } | null;
-                      locations: { id: string; name: string; code: string } | null;
-                    }) => (
-                      <tr key={row.id} className="border-b border-border">
-                        <td className="py-3 pl-5 pr-4 font-medium text-foreground">
-                          {row.materials?.name ?? "—"}
-                        </td>
-                        <td className="py-3 pr-4 tabular-nums">{row.quantity}</td>
-                        <td className="py-3 pr-4 text-muted-foreground">
-                          {row.locations?.name ?? "—"}
-                        </td>
-                        <td className="py-3 pr-4 text-muted-foreground">
-                          {row.notes ?? "—"}
-                        </td>
-                        <td className="py-3 pr-5">
-                          <form action={removeJobMaterial} className="inline">
-                            <input type="hidden" name="job_material_id" value={row.id} />
-                            <button type="submit" className="link text-destructive">
-                              Remove
-                            </button>
-                          </form>
-                        </td>
-                      </tr>
-                    ))
+                    jobMaterials.map((row) => {
+                      const mat = Array.isArray(row.materials) ? row.materials[0] : row.materials;
+                      const loc = Array.isArray(row.locations) ? row.locations[0] : row.locations;
+                      return (
+                        <tr key={row.id} className="border-b border-border">
+                          <td className="py-3 pl-5 pr-4 font-medium text-foreground">
+                            {mat?.name ?? "—"}
+                          </td>
+                          <td className="py-3 pr-4 tabular-nums">{row.quantity}</td>
+                          <td className="py-3 pr-4 text-muted-foreground">
+                            {loc?.name ?? "—"}
+                          </td>
+                          <td className="py-3 pr-4 text-muted-foreground">
+                            {row.notes ?? "—"}
+                          </td>
+                          <td className="py-3 pr-5">
+                            <form action={removeJobMaterial} className="inline">
+                              <input type="hidden" name="job_material_id" value={row.id} />
+                              <button type="submit" className="link text-destructive">
+                                Remove
+                              </button>
+                            </form>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
