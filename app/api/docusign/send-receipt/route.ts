@@ -122,17 +122,17 @@ export async function POST(request: Request) {
 </body>
 </html>`;
 
-  const accessToken = await getDocuSignAccessToken();
-  if (!accessToken) {
+  const tokenResult = await getDocuSignAccessToken();
+  if (!tokenResult.ok) {
     return NextResponse.json(
-      { error: "DocuSign authentication failed" },
+      { error: tokenResult.error },
       { status: 502 }
     );
   }
 
   const accountId = process.env.DOCUSIGN_ACCOUNT_ID!;
   const result = await sendEnvelopeForSignature(
-    accessToken,
+    tokenResult.accessToken,
     accountId,
     receiptHtml,
     `Receipt ${invoice.id.slice(0, 8)}`,

@@ -16,10 +16,21 @@ function base64UrlEncode(buf: Buffer): string {
     .replace(/=+$/, "");
 }
 
+/** Normalize PEM so it works when env strips newlines (e.g. pasted in Vercel). */
 function getPrivateKey(): string | null {
   const raw = process.env.DOCUSIGN_PRIVATE_KEY;
   if (!raw) return null;
-  return raw.replace(/\\n/g, "\n");
+  let pem = raw.replace(/\\n/g, "\n");
+  if (pem.includes("-----BEGIN") && pem.includes("-----END") && !pem.includes("\n")) {
+    const beginEnd = pem.indexOf("-----", 26);
+    const endBegin = pem.indexOf("-----END");
+    const header = pem.slice(0, beginEnd + 5);
+    const footer = pem.slice(endBegin);
+    const body = pem.slice(beginEnd + 5, endBegin).replace(/\s/g, "");
+    const lines = body.match(/.{1,64}/g) ?? [body];
+    pem = header + "\n" + lines.join("\n") + "\n" + footer;
+  }
+  return pem;
 }
 
 /** Build a JWT for DocuSign OAuth (RS256). */
@@ -50,12 +61,22 @@ export function createDocuSignJwt(
   return `${message}.${sig}`;
 }
 
-/** Exchange JWT for access token. */
-export async function getDocuSignAccessToken(): Promise<string | null> {
+export type TokenResult =
+  | { ok: true; accessToken: string }
+  | { ok: false; error: string };
+
+/** Exchange JWT for access token. Returns detailed error if DocuSign rejects the request. */
+export async function getDocuSignAccessToken(): Promise<TokenResult> {
   const integrationKey = process.env.DOCUSIGN_INTEGRATION_KEY;
   const userId = process.env.DOCUSIGN_USER_ID;
   const privateKeyPem = getPrivateKey();
-  if (!integrationKey || !userId || !privateKeyPem) return null;
+
+  if (!integrationKey)
+    return { ok: false, error: "DOCUSIGN_INTEGRATION_KEY is not set." };
+  if (!userId)
+    return { ok: false, error: "DOCUSIGN_USER_ID is not set. In DocuSign Admin go to Users, open the user, copy the User ID (GUID)." };
+  if (!privateKeyPem)
+    return { ok: false, error: "DOCUSIGN_PRIVATE_KEY is not set. Use the RSA private key PEM (from Generate RSA), with \\n for newlines in env." };
 
   const jwt = createDocuSignJwt(integrationKey, userId, privateKeyPem);
   const res = await fetch(`${DOCUSIGN_OAUTH}/oauth/token`, {
@@ -66,9 +87,18 @@ export async function getDocuSignAccessToken(): Promise<string | null> {
       assertion: jwt,
     }),
   });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { access_token?: string };
-  return data.access_token ?? null;
+  const data = (await res.json().catch(() => ({}))) as {
+    access_token?: string;
+    error?: string;
+    error_description?: string;
+  };
+  if (res.ok && data.access_token)
+    return { ok: true, accessToken: data.access_token };
+  const msg = data.error_description || data.error || `HTTP ${res.status}`;
+  return {
+    ok: false,
+    error: `DocuSign token failed: ${msg}. Common fixes: add DOCUSIGN_USER_ID (User GUID from DocuSign Admin → Users); grant JWT consent once in DocuSign (see .env.example); use the correct RSA private key.`,
+  };
 }
 
 /** Create an envelope with one HTML document and one signer; return envelope ID and optional recipient view URL. */
