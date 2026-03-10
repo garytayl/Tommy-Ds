@@ -26,17 +26,23 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
   useEffect(() => {
     if (!address.trim()) return;
 
+    setError(null);
     const q = encodeURIComponent(address.trim());
     fetch(
       `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
-      { headers: { Accept: "application/json" } }
+      {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "TommyDsJobMap/1.0 (field service job map)",
+        },
+      }
     )
       .then((res) => res.json())
       .then((data: NominatimResult[]) => {
         if (data && data[0]) {
           setCoords({ lat: Number.parseFloat(data[0].lat), lng: Number.parseFloat(data[0].lon) });
         } else {
-          setError("Address not found");
+          setError("Map couldn’t be loaded for this address. Use “Open in Maps” above for directions.");
         }
       })
       .catch(() => setError("Could not load map"));
@@ -77,7 +83,10 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
   if (error) {
     return (
       <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground" style={{ minHeight: height }}>
-        {error}
+        <p>{error}</p>
+        {address.trim() ? (
+          <p className="mt-2 text-xs opacity-90">Address: {address.trim()}</p>
+        ) : null}
       </div>
     );
   }
