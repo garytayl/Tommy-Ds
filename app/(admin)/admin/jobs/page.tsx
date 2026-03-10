@@ -24,9 +24,29 @@ function toIsoOrNull(value: FormDataEntryValue | null): string | null {
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ crew_id?: string }>;
+  searchParams: Promise<{ crew_id?: string; use_customer_id?: string }>;
 }) {
-  const { crew_id: filterCrewId } = await searchParams;
+  const { crew_id: filterCrewId, use_customer_id: useCustomerId } = await searchParams;
+
+  async function createCustomerAndRedirect(formData: FormData) {
+    "use server";
+    const name = String(formData.get("name") ?? "").trim();
+    const phone = String(formData.get("phone") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+    if (!name) return;
+    const supabase = await createSupabaseServerClientForData();
+    const { data: newCustomer } = await supabase
+      .from("customers")
+      .insert({ name, phone: phone || null, email: email || null })
+      .select("id")
+      .single();
+    if (newCustomer) {
+      revalidatePath("/admin/jobs");
+      revalidatePath("/admin/customers");
+      const { redirect } = await import("next/navigation");
+      redirect(`/admin/jobs?use_customer_id=${newCustomer.id}#create`);
+    }
+  }
 
   async function createJob(formData: FormData) {
     "use server";
@@ -70,7 +90,7 @@ export default async function JobsPage({
     .order("created_at", { ascending: false });
   if (filterCrewId) jobsQuery = jobsQuery.eq("assigned_crew_id", filterCrewId);
 
-  const [jobsResult, customersResult, installersResult, crewsResult] = await Promise.all([
+  const [jobsResult, customersResult, installersResult, crewMembersResult, crewsResult] = await Promise.all([
     jobsQuery,
     supabase.from("customers").select("id,name").order("name", { ascending: true }),
     supabase
@@ -78,8 +98,26 @@ export default async function JobsPage({
       .select("user_id,full_name")
       .eq("role", "installer")
       .order("full_name", { ascending: true }),
+    supabase
+      .from("crew_members")
+      .select("user_id,profiles(user_id,full_name)")
+      .order("user_id"),
     supabase.from("crews").select("id,name,specialty").order("name", { ascending: true }),
   ]);
+
+  const installersList = (installersResult.data ?? []) as { user_id: string; full_name: string | null }[];
+  const crewMembers = (crewMembersResult.data ?? []) as { user_id: string; profiles: { user_id: string; full_name: string | null } | { user_id: string; full_name: string | null }[] | null }[];
+  const crewMemberProfiles = crewMembers.map((m) => {
+    const p = m.profiles;
+    const prof = Array.isArray(p) ? p[0] : p;
+    return { user_id: m.user_id, full_name: prof?.full_name ?? null };
+  });
+  const installerIds = new Set(installersList.map((i) => i.user_id));
+  const mergedInstallers = [
+    ...installersList,
+    ...crewMemberProfiles.filter((c) => !installerIds.has(c.user_id)),
+  ];
+  const installers = mergedInstallers.length > 0 ? mergedInstallers : installersList;
 
   type JobRow = {
     id: string;
@@ -112,15 +150,37 @@ export default async function JobsPage({
         <span className="block h-1 w-12 rounded-full bg-primary/80" />
         <h2 className="mt-3 text-base font-semibold text-foreground">Create job</h2>
         <p className="mt-1 text-sm text-muted-foreground">Add to schedule with date/time below. Assign a crew to organize the calendar. Then open the job to create an invoice and add line items (price).</p>
+        <details className="mt-3 rounded-lg border border-border bg-muted/30 px-3 py-2">
+          <summary className="cursor-pointer text-sm font-medium text-foreground">Quick add customer</summary>
+          <form action={createCustomerAndRedirect} className="mt-3 grid gap-2 sm:grid-cols-4">
+            <input type="text" name="name" required placeholder="Name" className="field" />
+            <input type="text" name="phone" placeholder="Phone" className="field" />
+            <input type="email" name="email" placeholder="Email" className="field" />
+            <button type="submit" className="btn-secondary">Add and use for job</button>
+          </form>
+        </details>
         <form action={createJob} className="mt-4 grid gap-3 sm:grid-cols-2">
-          <select name="customer_id" required className="field">
-            <option value="">Select customer</option>
-            {(customersResult.data ?? []).map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              name="customer_id"
+              required
+              className="field flex-1 min-w-0"
+              defaultValue={useCustomerId ?? ""}
+            >
+              <option value="">Select customer</option>
+              {(customersResult.data ?? []).map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.name}
+                </option>
+              ))}
+            </select>
+            <Link
+              href="/admin/customers#add"
+              className="whitespace-nowrap text-sm font-medium text-primary hover:underline"
+            >
+              Add customer
+            </Link>
+          </div>
           <input
             name="title"
             type="text"
@@ -169,14 +229,22 @@ export default async function JobsPage({
               </option>
             ))}
           </select>
-          <select name="assigned_installer_id" className="field">
-            <option value="">Unassigned installer</option>
-            {(installersResult.data ?? []).map((installer) => (
-              <option key={installer.user_id} value={installer.user_id}>
-                {installer.full_name ?? installer.user_id}
-              </option>
-            ))}
-          </select>
+          <div>
+            <select name="assigned_installer_id" className="field w-full">
+              <option value="">Unassigned installer</option>
+              {installers.map((installer) => (
+                <option key={installer.user_id} value={installer.user_id}>
+                  {installer.full_name ?? installer.user_id}
+                </option>
+              ))}
+            </select>
+            {installers.length === 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                No installers yet. Add users in Supabase Auth with role &quot;installer&quot;, then add them to a crew on{" "}
+                <Link href="/admin/crews" className="text-primary hover:underline">Crews</Link>.
+              </p>
+            )}
+          </div>
           <input
             name="scheduled_start"
             type="datetime-local"

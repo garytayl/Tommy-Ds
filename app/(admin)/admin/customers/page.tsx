@@ -42,7 +42,7 @@ export default async function CustomersPage() {
           Add and manage customer records. Select a customer when creating a job.
         </p>
       </div>
-      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <section id="add" className="rounded-xl border border-border bg-card p-5 shadow-sm scroll-mt-4">
         <span className="block h-1 w-12 rounded-full bg-primary/80" />
         <h2 className="mt-3 text-base font-semibold text-foreground">Add customer</h2>
         <form action={createCustomer} className="mt-4 grid gap-3 sm:grid-cols-4">
