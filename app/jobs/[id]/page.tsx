@@ -146,6 +146,8 @@ export default async function JobWorkspacePage({
   const crews = crewsResult.data ?? [];
   const photos = photosResult.data ?? [];
   const jobMaterials = jobMaterialsResult.data ?? [];
+  const payments = paymentsResult.data ?? [];
+  const items = itemsResult.data ?? [];
   const allMaterials = materialsResult.data ?? [];
   const allLocations = locationsResult.data ?? [];
 
