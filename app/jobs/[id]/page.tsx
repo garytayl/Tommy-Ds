@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { InvoiceSummary } from "@/components/InvoiceSummary";
+import { JobMapDynamic } from "@/components/JobMapDynamic";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { JobStickyActions } from "@/components/JobStickyActions";
 import { JobWorkspaceTabs } from "@/components/JobWorkspaceTabs";
@@ -156,9 +157,8 @@ export default async function JobWorkspacePage({
   const customer = Array.isArray(job.customers) ? job.customers[0] : job.customers;
   const customerPhone = customer?.phone ?? null;
 
-  const mapQuery = encodeURIComponent(
-    `${job.address_line1}, ${job.city}, ${job.state} ${job.zip}`,
-  );
+  const fullAddress = `${job.address_line1}${job.address_line2 ? `, ${job.address_line2}` : ""}, ${job.city}, ${job.state} ${job.zip}`;
+  const mapQuery = encodeURIComponent(fullAddress);
   const mapsUrl = `https://maps.google.com/?q=${mapQuery}`;
   const balanceDueCents = invoice?.balance_due_cents ?? 0;
 
@@ -351,6 +351,9 @@ export default async function JobWorkspacePage({
             >
               Open in Maps →
             </a>
+            <div className="mt-4">
+              <JobMapDynamic address={fullAddress} title={job.title} height={240} />
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <JobStatusBadge status={job.status} />

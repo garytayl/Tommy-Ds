@@ -18,6 +18,31 @@ export function CollectPaymentButton({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [payLink, setPayLink] = useState<string | null>(null);
+  const [smsLoading, setSmsLoading] = useState(false);
+  const [smsSent, setSmsSent] = useState(false);
+  const [smsError, setSmsError] = useState<string | null>(null);
+
+  async function onSendViaSms() {
+    setSmsLoading(true);
+    setSmsError(null);
+    setSmsSent(false);
+    try {
+      const res = await fetch("/api/sms/send-payment-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoiceId }),
+      });
+      const data = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
+      if (!res.ok) {
+        throw new Error(data?.error ?? data?.message ?? "Failed to send SMS");
+      }
+      setSmsSent(true);
+    } catch (err) {
+      setSmsError(err instanceof Error ? err.message : "SMS failed");
+    } finally {
+      setSmsLoading(false);
+    }
+  }
 
   async function onCollectPayment() {
     setIsLoading(true);
@@ -62,7 +87,7 @@ export function CollectPaymentButton({
 
   if (compact) {
     return (
-      <span className="inline-flex items-center gap-1.5">
+      <span className="inline-flex flex-wrap items-center gap-1.5">
         {payLink ? (
           <>
             <span className="text-xs text-muted-foreground">Copied.</span>
@@ -92,7 +117,16 @@ export function CollectPaymentButton({
             >
               {isLoading ? "…" : "Pay link"}
             </button>
+            <button
+              type="button"
+              onClick={onSendViaSms}
+              disabled={disabled || smsLoading}
+              className="text-sm font-medium text-primary hover:underline disabled:opacity-50"
+            >
+              {smsLoading ? "…" : smsSent ? "Sent" : "SMS"}
+            </button>
             {error && <span className="text-xs text-destructive">{error}</span>}
+            {smsError && <span className="text-xs text-destructive">{smsError}</span>}
           </>
         )}
       </span>
@@ -118,6 +152,15 @@ export function CollectPaymentButton({
             >
               Open pay page
             </a>
+            <button
+              type="button"
+              onClick={onSendViaSms}
+              disabled={smsLoading}
+              className="inline-flex items-center rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
+            >
+              {smsLoading ? "Sending…" : smsSent ? "Sent via SMS" : "Send via SMS"}
+            </button>
+            {smsError && <span className="text-xs text-destructive self-center">{smsError}</span>}
             <button
               type="button"
               onClick={() => {

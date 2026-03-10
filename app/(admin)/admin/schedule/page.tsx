@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 
-import { CollectPaymentButton } from "@/components/CollectPaymentButton";
-import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { ScheduleCalendar } from "@/components/ScheduleCalendar";
+import { ScheduleDragDrop, type ScheduleJob } from "@/components/ScheduleDragDrop";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 const DAYS_AHEAD = 90;
@@ -11,12 +11,26 @@ const DAYS_PAST = 7;
 export default async function SchedulePage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; week?: string; layout?: string }>;
 }) {
-  const { view: viewParam } = await searchParams;
+  const { view: viewParam, week: weekParam, layout: layoutParam } = await searchParams;
   const view = viewParam ?? "all";
   const viewCrewId = view.startsWith("crew:") ? view.slice(5) : null;
   const viewPersonId = view.startsWith("person:") ? view.slice(7) : null;
+  const isWeekView = layoutParam === "week";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const weekStart = weekParam
+    ? new Date(weekParam + "T12:00:00")
+    : (() => {
+        const d = new Date(today);
+        d.setDate(d.getDate() - d.getDay());
+        return d;
+      })();
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+  const weekStartStr = weekStart.toISOString().slice(0, 10);
+  const weekEndStr = weekEnd.toISOString().slice(0, 10);
 
   const supabase = await createSupabaseServerClientForData();
 
@@ -103,7 +117,38 @@ export default async function SchedulePage({
 
   const startDateStr = start.toISOString().slice(0, 10);
   const endDateStr = end.toISOString().slice(0, 10);
-  const sortedDates = Object.keys(byDate).sort();
+  let sortedDates = Object.keys(byDate).sort();
+  if (isWeekView) {
+    sortedDates = sortedDates.filter((d) => d >= weekStartStr && d < weekEndStr);
+  }
+
+  async function rescheduleJob(jobId: string, newStartIso: string) {
+    "use server";
+    const supabase = await createSupabaseServerClientForData();
+    const { data: job } = await supabase
+      .from("jobs")
+      .select("scheduled_start,scheduled_end")
+      .eq("id", jobId)
+      .maybeSingle();
+    if (!job) return;
+    let newEnd: string | null = null;
+    if (job.scheduled_start && job.scheduled_end) {
+      const startMs = new Date(job.scheduled_start).getTime();
+      const endMs = new Date(job.scheduled_end).getTime();
+      const durationMs = endMs - startMs;
+      newEnd = new Date(new Date(newStartIso).getTime() + durationMs).toISOString();
+    }
+    await supabase
+      .from("jobs")
+      .update({
+        scheduled_start: newStartIso,
+        ...(newEnd && { scheduled_end: newEnd }),
+      })
+      .eq("id", jobId);
+    revalidatePath("/admin/schedule");
+    revalidatePath("/admin/jobs");
+    revalidatePath("/m");
+  }
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -115,8 +160,45 @@ export default async function SchedulePage({
           Schedule
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          View by crew or person to see everyone&apos;s schedule. Tap a date to jump to that day.
+          View by crew or person to see everyone&apos;s schedule. Drag jobs between days to reschedule. Tap a date to jump to that day.
         </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2.5 sm:px-4">
+        <span className="text-xs font-medium text-muted-foreground sm:text-sm">Layout:</span>
+        <Link
+          href={view !== "all" ? `/admin/schedule?view=${view}` : "/admin/schedule"}
+          className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
+            !isWeekView ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+          }`}
+        >
+          Month
+        </Link>
+        <Link
+          href={view !== "all" ? `/admin/schedule?view=${view}&layout=week` : "/admin/schedule?layout=week"}
+          className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
+            isWeekView ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+          }`}
+        >
+          Week
+        </Link>
+        {isWeekView && (
+          <>
+            <span className="text-muted-foreground">|</span>
+            <Link
+              href={`/admin/schedule?layout=week&week=${new Date(weekStart.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)}${view !== "all" ? `&view=${view}` : ""}`}
+              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              Previous week
+            </Link>
+            <Link
+              href={`/admin/schedule?layout=week&week=${weekEndStr}${view !== "all" ? `&view=${view}` : ""}`}
+              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              Next week
+            </Link>
+          </>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -180,94 +262,11 @@ export default async function SchedulePage({
         endDate={endDateStr}
       />
 
-      <section className="space-y-4" aria-label="Jobs by day">
-        {sortedDates.map((dateKey) => {
-          const dayJobs = byDate[dateKey];
-          const date = new Date(dateKey + "T12:00:00");
-          const label = date.toLocaleDateString("en-US", {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-          });
-          return (
-            <div
-              key={dateKey}
-              id={`day-${dateKey}`}
-              className="scroll-mt-4 rounded-xl border border-border bg-card overflow-hidden shadow-sm"
-            >
-              <div className="border-b border-border bg-muted/30 px-3 py-2.5 sm:px-5">
-                <h2 className="text-sm font-semibold text-foreground">{label}</h2>
-              </div>
-              <ul className="divide-y divide-border">
-                {dayJobs.length === 0 ? (
-                  <li className="px-3 py-4 text-sm text-muted-foreground sm:px-5">
-                    No jobs scheduled
-                  </li>
-                ) : (
-                  dayJobs.map((job) => {
-                    const customer = Array.isArray(job.customers)
-                      ? job.customers[0]?.name
-                      : job.customers?.name;
-                    const crew = Array.isArray(job.crews) ? job.crews[0] : job.crews;
-                    const installer = Array.isArray(job.profiles)
-                      ? job.profiles[0]?.full_name
-                      : job.profiles?.full_name;
-                    const invoice = Array.isArray(job.invoices) ? job.invoices[0] : job.invoices;
-                    const hasBalanceDue = invoice && invoice.balance_due_cents > 0;
-                    return (
-                      <li key={job.id} className="flex flex-wrap items-center gap-2 px-3 py-3 sm:px-5">
-                        <Link
-                          href={`/jobs/${job.id}`}
-                          className="flex flex-1 min-w-0 flex-col gap-1 transition hover:bg-muted/30 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-1 -mx-3 px-3 py-1 sm:-mx-5 sm:px-5 sm:py-1"
-                        >
-                          <span className="font-medium text-foreground">
-                            {job.title}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {job.scheduled_start
-                              ? new Date(
-                                  job.scheduled_start,
-                                ).toLocaleTimeString([], {
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                })
-                              : "—"}
-                          </span>
-                          {crew?.name && (
-                            <span className="text-xs font-medium text-muted-foreground">
-                              {crew.name}
-                            </span>
-                          )}
-                          {customer && (
-                            <span className="text-sm text-muted-foreground">
-                              {customer}
-                            </span>
-                          )}
-                          {installer && (
-                            <span className="text-xs text-muted-foreground">
-                              {installer}
-                            </span>
-                          )}
-                          <span className="mt-1 sm:mt-0 sm:ml-auto">
-                            <JobStatusBadge status={job.status} />
-                          </span>
-                        </Link>
-                        {hasBalanceDue && (
-                          <CollectPaymentButton
-                            invoiceId={invoice!.id}
-                            disabled={false}
-                            compact
-                          />
-                        )}
-                      </li>
-                    );
-                  })
-                )}
-              </ul>
-            </div>
-          );
-        })}
-      </section>
+      <ScheduleDragDrop
+        jobsByDate={byDate as Record<string, ScheduleJob[]>}
+        sortedDates={sortedDates}
+        rescheduleJob={rescheduleJob}
+      />
     </div>
   );
 }

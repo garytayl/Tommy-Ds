@@ -33,6 +33,9 @@ export const serverEnv = {
   docusignUserId: env("DOCUSIGN_USER_ID"),
   docusignAccountId: env("DOCUSIGN_ACCOUNT_ID"),
   docusignPrivateKey: env("DOCUSIGN_PRIVATE_KEY"),
+  twilioAccountSid: env("TWILIO_ACCOUNT_SID"),
+  twilioAuthToken: env("TWILIO_AUTH_TOKEN"),
+  twilioPhoneNumber: env("TWILIO_PHONE_NUMBER"),
 } as const;
 
 /**
@@ -72,6 +75,15 @@ export const features = {
         serverEnv.docusignUserId &&
         serverEnv.docusignAccountId &&
         serverEnv.docusignPrivateKey
+    );
+  },
+
+  /** Twilio SMS: send payment link via text when env vars set. */
+  get twilio() {
+    return Boolean(
+      serverEnv.twilioAccountSid &&
+        serverEnv.twilioAuthToken &&
+        serverEnv.twilioPhoneNumber
     );
   },
 } as const;

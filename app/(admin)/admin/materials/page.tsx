@@ -10,6 +10,7 @@ export default async function MaterialsPage() {
     const sku = String(formData.get("sku") ?? "").trim();
     const unit = String(formData.get("unit") ?? "each").trim() || "each";
     const defaultLocationId = String(formData.get("default_location_id") ?? "").trim() || null;
+    const barcode = String(formData.get("barcode") ?? "").trim() || null;
 
     if (!name) return;
 
@@ -19,6 +20,7 @@ export default async function MaterialsPage() {
       sku: sku || null,
       unit,
       default_location_id: defaultLocationId || null,
+      barcode,
     });
 
     revalidatePath("/admin/materials");
@@ -28,7 +30,7 @@ export default async function MaterialsPage() {
   const [{ data: materials }, { data: locations }] = await Promise.all([
     supabase
       .from("materials")
-      .select("id,name,sku,unit,default_location_id,locations(name,code)")
+      .select("id,name,sku,unit,barcode,default_location_id,locations(name,code)")
       .order("name", { ascending: true }),
     supabase
       .from("locations")
@@ -61,6 +63,7 @@ export default async function MaterialsPage() {
             className="field sm:col-span-2"
           />
           <input type="text" name="sku" placeholder="SKU" className="field" />
+          <input type="text" name="barcode" placeholder="Barcode" className="field" />
           <input
             type="text"
             name="unit"
@@ -92,6 +95,7 @@ export default async function MaterialsPage() {
               <tr className="border-b border-border bg-muted/50">
                 <th className="table-header py-3 pl-5 pr-4">Name</th>
                 <th className="table-header py-3 pr-4">SKU</th>
+                <th className="table-header py-3 pr-4">Barcode</th>
                 <th className="table-header py-3 pr-4">Unit</th>
                 <th className="table-header py-3 pr-5">Default location</th>
               </tr>
@@ -107,6 +111,7 @@ export default async function MaterialsPage() {
                   >
                     <td className="py-3 pl-5 pr-4 font-medium text-foreground">{m.name}</td>
                     <td className="py-3 pr-4 text-muted-foreground">{m.sku ?? "—"}</td>
+                    <td className="py-3 pr-4 font-mono text-muted-foreground">{m.barcode ?? "—"}</td>
                     <td className="py-3 pr-4 text-muted-foreground">{m.unit}</td>
                     <td className="py-3 pr-5 text-muted-foreground">
                       {loc?.name ?? "—"}

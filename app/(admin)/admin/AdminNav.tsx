@@ -8,11 +8,14 @@ const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/jobs", label: "Jobs" },
+  { href: "/admin/quotes", label: "Quotes" },
   { href: "/admin/crews", label: "Crews" },
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/invoices", label: "Invoices" },
   { href: "/admin/locations", label: "Locations" },
+  { href: "/admin/lots", label: "Lots" },
   { href: "/admin/materials", label: "Materials" },
+  { href: "/admin/scan", label: "Scan" },
   { href: "/admin/future-features", label: "Future features" },
 ];
 
