@@ -52,7 +52,7 @@ export default async function ReceiptPage({
     : null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background print:min-h-0">
       {/* Customer-facing header: back link + print only */}
       <div className="print:hidden border-b border-border bg-card px-4 py-3">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
@@ -63,8 +63,8 @@ export default async function ReceiptPage({
         </div>
       </div>
 
-      <main className="mx-auto max-w-3xl px-4 py-8 print:py-4">
-        <article className="rounded-xl border border-border bg-card p-6 shadow-sm print:shadow-none print:border-0">
+      <main className="mx-auto max-w-3xl px-4 py-8 print:py-4 print:pb-0">
+        <article className="rounded-xl border border-border bg-card p-6 shadow-sm print:shadow-none print:border-0 print:break-inside-avoid">
           <header className="border-b border-border pb-4">
             <h1 className="text-2xl font-semibold text-foreground">
               Your receipt
