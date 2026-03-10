@@ -25,6 +25,20 @@ export default async function CrewsPage() {
     revalidatePath("/admin/crews");
   }
 
+  async function updateCrew(formData: FormData) {
+    "use server";
+    const crewId = String(formData.get("crew_id") ?? "").trim();
+    const name = String(formData.get("name") ?? "").trim();
+    const specialty = String(formData.get("specialty") ?? SPECIALTIES[0]).trim();
+    if (!crewId || !name) return;
+    const supabase = await createSupabaseServerClientForData();
+    await supabase
+      .from("crews")
+      .update({ name, specialty })
+      .eq("id", crewId);
+    revalidatePath("/admin/crews");
+  }
+
   async function removeMember(formData: FormData) {
     "use server";
     const crewId = String(formData.get("crew_id") ?? "").trim();
@@ -110,6 +124,23 @@ export default async function CrewsPage() {
                   <p className="text-sm text-muted-foreground">{crew.specialty}</p>
                 </div>
                 <div className="p-4 sm:p-5 space-y-3">
+                  <form action={updateCrew} className="grid gap-2 sm:grid-cols-3">
+                    <input type="hidden" name="crew_id" value={crew.id} />
+                    <input
+                      type="text"
+                      name="name"
+                      required
+                      defaultValue={crew.name}
+                      placeholder="Crew name"
+                      className="field"
+                    />
+                    <select name="specialty" className="field" defaultValue={crew.specialty}>
+                      {SPECIALTIES.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                    <button type="submit" className="btn-secondary text-sm py-2">Save changes</button>
+                  </form>
                   <p className="text-sm text-muted-foreground">
                     Members: {memberNames.length ? memberNames.join(", ") : "None"}
                   </p>
