@@ -3,6 +3,7 @@
 -- Uses deterministic UUIDs so re-running is idempotent if you clear tables first.
 
 -- Clear existing placeholder data (optional: only if you want to re-seed same IDs)
+DELETE FROM public.job_materials WHERE job_id IN (SELECT id FROM public.jobs WHERE customer_id IN (SELECT id FROM public.customers WHERE name LIKE '%(seed)%'));
 DELETE FROM public.payments WHERE invoice_id IN (SELECT id FROM public.invoices WHERE job_id IN (SELECT id FROM public.jobs WHERE customer_id IN (SELECT id FROM public.customers WHERE name LIKE '%(seed)%')));
 DELETE FROM public.invoice_items WHERE invoice_id IN (SELECT id FROM public.invoices WHERE job_id IN (SELECT id FROM public.jobs WHERE customer_id IN (SELECT id FROM public.customers WHERE name LIKE '%(seed)%')));
 DELETE FROM public.invoices WHERE job_id IN (SELECT id FROM public.jobs WHERE customer_id IN (SELECT id FROM public.customers WHERE name LIKE '%(seed)%'));
@@ -109,3 +110,29 @@ INSERT INTO public.payments (invoice_id, amount_cents, provider, status) VALUES
 SELECT public.recompute_invoice_totals('b3000001-0000-4000-8000-000000000005');
 SELECT public.recompute_invoice_totals('b3000001-0000-4000-8000-00000000000d');
 SELECT public.recompute_invoice_totals('b3000001-0000-4000-8000-00000000000a');
+
+-- Materials (supplies/parts catalog). Locations are seeded in migration.
+INSERT INTO public.materials (id, name, sku, unit, default_location_id) VALUES
+  ('e5000001-0000-4000-8000-000000000001', 'Door unit - 36" entry', 'DR-36-ENT', 'each', 'd4000001-0000-4000-8000-000000000001'),
+  ('e5000001-0000-4000-8000-000000000002', 'Hinge set (3-pack)', 'HNG-3', 'pack', 'd4000001-0000-4000-8000-000000000001'),
+  ('e5000001-0000-4000-8000-000000000003', 'Deadbolt', 'DB-STD', 'each', 'd4000001-0000-4000-8000-000000000002'),
+  ('e5000001-0000-4000-8000-000000000004', 'Shim pack', 'SHM-50', 'pack', 'd4000001-0000-4000-8000-000000000002'),
+  ('e5000001-0000-4000-8000-000000000005', 'Caulk - exterior', 'CAK-EXT', 'tube', 'd4000001-0000-4000-8000-000000000001'),
+  ('e5000001-0000-4000-8000-000000000006', 'Screws - install kit', 'SCR-INST', 'kit', 'd4000001-0000-4000-8000-000000000003'),
+  ('e5000001-0000-4000-8000-000000000007', 'Weatherstrip', 'WTH-36', 'each', 'd4000001-0000-4000-8000-000000000003'),
+  ('e5000001-0000-4000-8000-000000000008', 'Garage door panel section', 'GDP-9', 'each', 'd4000001-0000-4000-8000-000000000002')
+ON CONFLICT (id) DO NOTHING;
+
+-- Job materials: supplies/parts per job and installation (location = where to pull from)
+-- Location IDs: door_shop d4000001-...001, lower_warehouse ...002, upper_warehouse ...003
+INSERT INTO public.job_materials (job_id, material_id, quantity, location_id, notes) VALUES
+  ('a2000001-0000-4000-8000-000000000001', 'e5000001-0000-4000-8000-000000000001', 1, 'd4000001-0000-4000-8000-000000000001', 'Front door unit'),
+  ('a2000001-0000-4000-8000-000000000001', 'e5000001-0000-4000-8000-000000000002', 1, 'd4000001-0000-4000-8000-000000000001', NULL),
+  ('a2000001-0000-4000-8000-000000000001', 'e5000001-0000-4000-8000-000000000003', 1, 'd4000001-0000-4000-8000-000000000002', NULL),
+  ('a2000001-0000-4000-8000-000000000001', 'e5000001-0000-4000-8000-000000000005', 2, 'd4000001-0000-4000-8000-000000000001', NULL),
+  ('a2000001-0000-4000-8000-000000000002', 'e5000001-0000-4000-8000-000000000008', 1, 'd4000001-0000-4000-8000-000000000002', 'Garage repair'),
+  ('a2000001-0000-4000-8000-000000000002', 'e5000001-0000-4000-8000-000000000006', 1, 'd4000001-0000-4000-8000-000000000003', NULL),
+  ('a2000001-0000-4000-8000-000000000004', 'e5000001-0000-4000-8000-000000000007', 1, 'd4000001-0000-4000-8000-000000000001', 'Patio door'),
+  ('a2000001-0000-4000-8000-000000000004', 'e5000001-0000-4000-8000-000000000005', 1, 'd4000001-0000-4000-8000-000000000001', NULL),
+  ('a2000001-0000-4000-8000-000000000009', 'e5000001-0000-4000-8000-000000000001', 1, 'd4000001-0000-4000-8000-000000000001', 'Back door + frame'),
+  ('a2000001-0000-4000-8000-000000000009', 'e5000001-0000-4000-8000-000000000004', 2, 'd4000001-0000-4000-8000-000000000002', NULL);
