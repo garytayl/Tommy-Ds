@@ -5,8 +5,21 @@
 
 import { createSign } from "crypto";
 
-const DOCUSIGN_OAUTH = "https://account-d.docusign.com";
-const DOCUSIGN_REST = "https://demo.docusign.net/restapi";
+function getDocuSignBaseUrls(): { oauth: string; rest: string; aud: string } {
+  const prod = process.env.DOCUSIGN_PRODUCTION === "true" || process.env.DOCUSIGN_PRODUCTION === "1";
+  if (prod) {
+    return {
+      oauth: "https://account.docusign.com",
+      rest: "https://www.docusign.net/restapi",
+      aud: "account.docusign.com",
+    };
+  }
+  return {
+    oauth: "https://account-d.docusign.com",
+    rest: "https://demo.docusign.net/restapi",
+    aud: "account-d.docusign.com",
+  };
+}
 
 function base64UrlEncode(buf: Buffer): string {
   return buf
@@ -38,14 +51,16 @@ export function createDocuSignJwt(
   integrationKey: string,
   userId: string,
   privateKeyPem: string,
-  expirySeconds = 3600
+  expirySeconds = 3600,
+  aud = "account-d.docusign.com"
 ): string {
   const header = { alg: "RS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
   const payload = {
     iss: integrationKey,
     sub: userId,
-    aud: "account-d.docusign.com",
+    aud,
+    scope: "signature impersonation",
     iat: now,
     exp: now + expirySeconds,
   };
@@ -78,8 +93,9 @@ export async function getDocuSignAccessToken(): Promise<TokenResult> {
   if (!privateKeyPem)
     return { ok: false, error: "DOCUSIGN_PRIVATE_KEY is not set. Use the RSA private key PEM (from Generate RSA), with \\n for newlines in env." };
 
-  const jwt = createDocuSignJwt(integrationKey, userId, privateKeyPem);
-  const res = await fetch(`${DOCUSIGN_OAUTH}/oauth/token`, {
+  const { oauth, aud } = getDocuSignBaseUrls();
+  const jwt = createDocuSignJwt(integrationKey, userId, privateKeyPem, 3600, aud);
+  const res = await fetch(`${oauth}/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -94,10 +110,10 @@ export async function getDocuSignAccessToken(): Promise<TokenResult> {
   };
   if (res.ok && data.access_token)
     return { ok: true, accessToken: data.access_token };
-  const msg = data.error_description || data.error || `HTTP ${res.status}`;
+  const msg = [data.error, data.error_description].filter(Boolean).join(" — ") || `HTTP ${res.status}`;
   return {
     ok: false,
-    error: `DocuSign token failed: ${msg}. Common fixes: add DOCUSIGN_USER_ID (User GUID from DocuSign Admin → Users); grant JWT consent once in DocuSign (see .env.example); use the correct RSA private key.`,
+    error: `DocuSign token failed: ${msg}. Ensure DOCUSIGN_USER_ID is the User GUID (Admin → Users); grant JWT consent once (see .env.example); use the private key that matches the app’s RSA public key.`,
   };
 }
 
@@ -145,8 +161,9 @@ export async function sendEnvelopeForSignature(
     status: "sent",
   };
 
+  const { rest } = getDocuSignBaseUrls();
   const createRes = await fetch(
-    `${DOCUSIGN_REST}/v2.1/accounts/${accountId}/envelopes`,
+    `${rest}/v2.1/accounts/${accountId}/envelopes`,
     {
       method: "POST",
       headers: {
@@ -162,7 +179,7 @@ export async function sendEnvelopeForSignature(
   if (!envelopeId) return null;
 
   const viewRes = await fetch(
-    `${DOCUSIGN_REST}/v2.1/accounts/${accountId}/envelopes/${envelopeId}/views/recipient`,
+    `${rest}/v2.1/accounts/${accountId}/envelopes/${envelopeId}/views/recipient`,
     {
       method: "POST",
       headers: {
