@@ -24,7 +24,7 @@ export default async function ReceiptPage({
     supabase
       .from("invoices")
       .select(
-        "id,job_id,status,subtotal_cents,tax_cents,total_cents,deposit_paid_cents,balance_due_cents,created_at,jobs(id,title,address_line1,address_line2,city,state,zip,customers(id,name,email,phone))",
+        "id,invoice_number,job_id,status,subtotal_cents,tax_cents,total_cents,deposit_paid_cents,balance_due_cents,created_at,jobs(id,title,address_line1,address_line2,city,state,zip,customers(id,name,email,phone))",
       )
       .eq("id", invoiceId)
       .maybeSingle(),
@@ -76,7 +76,7 @@ export default async function ReceiptPage({
               Your receipt
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Thank you for your payment. Invoice #{invoice.id.slice(0, 8)} ·{" "}
+              Thank you for your payment. Invoice #{invoice.invoice_number} ·{" "}
               {new Date(invoice.created_at).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "long",

@@ -29,20 +29,20 @@ export async function GET(request: Request) {
         ? `${input.slice(0, 8)}-${input.slice(8, 12)}-${input.slice(12, 16)}-${input.slice(16, 20)}-${input.slice(20, 32)}`
         : null;
 
-    type InvoiceRow = { id: string; job_id: string; balance_due_cents: number; status: string };
+    type InvoiceRow = { id: string; job_id: string; invoice_number: number; balance_due_cents: number; status: string };
     let invoiceResult: { data: InvoiceRow | null };
 
     if (fullUuid) {
       invoiceResult = await supabase
         .from("invoices")
-        .select("id,job_id,balance_due_cents,status")
+        .select("id,job_id,invoice_number,balance_due_cents,status")
         .eq("id", fullUuid)
         .maybeSingle();
     } else {
       // Short code: filter in memory (Supabase may not support LIKE on uuid). Fetch recent and match prefix.
       const { data: rows } = await supabase
         .from("invoices")
-        .select("id,job_id,balance_due_cents,status")
+        .select("id,job_id,invoice_number,balance_due_cents,status")
         .order("created_at", { ascending: false })
         .limit(500);
       const list = (rows ?? []).filter(
@@ -68,6 +68,7 @@ export async function GET(request: Request) {
     if (invoice.balance_due_cents <= 0) {
       return NextResponse.json({
         invoiceId: invoice.id,
+        invoiceNumber: invoice.invoice_number,
         balanceDueCents: 0,
         alreadyPaid: true,
         customerName: null,
@@ -86,6 +87,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       invoiceId: invoice.id,
+      invoiceNumber: invoice.invoice_number,
       balanceDueCents: invoice.balance_due_cents,
       alreadyPaid: false,
       customerName,

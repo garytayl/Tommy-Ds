@@ -48,7 +48,7 @@ export default async function SchedulePage({
     supabase
       .from("jobs")
       .select(
-        "id,title,status,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(name),profiles(full_name),crews(name,specialty),invoices(id,balance_due_cents)",
+        "id,title,status,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(name),profiles(full_name),crews(name,specialty),invoices(id,invoice_number,balance_due_cents)",
       )
       .gte("scheduled_start", start.toISOString())
       .lt("scheduled_start", end.toISOString())
@@ -75,7 +75,7 @@ export default async function SchedulePage({
     customers: { name: string } | { name: string }[] | null;
     profiles: { full_name: string | null } | { full_name: string | null }[] | null;
     crews: { name: string; specialty: string } | { name: string; specialty: string }[] | null;
-    invoices: { id: string; balance_due_cents: number }[] | { id: string; balance_due_cents: number } | null;
+    invoices: { id: string; invoice_number: number; balance_due_cents: number }[] | { id: string; invoice_number: number; balance_due_cents: number } | null;
   };
 
   const allRows = (jobs ?? []) as JobRow[];

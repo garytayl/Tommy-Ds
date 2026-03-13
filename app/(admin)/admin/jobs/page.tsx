@@ -86,7 +86,7 @@ export default async function JobsPage({
   const supabase = await createSupabaseServerClientForData();
   let jobsQuery = supabase
     .from("jobs")
-    .select("id,title,status,scheduled_start,customers(name),profiles(full_name),crews(name,specialty),invoices(id,balance_due_cents)")
+    .select("id,title,status,scheduled_start,customers(name),profiles(full_name),crews(name,specialty),invoices(id,invoice_number,balance_due_cents)")
     .order("created_at", { ascending: false });
   if (filterCrewId) jobsQuery = jobsQuery.eq("assigned_crew_id", filterCrewId);
 
@@ -127,7 +127,7 @@ export default async function JobsPage({
     customers: { name: string } | { name: string }[] | null;
     profiles: { full_name: string | null } | { full_name: string | null }[] | null;
     crews: { name: string; specialty: string } | { name: string; specialty: string }[] | null;
-    invoices: { id: string; balance_due_cents: number }[] | { id: string; balance_due_cents: number } | null;
+    invoices: { id: string; invoice_number: number; balance_due_cents: number }[] | { id: string; invoice_number: number; balance_due_cents: number } | null;
   };
 
   const jobs = (jobsResult.data ?? []) as JobRow[];
@@ -300,6 +300,7 @@ export default async function JobsPage({
               <tr className="border-b border-border bg-muted/50">
                 <th className="table-header py-3 pl-5 pr-4">Title</th>
                 <th className="table-header py-3 pr-4">Customer</th>
+                <th className="table-header py-3 pr-4">Invoice #</th>
                 <th className="table-header py-3 pr-4">Crew</th>
                 <th className="table-header py-3 pr-4">Installer</th>
                 <th className="table-header py-3 pr-4">Scheduled</th>
@@ -310,7 +311,7 @@ export default async function JobsPage({
             <tbody>
               {jobs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                  <td colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
                     {filterCrewId
                       ? "No jobs for this crew. Create a job and assign this crew, or clear the filter."
                       : "No jobs in the database yet. Create one above (select a customer first—you need at least one in "}
@@ -336,6 +337,15 @@ export default async function JobsPage({
                   <tr key={job.id} className="border-b border-border transition hover:bg-muted/30">
                     <td className="py-3 pl-5 pr-4 font-medium text-foreground">{job.title}</td>
                     <td className="py-3 pr-4 text-muted-foreground">{customer ?? "-"}</td>
+                    <td className="py-3 pr-4 tabular-nums text-muted-foreground">
+                      {invoice ? (
+                        <Link href={`/admin/invoices/${invoice.id}`} className="hover:underline">
+                          #{invoice.invoice_number}
+                        </Link>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td className="py-3 pr-4 text-muted-foreground">{crew?.name ?? "—"}</td>
                     <td className="py-3 pr-4 text-muted-foreground">{installer ?? "Unassigned"}</td>
                     <td className="py-3 pr-4 text-muted-foreground">

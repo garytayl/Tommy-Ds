@@ -9,12 +9,13 @@ export default async function InvoicesListPage() {
   const { data: invoices } = await supabase
     .from("invoices")
     .select(
-      "id,status,total_cents,balance_due_cents,jobs(id,title,customers(name))",
+      "id,invoice_number,status,total_cents,balance_due_cents,jobs(id,title,customers(name))",
     )
     .order("created_at", { ascending: false });
 
   type InvoiceRow = {
     id: string;
+    invoice_number: number;
     status: string;
     total_cents: number;
     balance_due_cents: number;
@@ -42,7 +43,8 @@ export default async function InvoicesListPage() {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="table-header py-3 pl-5 pr-4">Job</th>
+                <th className="table-header py-3 pl-5 pr-4">Invoice #</th>
+                <th className="table-header py-3 pr-4">Job</th>
                 <th className="table-header py-3 pr-4">Customer</th>
                 <th className="table-header py-3 pr-4">Status</th>
                 <th className="table-header py-3 pr-4 text-right">Total</th>
@@ -54,7 +56,7 @@ export default async function InvoicesListPage() {
               {rows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="py-10 text-center text-sm text-muted-foreground"
                   >
                     No invoices yet. Create a job, then create an invoice from the job page.
@@ -71,6 +73,11 @@ export default async function InvoicesListPage() {
                       key={inv.id}
                       className="border-b border-border last:border-0 transition hover:bg-muted/30"
                     >
+                      <td className="py-3 pl-5 pr-4 tabular-nums font-medium text-foreground">
+                        <Link href={`/admin/invoices/${inv.id}`} className="hover:underline">
+                          #{inv.invoice_number}
+                        </Link>
+                      </td>
                       <td className="py-3 pl-5 pr-4 font-medium text-foreground">
                         {jobObj?.title ?? "-"}
                       </td>

@@ -18,9 +18,33 @@ type NominatimResult = {
   display_name?: string;
 };
 
+/** Removes a unit/apt/suite segment so Nominatim can geocode the building. */
+function simplifyAddressForGeocode(address: string): string {
+  const trimmed = address.trim();
+  if (!trimmed) return trimmed;
+  const unitPattern = /^\s*(Unit|Apt|Suite|Ste\.?|Bldg\.?|#)\s*[\w-]+\s*$/i;
+  const parts = trimmed.split(",").map((p) => p.trim());
+  const filtered = parts.filter((part) => !unitPattern.test(part));
+  const simplified = filtered.join(", ").replace(/\s*,\s*,/g, ",").trim();
+  return simplified;
+}
+
+const NOMINATIM_HEADERS = {
+  Accept: "application/json",
+  "User-Agent": "TommyDsJobMap/1.0 (field service job map)",
+};
+
+function fetchNominatim(query: string): Promise<NominatimResult[]> {
+  const q = encodeURIComponent(query);
+  return fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
+    headers: NOMINATIM_HEADERS,
+  }).then((res) => res.json());
+}
+
 export function JobMap({ address, title, height = 240 }: JobMapProps) {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [usedFallback, setUsedFallback] = useState(false);
   const [MapContent, setMapContent] = useState<React.ComponentType<{ center: [number, number]; title?: string }> | null>(null);
 
   useEffect(() => {

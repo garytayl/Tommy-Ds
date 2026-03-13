@@ -17,7 +17,7 @@ export type ScheduleJob = {
   customers: { name: string } | { name: string }[] | null;
   profiles: { full_name: string | null } | { full_name: string | null }[] | null;
   crews: { name: string; specialty: string } | { name: string; specialty: string }[] | null;
-  invoices: { id: string; balance_due_cents: number }[] | { id: string; balance_due_cents: number } | null;
+  invoices: { id: string; invoice_number: number; balance_due_cents: number }[] | { id: string; invoice_number: number; balance_due_cents: number } | null;
 };
 
 type ScheduleDragDropProps = {
@@ -128,6 +128,15 @@ export function ScheduleDragDrop({
                         )}
                         {customer && (
                           <span className="text-sm text-muted-foreground">{customer}</span>
+                        )}
+                        {invoice && (
+                          <Link
+                            href={`/admin/invoices/${invoice.id}`}
+                            className="text-xs text-muted-foreground hover:underline tabular-nums"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Inv #{invoice.invoice_number}
+                          </Link>
                         )}
                         {installer && (
                           <span className="text-xs text-muted-foreground">{installer}</span>

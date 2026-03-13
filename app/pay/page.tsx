@@ -12,12 +12,13 @@ type LookupResult =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "not_found"; error?: string }
-  | { status: "already_paid"; invoiceId: string }
+  | { status: "already_paid"; invoiceId: string; invoiceNumber?: number }
   | {
       status: "balance_due";
       invoiceId: string;
       balanceDueCents: number;
       customerName: string | null;
+      invoiceNumber?: number;
     };
 
 export default function PayInvoicePage() {
@@ -47,7 +48,7 @@ export default function PayInvoicePage() {
         return;
       }
       if (data?.alreadyPaid && data?.invoiceId) {
-        setResult({ status: "already_paid", invoiceId: data.invoiceId });
+        setResult({ status: "already_paid", invoiceId: data.invoiceId, invoiceNumber: data.invoiceNumber });
         return;
       }
       if (
@@ -60,6 +61,7 @@ export default function PayInvoicePage() {
           invoiceId: data.invoiceId,
           balanceDueCents: data.balanceDueCents,
           customerName: data.customerName ?? null,
+          invoiceNumber: data.invoiceNumber,
         });
         return;
       }
@@ -116,7 +118,9 @@ export default function PayInvoicePage() {
 
         {result.status === "already_paid" && (
           <div className="mt-6 rounded-xl border border-border bg-card p-4">
-            <p className="text-sm font-medium text-foreground">This invoice is paid.</p>
+            <p className="text-sm font-medium text-foreground">
+              This invoice is paid.{result.invoiceNumber != null && ` (Invoice #${result.invoiceNumber})`}
+            </p>
             <p className="mt-2 text-xs text-muted-foreground">
               <Link href={`/receipt/${result.invoiceId}`} className="text-primary hover:underline">
                 View your receipt →
@@ -128,12 +132,18 @@ export default function PayInvoicePage() {
         {result.status === "balance_due" && (
           <div className="mt-6 rounded-xl border border-border bg-card p-4 space-y-4">
             <p className="text-sm text-foreground">
+              {result.invoiceNumber != null && (
+                <span className="font-medium tabular-nums">Invoice #{result.invoiceNumber}</span>
+              )}
+              {result.invoiceNumber != null && (result.customerName || result.balanceDueCents > 0) && (
+                <span className="text-muted-foreground"> · </span>
+              )}
               {result.customerName ? (
-                <>
-                  <span className="font-medium">{result.customerName}</span>
-                  <span className="text-muted-foreground"> · </span>
-                </>
+                <span className="font-medium">{result.customerName}</span>
               ) : null}
+              {result.customerName && result.balanceDueCents > 0 && (
+                <span className="text-muted-foreground"> · </span>
+              )}
               Balance due: <span className="font-semibold tabular-nums">{formatCents(result.balanceDueCents)}</span>
             </p>
             <PayWithCardButton invoiceId={result.invoiceId} />

@@ -22,7 +22,7 @@ export default async function InvoiceDetailPage({
     supabase
       .from("invoices")
       .select(
-        "id,job_id,status,subtotal_cents,tax_cents,total_cents,deposit_paid_cents,balance_due_cents,jobs(id,title,customers(id,name,email))",
+        "id,invoice_number,job_id,status,subtotal_cents,tax_cents,total_cents,deposit_paid_cents,balance_due_cents,jobs(id,title,customers(id,name,email))",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -117,7 +117,7 @@ export default async function InvoiceDetailPage({
       <section className="space-y-6">
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-foreground">Invoice {invoice.id.slice(0, 8)}</h1>
+            <h1 className="text-xl font-semibold text-foreground">Invoice #{invoice.invoice_number}</h1>
             <div className="flex flex-wrap items-center gap-3">
               {invoice.deposit_paid_cents > 0 && (
                 <Link href={`/receipt/${invoice.id}`} className="link text-sm">

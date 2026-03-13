@@ -78,7 +78,7 @@ export default async function JobWorkspacePage({
       supabase
         .from("invoices")
         .select(
-          "id,job_id,status,subtotal_cents,tax_cents,total_cents,deposit_paid_cents,balance_due_cents",
+          "id,invoice_number,job_id,status,subtotal_cents,tax_cents,total_cents,deposit_paid_cents,balance_due_cents",
         )
         .eq("job_id", id)
         .order("created_at", { ascending: true })
@@ -613,7 +613,9 @@ export default async function JobWorkspacePage({
       {tab === "invoice" && (
         <div className="mt-6 space-y-6">
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="text-base font-semibold text-foreground">Invoice</h2>
+            <h2 className="text-base font-semibold text-foreground">
+              {invoice ? `Invoice #${invoice.invoice_number}` : "Invoice"}
+            </h2>
             <InvoiceSummary invoice={invoice} />
             {invoice ? (
               <div className="mt-4 flex flex-wrap gap-2">
@@ -621,7 +623,7 @@ export default async function JobWorkspacePage({
                   href={`/admin/invoices/${invoice.id}`}
                   className="btn-primary inline-flex py-2.5"
                 >
-                  Open invoice (line items & tax)
+                  Open invoice #{invoice.invoice_number} (line items & tax)
                 </Link>
               </div>
             ) : (

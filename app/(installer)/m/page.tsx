@@ -20,7 +20,7 @@ export default async function InstallerTodayPage() {
     supabase
       .from("jobs")
       .select(
-        "id,title,status,notes,address_line1,city,state,zip,scheduled_start,customers(name,phone),invoices(id,status,balance_due_cents)",
+        "id,title,status,notes,address_line1,city,state,zip,scheduled_start,customers(name,phone),invoices(id,invoice_number,status,balance_due_cents)",
       )
       .gte("scheduled_start", todayStart.toISOString())
       .lt("scheduled_start", todayEnd.toISOString())
@@ -28,7 +28,7 @@ export default async function InstallerTodayPage() {
     supabase
       .from("jobs")
       .select(
-        "id,title,status,notes,address_line1,city,state,zip,scheduled_start,customers(name,phone),invoices(id,status,balance_due_cents)",
+        "id,title,status,notes,address_line1,city,state,zip,scheduled_start,customers(name,phone),invoices(id,invoice_number,status,balance_due_cents)",
       )
       .gte("scheduled_start", todayStart.toISOString())
       .lt("scheduled_start", weekEnd.toISOString())
@@ -167,7 +167,7 @@ export default async function InstallerTodayPage() {
                       </p>
                       <p className="font-semibold tabular-nums text-foreground">
                         {invoice
-                          ? `Balance: ${formatCents(invoice.balance_due_cents)}`
+                          ? `Inv #${invoice.invoice_number} · ${formatCents(invoice.balance_due_cents)} due`
                           : "No invoice"}
                       </p>
                     </div>
