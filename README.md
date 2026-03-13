@@ -1,8 +1,11 @@
 # Field Service Scheduler MVP
 
+**Field Service Scheduler** is the project name. The business using it is **Tommy D's** (Windows, Doors, & More); that name appears in customer-facing copy (receipts, payments, etc.).
+
 MVP for a local installer business:
-- Office/admin dashboard (customers, jobs, invoices)
+- Office/admin dashboard: schedule, jobs, quotes, crews, customers, invoices, locations, lots, materials, scan
 - Installer mobile flow (`/m`) for today’s jobs, notes, photos, and payment collection
+- **Customer payment:** Public **Pay your invoice** (`/pay`) — enter invoice number to look up and pay by card; or use the link from your bill. Receipt page shows “Pay remaining balance” when balance is due. Card payments are for invoices only (no generic “pay your bill” without an invoice).
 - Stripe Checkout payment-link flow + webhook reconciliation
 - Supabase schema + RLS + invoice recompute helpers
 
@@ -32,35 +35,31 @@ STRIPE_WEBHOOK_SECRET=
 app/
   (admin)/
     admin/
-      layout.tsx
-      page.tsx
-      customers/page.tsx
-      customers/[id]/page.tsx
-      jobs/page.tsx
-      jobs/[id]/page.tsx
-      invoices/[id]/page.tsx
-  (installer)/
-    m/
-      layout.tsx
-      page.tsx
-      jobs/[id]/page.tsx
+      layout.tsx, page.tsx
+      schedule/page.tsx, jobs/, quotes/, crews/, customers/, invoices/
+      locations/, lots/, materials/, scan/, future-features/
+  (installer)/m/
+    layout.tsx, page.tsx, jobs/[id]/page.tsx
+  pay/page.tsx              # Public: pay your invoice (lookup + card)
+  receipt/[invoiceId]/page.tsx
+  payment/thank-you/page.tsx
   api/
     checkout/create/route.ts
+    invoices/lookup/route.ts   # GET ?id= — public invoice lookup for /pay
     stripe/webhook/route.ts
 lib/
-  supabase/
-    client.ts
-    server.ts
-    service.ts
-  stripe.ts
-  money.ts
+  supabase/, config.ts, money.ts, stripe.ts
 components/
-  InvoiceSummary.tsx
-  JobStatusBadge.tsx
-  CollectPaymentButton.tsx
+  InvoiceSummary.tsx, JobStatusBadge.tsx, CollectPaymentButton.tsx
+  PayWithCardButton.tsx       # Used on /pay and receipt when balance due
 supabase/
   migrations/
     20260302141000_mvp_schema.sql
+    20260302150000_enforce_job_update_permissions.sql
+    20260310120000_locations_materials_job_supplies.sql
+    20260310140000_crews.sql
+    20260310160000_quotes.sql
+    20260310170000_lots_inventory_barcodes.sql
 ```
 
 ## Local Setup
@@ -71,8 +70,8 @@ supabase/
    npm install
    ```
 
-2. Apply SQL migration in Supabase:
-   - `supabase/migrations/20260302141000_mvp_schema.sql`
+2. Apply SQL migrations in Supabase (in order):
+   - All files in `supabase/migrations/` (mvp_schema first, then the rest by timestamp)
 
 3. **(Optional)** Seed placeholder data (customers, jobs, invoices):
    - From the project root (with `.env.local` containing `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`):  
@@ -87,6 +86,8 @@ supabase/
    ```
 
 5. Open:
+   - Home: `http://localhost:3000` (includes “Pay your bill” and links to /pay)
+   - Pay invoice (customers): `http://localhost:3000/pay`
    - Admin: `http://localhost:3000/admin`
    - Installer: `http://localhost:3000/m`
 

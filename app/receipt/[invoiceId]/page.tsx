@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { PayWithCardButton } from "@/components/PayWithCardButton";
 import { formatCents } from "@/lib/money";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { ReceiptPrintButton } from "./ReceiptPrintButton";
@@ -56,9 +57,14 @@ export default async function ReceiptPage({
       {/* Customer-facing header: back link + print only */}
       <div className="print:hidden border-b border-border bg-card px-4 py-3">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
-          <Link href="/" className="text-sm font-medium text-primary hover:underline">
-            ← Tommy D&apos;s
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="text-sm font-medium text-primary hover:underline">
+              ← Tommy D&apos;s
+            </Link>
+            <Link href="/pay" className="text-sm text-muted-foreground hover:text-foreground">
+              Pay another invoice
+            </Link>
+          </div>
           <ReceiptPrintButton />
         </div>
       </div>
@@ -199,6 +205,20 @@ export default async function ReceiptPage({
               We&apos;ve received {formatCents(invoice.deposit_paid_cents)} from you. Thank you for your business.
             </p>
           </section>
+
+          {invoice.balance_due_cents > 0 ? (
+            <section className="mt-6 border-t border-border pt-4 print:hidden">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Balance due
+              </h2>
+              <p className="mt-2 text-sm text-foreground">
+                Balance due: <span className="font-semibold tabular-nums">{formatCents(invoice.balance_due_cents)}</span>
+              </p>
+              <div className="mt-3">
+                <PayWithCardButton invoiceId={invoice.id} label="Pay remaining balance" />
+              </div>
+            </section>
+          ) : null}
         </article>
       </main>
 

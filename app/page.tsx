@@ -35,8 +35,21 @@ export default function Home() {
         </a>
       </section>
 
-      <div id="hub" className="flex-1 container mx-auto scroll-mt-8 px-4 py-12 md:py-16 md:px-6 max-w-4xl">
-        <h2 className="text-lg font-medium tracking-tight text-muted-foreground">
+      <div className="flex-1 container mx-auto px-4 py-12 md:py-16 md:px-6 max-w-4xl">
+        <section className="rounded-xl border border-border bg-card p-4 sm:p-5 mb-10">
+          <h2 className="text-sm font-semibold tracking-tight text-foreground">
+            Pay your bill
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Send a check to the address on your bill, or pay online: use your invoice number at{" "}
+            <Link href="/pay" className="text-primary font-medium hover:underline">
+              Pay your invoice
+            </Link>{" "}
+            or use the link we sent you.
+          </p>
+        </section>
+
+        <h2 id="hub" className="scroll-mt-8 text-lg font-medium tracking-tight text-muted-foreground">
           Open a view
         </h2>
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
