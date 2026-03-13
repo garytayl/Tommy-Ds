@@ -5,7 +5,6 @@ import { Suspense } from "react";
 
 import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { InvoiceSummary } from "@/components/InvoiceSummary";
-import { JobMapDynamic } from "@/components/JobMapDynamic";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { JobStickyActions } from "@/components/JobStickyActions";
 import { JobWorkspaceTabs } from "@/components/JobWorkspaceTabs";
@@ -373,13 +372,10 @@ export default async function JobWorkspacePage({
               href={mapsUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-2 inline-block text-sm font-medium text-primary"
+              className="mt-2 inline-flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted"
             >
               Open in Maps →
             </a>
-            <div className="mt-4">
-              <JobMapDynamic address={fullAddress} title={job.title} height={240} />
-            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <JobStatusBadge status={job.status} />
