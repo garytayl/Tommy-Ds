@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { InvoiceSummary } from "@/components/InvoiceSummary";
 import { formatCents, dollarsToCents } from "@/lib/money";
+import { computeTaxCents } from "@/lib/tax";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { SendReceiptForSignature } from "./SendReceiptForSignature";
 
@@ -67,6 +68,13 @@ export default async function InvoiceDetailPage({
       unit_price_cents: unitPriceCents,
       line_total_cents: lineTotalCents,
     });
+    // Auto-apply Indiana default tax after line items change (staff can override in tax field)
+    const { data: inv } = await supabase.from("invoices").select("subtotal_cents").eq("id", id).single();
+    if (inv?.subtotal_cents != null) {
+      const taxCents = computeTaxCents(inv.subtotal_cents);
+      await supabase.from("invoices").update({ tax_cents: taxCents }).eq("id", id);
+      await supabase.rpc("recompute_invoice_totals", { p_invoice_id: id });
+    }
 
     revalidatePath(`/admin/invoices/${id}`);
     revalidatePath(`/jobs/${invoiceJobId}`);
@@ -251,6 +259,7 @@ export default async function InvoiceDetailPage({
           <form action={updateTax} className="mt-3 flex items-end gap-2">
             <div className="grow">
               <label className="mb-1 block text-xs font-medium text-muted-foreground">Tax amount ($)</label>
+              <p className="mb-1 text-xs text-muted-foreground">Auto 7% (Indiana) when you add line items; override if needed.</p>
               <input
                 type="number"
                 name="tax"

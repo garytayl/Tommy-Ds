@@ -10,6 +10,7 @@ import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { JobStickyActions } from "@/components/JobStickyActions";
 import { JobWorkspaceTabs } from "@/components/JobWorkspaceTabs";
 import { formatCents, dollarsToCents } from "@/lib/money";
+import { computeTaxCents } from "@/lib/tax";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -272,6 +273,13 @@ export default async function JobWorkspacePage({
       unit_price_cents: unitPriceCents,
       line_total_cents: lineTotalCents,
     });
+    // Auto-apply Indiana default tax after line items change (staff can override in tax field)
+    const { data: inv } = await supabase.from("invoices").select("subtotal_cents").eq("id", invoice.id).single();
+    if (inv?.subtotal_cents != null) {
+      const taxCents = computeTaxCents(inv.subtotal_cents);
+      await supabase.from("invoices").update({ tax_cents: taxCents }).eq("id", invoice.id);
+      await supabase.rpc("recompute_invoice_totals", { p_invoice_id: invoice.id });
+    }
     revalidatePath(`/jobs/${id}`);
     revalidatePath(`/admin/invoices/${invoice.id}`);
   }
@@ -651,6 +659,7 @@ export default async function JobWorkspacePage({
               <form action={updateTax} className="mt-4 flex items-end gap-2">
                 <div className="grow">
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Tax ($)</label>
+                  <p className="mb-1 text-xs text-muted-foreground">Auto 7% (Indiana) when you add line items; override if needed.</p>
                   <input
                     type="number"
                     name="tax"

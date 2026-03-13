@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { formatCents, dollarsToCents } from "@/lib/money";
+import { computeTaxCents } from "@/lib/tax";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 const QUOTE_STATUSES = ["draft", "sent", "accepted", "declined"];
@@ -53,6 +54,13 @@ export default async function QuoteDetailPage({
       unit_price_cents: unitPriceCents,
       line_total_cents: lineTotalCents,
     });
+    // Auto-apply Indiana default tax after line items change (staff can override in tax field)
+    const { data: q } = await supabase.from("quotes").select("subtotal_cents").eq("id", id).single();
+    if (q?.subtotal_cents != null) {
+      const taxCents = computeTaxCents(q.subtotal_cents);
+      await supabase.from("quotes").update({ tax_cents: taxCents }).eq("id", id);
+      await supabase.rpc("recompute_quote_totals", { p_quote_id: id });
+    }
 
     revalidatePath(`/admin/quotes/${id}`);
   }
@@ -282,6 +290,7 @@ export default async function QuoteDetailPage({
           <form action={updateQuoteTax} className="flex items-end gap-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">Tax ($)</label>
+              <p className="mb-1 text-xs text-muted-foreground">Auto 7% (Indiana) when you add line items; override if needed.</p>
               <input
                 type="number"
                 name="tax"
