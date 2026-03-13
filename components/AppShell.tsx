@@ -60,9 +60,9 @@ export function AppShell({
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
       <div className="fixed inset-0 h-full w-full">
         <Aurora
-          colorStops={["#0f0809", "#1a1210", "#0f0809"]}
-          amplitude={0.35}
-          blend={0.2}
+          colorStops={["#1a0a0e", "#2d1810", "#1a0a0e"]}
+          amplitude={0.6}
+          blend={0.4}
         />
       </div>
       <div className="relative z-10 flex min-h-screen flex-col">

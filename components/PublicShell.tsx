@@ -24,8 +24,8 @@ export function PublicShell({ children, aurora = false }: PublicShellProps) {
       <div className="fixed inset-0 h-full w-full">
         <Aurora
           colorStops={aurora ? VIBRANT_STOPS : SUBTLE_STOPS}
-          amplitude={aurora ? 1.2 : 0.35}
-          blend={aurora ? 0.6 : 0.2}
+          amplitude={aurora ? 1.2 : 0.6}
+          blend={aurora ? 0.6 : 0.4}
         />
       </div>
 
