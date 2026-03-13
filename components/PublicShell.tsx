@@ -10,7 +10,8 @@ const Aurora = dynamic(() => import("@/components/Aurora").then((m) => m.default
 });
 
 const VIBRANT_STOPS = ["#7A1D2B", "#F5A623", "#7A1D2B"];
-const SUBTLE_STOPS = ["#0f0809", "#1a1210", "#0f0809"];
+/* Dark maroon/gold tint so subtle aurora is visible but not loud */
+const SUBTLE_STOPS = ["#1a0a0e", "#2d1810", "#1a0a0e"];
 
 type PublicShellProps = {
   children: React.ReactNode;

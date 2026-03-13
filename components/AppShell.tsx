@@ -48,9 +48,13 @@ export function AppShell({
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const nav = navFor(mode);
-  const homeHref = mode === "admin" ? "/admin" : "/m";
   const otherModeHref = mode === "admin" ? "/m" : "/admin";
   const otherModeLabel = mode === "admin" ? "Field" : "Admin";
+
+  const hubLinkStyle = (href: string) =>
+    pathname === href
+      ? "bg-primary-foreground/20 text-primary-foreground"
+      : "border border-white/30 bg-white/10 text-primary-foreground hover:bg-white/20";
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
@@ -65,8 +69,8 @@ export function AppShell({
       <header className="sticky top-0 z-20 shrink-0 rounded-b-xl border-b border-white/10 bg-primary/90 backdrop-blur-md sm:rounded-b-2xl">
         <div className="relative mx-auto flex w-full max-w-6xl items-center gap-2 px-3 py-2.5 sm:px-6 sm:py-3">
           <Link
-            href={homeHref}
-            className="min-w-0 truncate text-sm font-semibold text-primary-foreground"
+            href="/"
+            className="min-w-0 truncate text-sm font-semibold text-primary-foreground transition hover:text-primary-foreground/90"
           >
             Tommy D&apos;s
           </Link>
@@ -78,6 +82,18 @@ export function AppShell({
           </div>
 
           <div className="flex flex-1 items-center justify-end gap-2 sm:flex-initial">
+            <Link
+              href="/"
+              className={`hidden rounded-xl px-2.5 py-1.5 text-sm font-medium transition touch-manipulation sm:inline-flex sm:px-3 ${hubLinkStyle("/")}`}
+            >
+              Home
+            </Link>
+            <Link
+              href="/pay"
+              className={`hidden rounded-xl px-2.5 py-1.5 text-sm font-medium transition touch-manipulation sm:inline-flex sm:px-3 ${hubLinkStyle("/pay")}`}
+            >
+              Pay invoice
+            </Link>
             <Link
               href={otherModeHref}
               className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition touch-manipulation sm:px-3 ${
@@ -165,6 +181,29 @@ export function AppShell({
       {mobileMenuOpen && (
         <div className="absolute left-0 right-0 top-full z-30 border-t border-white/20 bg-primary/95 px-3 py-3 backdrop-blur-md sm:hidden">
           <ul className="flex flex-col gap-0.5">
+            <li>
+              <Link
+                href="/"
+                className={`block rounded-lg px-3 py-2.5 text-sm font-medium text-primary-foreground touch-manipulation ${
+                  pathname === "/" ? "bg-primary-foreground/20" : "hover:bg-primary-foreground/10"
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Home
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/pay"
+                className={`block rounded-lg px-3 py-2.5 text-sm font-medium text-primary-foreground touch-manipulation ${
+                  pathname === "/pay" ? "bg-primary-foreground/20" : "hover:bg-primary-foreground/10"
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Pay invoice
+              </Link>
+            </li>
+            <li className="my-1 border-t border-primary-foreground/20" aria-hidden />
             {nav.map((item) => (
               <li key={`${item.href}-${item.label}`}>
                 <Link
@@ -178,6 +217,7 @@ export function AppShell({
                 </Link>
               </li>
             ))}
+            <li className="my-1 border-t border-primary-foreground/20" aria-hidden />
             <li>
               <Link
                 href={otherModeHref}
