@@ -174,29 +174,32 @@
   .btn-primary {
     background: var(--primary);
     color: var(--primary-foreground);
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition;
+    @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-200;
+    box-shadow: 0 1px 2px oklch(0 0 0 / 0.2);
   }
   .btn-primary:hover:not(:disabled) {
-    filter: brightness(0.95);
+    filter: brightness(1.08);
+    box-shadow: 0 4px 12px oklch(0.32 0.14 15 / 0.35);
   }
   .btn-primary:focus-visible {
-    @apply outline-none ring-2 ring-offset-2;
+    @apply outline-none ring-2 ring-offset-2 ring-offset-background;
     --tw-ring-color: var(--ring);
   }
   .btn-primary:disabled {
     @apply cursor-not-allowed opacity-60;
   }
   .btn-secondary {
-    background: var(--card);
-    color: var(--secondary-foreground);
-    border: 1px solid var(--border);
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition;
+    background: transparent;
+    color: var(--foreground);
+    border: 1.5px solid var(--border);
+    @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium transition-all duration-200;
   }
   .btn-secondary:hover:not(:disabled) {
     background: var(--secondary);
+    border-color: oklch(0.25 0.01 0);
   }
   .btn-secondary:focus-visible {
-    @apply outline-none ring-2 ring-offset-2;
+    @apply outline-none ring-2 ring-offset-2 ring-offset-background;
     --tw-ring-color: var(--ring);
   }
   .btn-secondary:disabled {
@@ -219,18 +222,52 @@
   .btn-danger:disabled {
     @apply cursor-not-allowed opacity-60;
   }
+  /* Modern form fields: soft bg, clear focus, hover feedback */
   .field {
-    @apply w-full rounded-lg border bg-card px-3 py-2.5 text-sm shadow-sm transition;
+    @apply w-full rounded-xl border bg-input/80 px-4 py-3 text-sm transition-all duration-200;
     border-color: var(--border);
     color: var(--foreground);
+    min-height: 2.75rem;
   }
   .field::placeholder {
     color: var(--muted-foreground);
+    opacity: 0.9;
+  }
+  .field:hover:not(:focus):not(:disabled) {
+    border-color: oklch(0.28 0.02 0);
+    background: var(--input);
   }
   .field:focus {
-    @apply outline-none ring-2 ring-offset-0;
+    @apply outline-none;
     border-color: var(--ring);
-    --tw-ring-color: var(--ring);
+    box-shadow: 0 0 0 3px oklch(0.32 0.14 15 / 0.25);
+  }
+  textarea.field {
+    min-height: 6rem;
+    resize: vertical;
+  }
+  select.field {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2.25rem;
+  }
+  /* Form layout: label + input + hint */
+  .form-group {
+    @apply flex flex-col gap-1.5;
+  }
+  .form-label {
+    @apply text-sm font-medium text-foreground;
+  }
+  .form-hint {
+    @apply text-xs text-muted-foreground;
+  }
+  .form-card {
+    @apply rounded-2xl border bg-card p-6 sm:p-8;
+    border-color: var(--border);
+    box-shadow: 0 1px 3px oklch(0 0 0 / 0.2), 0 0 0 1px oklch(1 1 1 / 0.02);
   }
   .table-header {
     @apply text-left text-xs font-semibold uppercase tracking-wider;
