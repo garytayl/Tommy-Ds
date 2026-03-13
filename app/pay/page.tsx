@@ -73,11 +73,11 @@ export default function PayInvoicePage() {
 
   return (
     <PublicShell>
-      <div className="container mx-auto max-w-lg flex-1 px-4 py-10 md:px-6 md:py-14">
+      <div className="container mx-auto max-w-lg flex-1 px-4 pb-12 pt-6 md:px-6 md:pb-16 md:pt-8">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Pay your invoice
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Enter your invoice number from your bill, or use the link we sent you to pay by card
           online.
         </p>
@@ -92,7 +92,7 @@ export default function PayInvoicePage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="e.g. first 8 characters or full ID"
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             autoComplete="off"
           />
           <button
@@ -105,7 +105,7 @@ export default function PayInvoicePage() {
         </form>
 
         {result.status === "not_found" && (
-          <div className="mt-6 rounded-xl border border-border bg-card p-4">
+          <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
             <p className="text-sm text-foreground">
               {result.error ?? "Invoice not found."}
             </p>
@@ -116,12 +116,12 @@ export default function PayInvoicePage() {
         )}
 
         {result.status === "already_paid" && (
-          <div className="mt-6 rounded-xl border border-border bg-card p-4">
+          <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
             <p className="text-sm font-medium text-foreground">
               This invoice is paid.{result.invoiceNumber != null && ` (Invoice #${result.invoiceNumber})`}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              <Link href={`/receipt/${result.invoiceId}`} className="text-primary hover:underline">
+              <Link href={`/receipt/${result.invoiceId}`} className="text-accent-gold font-medium hover:underline">
                 View your receipt →
               </Link>
             </p>
@@ -129,7 +129,7 @@ export default function PayInvoicePage() {
         )}
 
         {result.status === "balance_due" && (
-          <div className="mt-6 rounded-xl border border-border bg-card p-4 space-y-4">
+          <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm space-y-4">
             <p className="text-sm text-foreground">
               {result.invoiceNumber != null && (
                 <span className="font-medium tabular-nums">Invoice #{result.invoiceNumber}</span>
@@ -149,9 +149,9 @@ export default function PayInvoicePage() {
           </div>
         )}
 
-        <p className="mt-8 text-xs text-muted-foreground">
+        <p className="mt-8 text-sm text-muted-foreground">
           You can also send a check to the address on your bill. Questions?{" "}
-          <a href="tel:812-330-8898" className="text-primary hover:underline">
+          <a href="tel:812-330-8898" className="text-accent-gold font-medium hover:underline">
             812-330-8898
           </a>
         </p>

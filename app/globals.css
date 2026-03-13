@@ -43,7 +43,7 @@
   --secondary: oklch(0.15 0 0);
   --secondary-foreground: oklch(0.98 0 0);
   --muted: oklch(0.12 0 0);
-  --muted-foreground: oklch(0.6 0 0);
+  --muted-foreground: oklch(0.82 0.02 85);
   --muted-bg: oklch(0.14 0 0);
   --accent: oklch(0.15 0 0);
   --accent-foreground: oklch(0.98 0 0);
@@ -82,7 +82,7 @@
   --secondary: oklch(0.15 0 0);
   --secondary-foreground: oklch(0.98 0 0);
   --muted: oklch(0.12 0 0);
-  --muted-foreground: oklch(0.6 0 0);
+  --muted-foreground: oklch(0.82 0.02 85);
   --muted-bg: oklch(0.14 0 0);
   --accent: oklch(0.15 0 0);
   --accent-foreground: oklch(0.98 0 0);
@@ -244,8 +244,11 @@
     @apply min-w-[480px];
   }
   .link {
-    color: var(--primary);
+    color: var(--accent-gold);
     @apply font-medium underline-offset-4 hover:underline;
+  }
+  .link:hover {
+    color: oklch(0.88 0.12 70);
   }
 }
 

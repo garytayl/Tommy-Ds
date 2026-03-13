@@ -47,7 +47,7 @@ export default function Home() {
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             Send a check to the address on your bill, or pay online: use your invoice number at{" "}
-            <Link href="/pay" className="font-medium text-primary underline-offset-4 hover:underline">
+            <Link href="/pay" className="font-medium text-accent-gold underline-offset-4 hover:underline">
               Pay your invoice
             </Link>{" "}
             or use the link we sent you.
@@ -67,7 +67,7 @@ export default function Home() {
             <p className="mt-2 text-sm text-muted-foreground">
               Dashboard, customers, jobs, invoices. Office view.
             </p>
-            <span className="mt-4 inline-block text-sm font-medium text-primary">
+            <span className="mt-4 inline-block text-sm font-medium text-accent-gold">
               Open Admin →
             </span>
           </Link>
@@ -79,7 +79,7 @@ export default function Home() {
             <p className="mt-2 text-sm text-muted-foreground">
               Today&apos;s jobs, collect payment link, notes, photos. Field view.
             </p>
-            <span className="mt-4 inline-block text-sm font-medium text-primary">
+            <span className="mt-4 inline-block text-sm font-medium text-accent-gold">
               Open Installer view →
             </span>
           </Link>
@@ -91,7 +91,7 @@ export default function Home() {
             <p className="mt-2 text-sm text-muted-foreground">
               What the customer sees: tap-to-pay / pay link flow.
             </p>
-            <span className="mt-4 inline-block text-sm font-medium text-primary">
+            <span className="mt-4 inline-block text-sm font-medium text-accent-gold">
               See customer flow →
             </span>
           </Link>
