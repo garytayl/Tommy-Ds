@@ -86,9 +86,30 @@ export default async function QuoteDetailPage({
     if (!QUOTE_STATUSES.includes(status)) return;
 
     const supabase = await createSupabaseServerClientForData();
+    const { data: current } = await supabase.from("quotes").select("job_id,status").eq("id", id).single();
     await supabase.from("quotes").update({ status }).eq("id", id);
+
+    if (current?.job_id && status === "sent") {
+      await supabase.from("activities").insert({
+        job_id: current.job_id,
+        type: "quote_sent",
+        title: "Quote sent",
+        status: "completed",
+      });
+    }
+    if (current?.job_id && status === "accepted") {
+      await supabase.from("jobs").update({ status: "approved" }).eq("id", current.job_id);
+      await supabase.from("activities").insert({
+        job_id: current.job_id,
+        type: "customer_acceptance",
+        title: "Customer accepted quote",
+        status: "completed",
+      });
+    }
+
     await setToastCookie("Quote updated");
     revalidatePath(`/admin/quotes/${id}`);
+    revalidatePath(`/jobs/${current?.job_id ?? ""}`);
   }
 
   async function convertQuoteToJob(formData: FormData) {
@@ -156,6 +177,13 @@ export default async function QuoteDetailPage({
       .from("quotes")
       .update({ job_id: newJob.id, status: "accepted" })
       .eq("id", quoteId);
+    await supabase.from("jobs").update({ status: "approved" }).eq("id", newJob.id);
+    await supabase.from("activities").insert({
+      job_id: newJob.id,
+      type: "customer_acceptance",
+      title: "Customer accepted quote",
+      status: "completed",
+    });
 
     await setToastCookie("Quote converted to job");
     revalidatePath("/admin/quotes");

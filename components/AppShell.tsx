@@ -13,11 +13,14 @@ type Mode = "admin" | "field";
 
 const ADMIN_NAV = [
   { href: "/admin", label: "Today" },
+  { href: "/admin/leads", label: "Leads" },
   { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/jobs", label: "Jobs" },
-  { href: "/admin/crews", label: "Crews" },
+  { href: "/admin/quotes", label: "Quotes" },
+  { href: "/admin/crews", label: "Installers" },
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/invoices", label: "Money" },
+  { href: "/admin/reports", label: "Reports" },
   { href: "/admin/future-features", label: "Future features" },
 ] as const;
 

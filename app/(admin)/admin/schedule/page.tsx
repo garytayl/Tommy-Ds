@@ -51,6 +51,7 @@ export default async function SchedulePage({
   const [
     { data: jobs },
     { data: unscheduledJobs },
+    { data: activitiesInRange },
     { data: crews },
     { data: installers },
   ] = await Promise.all([
@@ -66,8 +67,15 @@ export default async function SchedulePage({
       .from("jobs")
       .select("id,title,status,customers(name),assigned_installer_id,assigned_crew_id")
       .is("scheduled_start", null)
-      .in("status", ["lead", "scheduled"])
+      .in("status", ["lead", "consultation_scheduled", "measured", "quote_sent", "approved", "scheduled"])
       .order("title", { ascending: true }),
+    supabase
+      .from("activities")
+      .select("id,job_id,type,title,scheduled_date,status")
+      .gte("scheduled_date", start.toISOString())
+      .lt("scheduled_date", end.toISOString())
+      .not("scheduled_date", "is", null)
+      .order("scheduled_date", { ascending: true }),
     supabase
       .from("crews")
       .select("id,name,specialty,crew_members(user_id,profiles(user_id,full_name))")
@@ -138,6 +146,12 @@ export default async function SchedulePage({
     if (!byDate[key]) byDate[key] = [];
     byDate[key].push(job);
     jobsByDateCount[key] = (jobsByDateCount[key] ?? 0) + 1;
+  }
+  for (const act of activitiesInRange ?? []) {
+    const a = act as { scheduled_date: string };
+    if (!a.scheduled_date) continue;
+    const key = a.scheduled_date.slice(0, 10);
+    if (byDate[key] !== undefined) jobsByDateCount[key] = (jobsByDateCount[key] ?? 0) + 1;
   }
 
   const startDateStr = start.toISOString().slice(0, 10);

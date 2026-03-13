@@ -1,18 +1,29 @@
 type JobStatus =
   | "lead"
+  | "consultation_scheduled"
+  | "measured"
+  | "quote_sent"
+  | "approved"
   | "scheduled"
   | "in_progress"
-  | "completed"
+  | "installed"
   | "paid"
+  | "closed"
   | "canceled"
   | string;
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   lead: { bg: "oklch(0.97 0.01 260)", text: "oklch(0.45 0.04 260)" },
+  consultation_scheduled: { bg: "oklch(0.92 0.05 260)", text: "oklch(0.42 0.12 262)" },
+  measured: { bg: "oklch(0.92 0.05 280)", text: "oklch(0.42 0.12 280)" },
+  quote_sent: { bg: "oklch(0.92 0.06 250)", text: "oklch(0.42 0.15 262)" },
+  approved: { bg: "oklch(0.92 0.07 200)", text: "oklch(0.4 0.14 200)" },
   scheduled: { bg: "oklch(0.92 0.06 250)", text: "oklch(0.42 0.15 262)" },
   in_progress: { bg: "oklch(0.92 0.08 75)", text: "oklch(0.5 0.15 75)" },
+  installed: { bg: "oklch(0.92 0.08 155)", text: "oklch(0.4 0.12 155)" },
   completed: { bg: "oklch(0.92 0.08 155)", text: "oklch(0.4 0.12 155)" },
   paid: { bg: "oklch(0.92 0.1 145)", text: "oklch(0.38 0.12 145)" },
+  closed: { bg: "oklch(0.92 0.06 155)", text: "oklch(0.35 0.1 155)" },
   canceled: { bg: "oklch(0.95 0.03 25)", text: "oklch(0.5 0.15 25)" },
 };
 

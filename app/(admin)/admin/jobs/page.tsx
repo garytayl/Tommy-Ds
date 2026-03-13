@@ -9,10 +9,16 @@ import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 const JOB_STATUSES = [
   "lead",
+  "consultation_scheduled",
+  "measured",
+  "quote_sent",
+  "approved",
   "scheduled",
+  "installed",
   "in_progress",
   "completed",
   "paid",
+  "closed",
   "canceled",
 ];
 
@@ -63,22 +69,34 @@ export default async function JobsPage({
     if (!customerId || !title || !address1 || !city || !zip) return;
 
     const supabase = await createSupabaseServerClientForData();
-    await supabase.from("jobs").insert({
-      customer_id: customerId,
-      title,
-      address_line1: address1,
-      address_line2: String(formData.get("address_line2") ?? "").trim() || null,
-      city,
-      state,
-      zip,
-      scheduled_start: toIsoOrNull(formData.get("scheduled_start")),
-      scheduled_end: toIsoOrNull(formData.get("scheduled_end")),
-      assigned_installer_id:
-        String(formData.get("assigned_installer_id") ?? "").trim() || null,
-      assigned_crew_id: String(formData.get("assigned_crew_id") ?? "").trim() || null,
-      status: String(formData.get("status") ?? "lead"),
-      notes: String(formData.get("notes") ?? "").trim() || null,
-    });
+    const { data: newJob } = await supabase
+      .from("jobs")
+      .insert({
+        customer_id: customerId,
+        title,
+        address_line1: address1,
+        address_line2: String(formData.get("address_line2") ?? "").trim() || null,
+        city,
+        state,
+        zip,
+        scheduled_start: toIsoOrNull(formData.get("scheduled_start")),
+        scheduled_end: toIsoOrNull(formData.get("scheduled_end")),
+        assigned_installer_id:
+          String(formData.get("assigned_installer_id") ?? "").trim() || null,
+        assigned_crew_id: String(formData.get("assigned_crew_id") ?? "").trim() || null,
+        status: String(formData.get("status") ?? "lead"),
+        notes: String(formData.get("notes") ?? "").trim() || null,
+      })
+      .select("id")
+      .single();
+    if (newJob) {
+      await supabase.from("activities").insert({
+        job_id: newJob.id,
+        type: "created",
+        title: "Job created",
+        status: "completed",
+      });
+    }
 
     await setToastCookie("Job created");
     revalidatePath("/admin/jobs");

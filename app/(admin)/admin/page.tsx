@@ -68,7 +68,7 @@ export default async function TodayCommandCenterPage() {
     supabase
       .from("jobs")
       .select("id,title,status,customers(name)")
-      .eq("status", "completed")
+      .in("status", ["completed", "installed"])
       .order("updated_at", { ascending: false })
       .limit(30),
   ]);

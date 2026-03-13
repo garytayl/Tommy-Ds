@@ -22,7 +22,7 @@ export function JobStickyActions({
   const [collecting, setCollecting] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [payLink, setPayLink] = useState<string | null>(null);
-  const canComplete = jobStatus === "in_progress" || jobStatus === "scheduled";
+  const canComplete = jobStatus === "in_progress" || jobStatus === "scheduled" || jobStatus === "approved";
 
   async function handleCollect() {
     if (!invoiceId || balanceDueCents <= 0) return;

@@ -135,7 +135,7 @@ export default async function InstallerJobPage({
   async function markComplete() {
     "use server";
     const supabase = await createSupabaseServerClientForData();
-    await supabase.from("jobs").update({ status: "completed" }).eq("id", id);
+    await supabase.from("jobs").update({ status: "installed" }).eq("id", id);
     await setToastCookie("Job marked complete");
     revalidatePath("/m");
     revalidatePath(`/m/jobs/${id}`);
@@ -172,14 +172,24 @@ export default async function InstallerJobPage({
               {job.address_line2 ? `, ${job.address_line2}` : ""}
               {`, ${job.city}, ${job.state} ${job.zip}`}
             </p>
-            <a
-              href={mapsUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              Open in Maps →
-            </a>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {customerPhone && (
+                <a
+                  href={`tel:${customerPhone.replace(/\D/g, "")}`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-95"
+                >
+                  Call customer
+                </a>
+              )}
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+              >
+                Navigate
+              </a>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <JobStatusBadge status={job.status} />
@@ -252,7 +262,7 @@ export default async function InstallerJobPage({
         </div>
       </div>
 
-      {(job.status === "scheduled" || job.status === "in_progress") && (
+      {(job.status === "scheduled" || job.status === "in_progress" || job.status === "approved") && (
         <form action={markComplete}>
           <SubmitButton className="w-full py-3">Mark job complete</SubmitButton>
         </form>

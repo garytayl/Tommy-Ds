@@ -16,13 +16,30 @@ import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
-const JOB_STATUSES = ["lead", "scheduled", "in_progress", "completed", "paid", "canceled"];
+const JOB_STATUSES = [
+  "lead",
+  "consultation_scheduled",
+  "measured",
+  "quote_sent",
+  "approved",
+  "scheduled",
+  "installed",
+  "paid",
+  "closed",
+  "canceled",
+];
 const STATUS_LABELS: Record<string, string> = {
   lead: "Lead",
+  consultation_scheduled: "Consultation scheduled",
+  measured: "Measured",
+  quote_sent: "Quote sent",
+  approved: "Approved",
   scheduled: "Scheduled",
+  installed: "Installed",
   in_progress: "In progress",
   completed: "Completed",
   paid: "Paid",
+  closed: "Closed",
   canceled: "Canceled",
 };
 
@@ -69,11 +86,14 @@ export default async function JobWorkspacePage({
     materialsResult,
     locationsResult,
     crewsResult,
+    activitiesResult,
+    jobNotesResult,
+    quoteResult,
   ] = await Promise.all([
       supabase
         .from("jobs")
         .select(
-          "id,title,status,notes,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone)",
+          "id,title,status,notes,project_type,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone)",
         )
         .eq("id", id)
         .maybeSingle(),
@@ -107,6 +127,23 @@ export default async function JobWorkspacePage({
         .from("crews")
         .select("id,name,specialty,crew_members(user_id,profiles(user_id,full_name))")
         .order("name", { ascending: true }),
+      supabase
+        .from("activities")
+        .select("id,type,title,description,scheduled_date,assigned_to,status,created_at")
+        .eq("job_id", id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("job_notes")
+        .select("id,note_type,note,created_by,created_at")
+        .eq("job_id", id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("quotes")
+        .select("id,title,status,subtotal_cents,tax_cents,total_cents")
+        .eq("job_id", id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
   const invoiceId = invoiceResult.data?.id ?? null;
@@ -132,6 +169,7 @@ export default async function JobWorkspacePage({
     title: string;
     status: string;
     notes: string | null;
+    project_type: string | null;
     address_line1: string;
     address_line2: string | null;
     city: string;
@@ -151,6 +189,9 @@ export default async function JobWorkspacePage({
   const invoice = invoiceResult.data;
   const installers = installersResult.data ?? [];
   const crewsRaw = crewsResult.data ?? [];
+  const activities = activitiesResult.data ?? [];
+  const jobNotes = jobNotesResult.data ?? [];
+  const quote = quoteResult.data;
   const crews = crewsRaw.map((c: { id: string; name: string; specialty: string; crew_members?: unknown }) => ({
     id: c.id,
     name: getCrewDisplayName({ name: c.name, crew_members: c.crew_members }),
@@ -199,6 +240,7 @@ export default async function JobWorkspacePage({
       .update({
         status: String(formData.get("status") ?? "lead"),
         notes: String(formData.get("notes") ?? "").trim() || null,
+        project_type: String(formData.get("project_type") ?? "").trim() || null,
         scheduled_start: toIsoOrNull(formData.get("scheduled_start")),
         scheduled_end: toIsoOrNull(formData.get("scheduled_end")),
         assigned_installer_id:
@@ -228,7 +270,7 @@ export default async function JobWorkspacePage({
   async function markComplete() {
     "use server";
     const supabase = await createSupabaseServerClientForData();
-    await supabase.from("jobs").update({ status: "completed" }).eq("id", id);
+    await supabase.from("jobs").update({ status: "installed" }).eq("id", id);
     await setToastCookie("Job marked complete");
     revalidatePath(`/jobs/${id}`);
     revalidatePath("/m");
@@ -340,6 +382,52 @@ export default async function JobWorkspacePage({
     revalidatePath(`/jobs/${id}`);
   }
 
+  async function addActivity(formData: FormData) {
+    "use server";
+    const type = String(formData.get("activity_type") ?? "note").trim();
+    const title = String(formData.get("activity_title") ?? "").trim();
+    const description = String(formData.get("activity_description") ?? "").trim() || null;
+    const scheduledDate = toIsoOrNull(formData.get("activity_scheduled_date"));
+    if (!type) return;
+    const supabase = await createSupabaseServerClientForData();
+    await supabase.from("activities").insert({
+      job_id: id,
+      type: type as "created" | "note" | "consultation" | "pre_measure" | "measure" | "design" | "quote_sent" | "follow_up" | "customer_acceptance" | "deposit_received" | "schedule_install" | "walkthrough" | "install" | "payment_received",
+      title: title || null,
+      description,
+      scheduled_date: scheduledDate,
+      assigned_to: null,
+      status: "pending",
+    });
+    await setToastCookie("Activity added");
+    revalidatePath(`/jobs/${id}`);
+  }
+
+  async function addJobNote(formData: FormData) {
+    "use server";
+    const noteType = String(formData.get("note_type") ?? "internal").trim();
+    const note = String(formData.get("note") ?? "").trim();
+    if (!note) return;
+    const supabase = await createSupabaseServerClientForData();
+    let createdBy: string | null = null;
+    try {
+      const { createSupabaseServerClient } = await import("@/lib/supabase/server");
+      const authClient = await createSupabaseServerClient();
+      const { data: { user } } = await authClient.auth.getUser();
+      createdBy = user?.id ?? null;
+    } catch {
+      // service role or no auth
+    }
+    await supabase.from("job_notes").insert({
+      job_id: id,
+      note_type: noteType as "internal" | "customer" | "installer" | "sales",
+      note,
+      created_by: createdBy,
+    });
+    await setToastCookie("Note added");
+    revalidatePath(`/jobs/${id}`);
+  }
+
   return (
     <div className="space-y-0 pb-24 sm:pb-0">
       {/* Job header */}
@@ -420,6 +508,13 @@ export default async function JobWorkspacePage({
                   </option>
                 ))}
               </select>
+              <input
+                name="project_type"
+                type="text"
+                defaultValue={job.project_type ?? ""}
+                className="field"
+                placeholder="Project type"
+              />
               <select
                 name="assigned_crew_id"
                 defaultValue={job.assigned_crew_id ?? ""}
@@ -466,6 +561,95 @@ export default async function JobWorkspacePage({
               <SubmitButton className="sm:col-span-2">Save</SubmitButton>
             </form>
           </div>
+
+          {/* Quote section */}
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-foreground">Quote</h2>
+            {quote ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Link href={`/admin/quotes/${quote.id}`} className="link font-medium">
+                  {quote.title ?? "Quote"}
+                </Link>
+                <span className="text-sm text-muted-foreground">
+                  {quote.status} · {formatCents((quote as { subtotal_cents?: number }).subtotal_cents ?? 0)} + tax
+                </span>
+                <Link href={`/admin/quotes/${quote.id}/print`} target="_blank" rel="noreferrer" className="text-sm link">
+                  Print
+                </Link>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">
+                No quote linked. <Link href="/admin/quotes/new" className="link">Create a quote</Link> and link it to this job when approved.
+              </p>
+            )}
+          </div>
+
+          {/* Activity timeline */}
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-foreground">Activity timeline</h2>
+            <form action={addActivity} className="mt-3 flex flex-wrap gap-2">
+              <select name="activity_type" className="field w-full sm:w-auto">
+                <option value="note">Note</option>
+                <option value="consultation">Consultation</option>
+                <option value="pre_measure">Pre-measure</option>
+                <option value="measure">Measure</option>
+                <option value="design">Design</option>
+                <option value="quote_sent">Quote sent</option>
+                <option value="follow_up">Follow-up</option>
+                <option value="customer_acceptance">Customer acceptance</option>
+                <option value="deposit_received">Deposit received</option>
+                <option value="schedule_install">Schedule install</option>
+                <option value="walkthrough">Walkthrough</option>
+                <option value="install">Install</option>
+                <option value="payment_received">Payment received</option>
+              </select>
+              <input name="activity_title" type="text" placeholder="Title" className="field flex-1 min-w-[120px]" />
+              <input name="activity_scheduled_date" type="datetime-local" className="field w-full sm:w-auto" />
+              <SubmitButton variant="secondary">Add activity</SubmitButton>
+            </form>
+            <ul className="mt-4 space-y-2">
+              {(activities as { id: string; type: string; title: string | null; description: string | null; scheduled_date: string | null; status: string; created_at: string }[]).map((a) => (
+                <li key={a.id} className="flex flex-wrap items-baseline gap-2 text-sm">
+                  <span className="font-medium text-foreground">{a.type.replace(/_/g, " ")}</span>
+                  {a.title && <span className="text-muted-foreground">{a.title}</span>}
+                  {a.scheduled_date && (
+                    <span className="text-muted-foreground">
+                      {new Date(a.scheduled_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </span>
+                  )}
+                  <span className="text-muted-foreground">· {a.status}</span>
+                </li>
+              ))}
+              {activities.length === 0 && <li className="text-sm text-muted-foreground">No activities yet.</li>}
+            </ul>
+          </div>
+
+          {/* Job notes */}
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-foreground">Notes</h2>
+            <form action={addJobNote} className="mt-3 flex flex-wrap gap-2">
+              <select name="note_type" className="field w-full sm:w-auto">
+                <option value="internal">Internal</option>
+                <option value="customer">Customer</option>
+                <option value="installer">Installer</option>
+                <option value="sales">Sales</option>
+              </select>
+              <textarea name="note" placeholder="Add a note..." className="field flex-1 min-w-[200px]" rows={2} required />
+              <SubmitButton variant="secondary">Add note</SubmitButton>
+            </form>
+            <ul className="mt-4 space-y-2">
+              {(jobNotes as { id: string; note_type: string; note: string; created_at: string }[]).map((n) => (
+                <li key={n.id} className="border-l-2 border-muted pl-3 text-sm">
+                  <span className="font-medium text-foreground">{n.note_type}</span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    {new Date(n.created_at).toLocaleDateString("en-US")}: {n.note}
+                  </span>
+                </li>
+              ))}
+              {jobNotes.length === 0 && <li className="text-sm text-muted-foreground">No notes yet.</li>}
+            </ul>
+          </div>
         </div>
       )}
 
@@ -510,7 +694,7 @@ export default async function JobWorkspacePage({
               )}
             </div>
           </div>
-          {(job.status === "scheduled" || job.status === "in_progress") && (
+          {(job.status === "scheduled" || job.status === "in_progress" || job.status === "approved") && (
             <form action={markComplete}>
               <button type="submit" className="btn-primary w-full py-3">
                 Mark job complete
