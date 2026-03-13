@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CheckCircle2 } from "lucide-react";
 
 const TOAST_COOKIE = "toast";
+const TOAST_DURATION_MS = 5000;
 
 function getToastFromCookie(): string | null {
   if (typeof document === "undefined") return null;
@@ -18,6 +20,7 @@ function clearToastCookie(): void {
 export function ToastViewer() {
   const [message, setMessage] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
+  const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
     const check = () => {
@@ -25,11 +28,16 @@ export function ToastViewer() {
       if (value) {
         clearToastCookie();
         setMessage(value);
+        setExiting(false);
         setVisible(true);
         const t = setTimeout(() => {
-          setVisible(false);
-          setTimeout(() => setMessage(null), 300);
-        }, 3500);
+          setExiting(true);
+          setTimeout(() => {
+            setVisible(false);
+            setMessage(null);
+            setExiting(false);
+          }, 280);
+        }, TOAST_DURATION_MS);
         return () => clearTimeout(t);
       }
     };
@@ -39,22 +47,50 @@ export function ToastViewer() {
     return () => clearInterval(interval);
   }, []);
 
+  function dismiss() {
+    if (!message) return;
+    setExiting(true);
+    setTimeout(() => {
+      setVisible(false);
+      setMessage(null);
+      setExiting(false);
+    }, 280);
+  }
+
   if (!message) return null;
 
   return (
     <div
       role="status"
       aria-live="polite"
-      className={`fixed bottom-6 left-1/2 z-[200] -translate-x-1/2 rounded-xl border border-white/20 bg-card/95 px-5 py-3 shadow-lg backdrop-blur-md transition-all duration-300 ${
-        visible
-          ? "translate-y-0 opacity-100"
-          : "translate-y-2 opacity-0"
+      aria-atomic="true"
+      className={`fixed left-1/2 z-[200] -translate-x-1/2 ${
+        visible ? "bottom-20 sm:bottom-8" : "bottom-20 sm:bottom-8 pointer-events-none"
       }`}
     >
-      <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-        <span className="h-2 w-2 rounded-full bg-primary" aria-hidden />
-        {message}
-      </span>
+      <div
+        className={`
+          flex items-center gap-3 rounded-2xl border-2 border-accent-gold/50 bg-card px-4 py-3.5 shadow-xl
+          ring-2 ring-accent-gold/20
+          ${visible && !exiting ? "animate-toast-in" : ""}
+          ${exiting ? "animate-toast-out" : ""}
+        `}
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-gold/20 text-accent-gold" aria-hidden>
+          <CheckCircle2 className="h-6 w-6" strokeWidth={2} />
+        </span>
+        <span className="min-w-0 flex-1 text-sm font-semibold text-foreground sm:text-base">
+          {message}
+        </span>
+        <button
+          type="button"
+          onClick={dismiss}
+          className="shrink-0 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-white/10 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent-gold/50"
+          aria-label="Dismiss"
+        >
+          Dismiss
+        </button>
+      </div>
     </div>
   );
 }

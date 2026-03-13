@@ -8,6 +8,7 @@ import { InvoiceSummary } from "@/components/InvoiceSummary";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { JobStickyActions } from "@/components/JobStickyActions";
 import { JobWorkspaceTabs } from "@/components/JobWorkspaceTabs";
+import { SubmitButton } from "@/components/SubmitButton";
 import { getCrewDisplayName } from "@/lib/crews";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
@@ -462,9 +463,7 @@ export default async function JobWorkspacePage({
                 rows={4}
                 placeholder="Notes"
               />
-              <button type="submit" className="btn-primary sm:col-span-2">
-                Save
-              </button>
+              <SubmitButton className="sm:col-span-2">Save</SubmitButton>
             </form>
           </div>
         </div>
@@ -481,9 +480,7 @@ export default async function JobWorkspacePage({
                 rows={4}
                 className="field w-full"
               />
-              <button type="submit" className="btn-secondary">
-                Save notes
-              </button>
+              <SubmitButton variant="secondary">Save notes</SubmitButton>
             </form>
           </div>
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">

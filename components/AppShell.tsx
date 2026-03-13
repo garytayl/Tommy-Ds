@@ -182,13 +182,13 @@ export function AppShell({
 
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-30 bg-background/80 sm:hidden"
+          className="fixed inset-0 z-30 bg-black/50 sm:hidden"
           aria-hidden
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
       {mobileMenuOpen && (
-        <div className="absolute left-0 right-0 top-full z-30 border-t border-white/20 bg-primary/95 px-3 py-3 backdrop-blur-md sm:hidden">
+        <div className="fixed left-0 right-0 top-[57px] z-40 max-h-[calc(100vh-57px)] overflow-y-auto border-t border-white/20 bg-primary/95 px-3 py-3 backdrop-blur-md sm:hidden">
           <ul className="flex flex-col gap-0.5">
             <li>
               <Link

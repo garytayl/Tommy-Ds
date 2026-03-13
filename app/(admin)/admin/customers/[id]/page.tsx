@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
 import { JobStatusBadge } from "@/components/JobStatusBadge";
+import { SubmitButton } from "@/components/SubmitButton";
 import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
@@ -93,15 +94,11 @@ export default async function CustomerDetailPage({
             className="field"
           />
           <div className="sm:col-span-3 flex items-center gap-2">
-            <button type="submit" className="btn-primary">
-              Save customer
-            </button>
+            <SubmitButton>Save customer</SubmitButton>
           </div>
         </form>
         <form action={deleteCustomer} className="mt-3">
-          <button type="submit" className="btn-danger">
-            Delete customer
-          </button>
+          <SubmitButton variant="danger" pendingLabel="Deleting…">Delete customer</SubmitButton>
         </form>
       </section>
 
