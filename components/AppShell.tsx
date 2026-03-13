@@ -48,8 +48,8 @@ export function AppShell({
   const otherModeLabel = mode === "admin" ? "Field" : "Admin";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-20 border-b border-border bg-primary backdrop-blur-md shrink-0">
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="sticky top-0 z-20 shrink-0 rounded-b-xl border-b border-white/10 bg-primary/90 backdrop-blur-md sm:rounded-b-2xl">
         <div className="relative mx-auto flex w-full max-w-6xl items-center gap-2 px-3 py-2.5 sm:px-6 sm:py-3">
           <Link
             href={homeHref}
@@ -59,7 +59,7 @@ export function AppShell({
           </Link>
 
           <div className="hidden flex-1 justify-center sm:flex">
-            <div className="w-full max-w-md rounded-lg border border-primary-foreground/20 bg-primary-foreground/10 px-3 py-1.5 text-sm text-primary-foreground/80">
+            <div className="w-full max-w-md rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-primary-foreground/80 backdrop-blur-sm">
               Search customer / job / address
             </div>
           </div>
@@ -67,17 +67,17 @@ export function AppShell({
           <div className="flex flex-1 items-center justify-end gap-2 sm:flex-initial">
             <Link
               href={otherModeHref}
-              className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition touch-manipulation sm:px-3 ${
+              className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition touch-manipulation sm:px-3 ${
                 pathname.startsWith(otherModeHref)
                   ? "bg-primary-foreground/20 text-primary-foreground"
-                  : "border border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"
+                  : "border border-white/30 bg-white/10 text-primary-foreground hover:bg-white/20"
               }`}
             >
               {otherModeLabel}
             </Link>
             <button
               type="button"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-primary-foreground hover:bg-primary-foreground/10 sm:hidden touch-manipulation"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-primary-foreground hover:bg-white/10 sm:hidden touch-manipulation"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -97,8 +97,8 @@ export function AppShell({
         </div>
       </header>
 
-      <div className="flex flex-1 min-h-0">
-        <aside className="hidden w-52 shrink-0 border-r border-border bg-muted/20 sm:block">
+      <div className="flex min-h-0 flex-1">
+        <aside className="hidden w-52 shrink-0 border-r border-border bg-card/50 sm:block">
           <nav className="sticky top-[57px] flex flex-col gap-0.5 p-2">
             {nav.map((item) => {
               const active = isActive(item.href, pathname) || (item.href === "/admin" && pathname.startsWith("/jobs"));
@@ -125,7 +125,7 @@ export function AppShell({
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-around border-t border-border bg-card px-2 py-2 safe-area-pb sm:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-around border-t border-white/10 bg-card/95 px-2 py-2 backdrop-blur-md safe-area-pb sm:hidden">
         {nav.slice(0, 4).map((item) => {
           const active = isActive(item.href, pathname);
           return (
@@ -150,7 +150,7 @@ export function AppShell({
         />
       )}
       {mobileMenuOpen && (
-        <div className="absolute left-0 right-0 top-full border-t border-primary-foreground/20 bg-primary px-3 py-3 sm:hidden z-30">
+        <div className="absolute left-0 right-0 top-full z-30 border-t border-white/20 bg-primary/95 px-3 py-3 backdrop-blur-md sm:hidden">
           <ul className="flex flex-col gap-0.5">
             {nav.map((item) => (
               <li key={`${item.href}-${item.label}`}>

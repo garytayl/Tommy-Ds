@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { PageTransition } from "@/components/page-transition";
+import { NavigationTransition } from "@/components/navigation-transition";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,9 +27,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={geistSans.variable}>
+    <html lang="en" className={`dark ${geistSans.variable}`}>
       <body className={`font-sans ${geistMono.variable} antialiased`}>
-        {children}
+        <Suspense fallback={null}>
+          <NavigationTransition />
+          <PageTransition>{children}</PageTransition>
+        </Suspense>
       </body>
     </html>
   );

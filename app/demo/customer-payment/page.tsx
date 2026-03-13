@@ -1,13 +1,11 @@
 import Link from "next/link";
 
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
+import { PublicShell } from "@/components/PublicShell";
 
 export default function CustomerPaymentDemoPage() {
   return (
-    <main className="min-h-screen flex flex-col bg-background">
-      <Header />
-      <div className="flex-1 container mx-auto px-4 py-10 md:py-14 md:px-6 max-w-2xl">
+    <PublicShell>
+      <div className="container mx-auto max-w-2xl flex-1 px-4 py-10 md:px-6 md:py-14">
         <p className="text-xs tracking-[0.2em] uppercase text-muted-foreground">Demo</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
           Customer payment flow
@@ -36,7 +34,6 @@ export default function CustomerPaymentDemoPage() {
           </Link>
         </div>
       </div>
-      <Footer />
-    </main>
+    </PublicShell>
   );
 }

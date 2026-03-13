@@ -3,8 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
+import { PublicShell } from "@/components/PublicShell";
 import { PayWithCardButton } from "@/components/PayWithCardButton";
 import { formatCents } from "@/lib/money";
 
@@ -73,9 +72,8 @@ export default function PayInvoicePage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col bg-background">
-      <Header />
-      <div className="flex-1 container mx-auto px-4 py-10 md:py-14 md:px-6 max-w-lg">
+    <PublicShell>
+      <div className="container mx-auto max-w-lg flex-1 px-4 py-10 md:px-6 md:py-14">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Pay your invoice
         </h1>
@@ -158,7 +156,6 @@ export default function PayInvoicePage() {
           </a>
         </p>
       </div>
-      <Footer />
-    </main>
+    </PublicShell>
   );
 }

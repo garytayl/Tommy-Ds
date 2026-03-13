@@ -18,15 +18,25 @@ type NominatimResult = {
   display_name?: string;
 };
 
-/** Removes a unit/apt/suite segment so Nominatim can geocode the building. */
+const UNIT_PATTERN = /,?\s*(Unit|Apt|Suite|Ste\.?|Bldg\.?|#)\s*[\w-]+/gi;
+
+/** Removes unit/apt/suite from address so Nominatim can geocode the building. */
 function simplifyAddressForGeocode(address: string): string {
   const trimmed = address.trim();
   if (!trimmed) return trimmed;
-  const unitPattern = /^\s*(Unit|Apt|Suite|Ste\.?|Bldg\.?|#)\s*[\w-]+\s*$/i;
-  const parts = trimmed.split(",").map((p) => p.trim());
-  const filtered = parts.filter((part) => !unitPattern.test(part));
-  const simplified = filtered.join(", ").replace(/\s*,\s*,/g, ",").trim();
+  const simplified = trimmed
+    .replace(UNIT_PATTERN, "")
+    .replace(/\s*,\s*,/g, ",")
+    .replace(/^\s*,|,\s*$/g, "")
+    .trim();
   return simplified;
+}
+
+/** Last two comma-segments (e.g. "City, ST 12345") for a final fallback. */
+function getCityStateZip(address: string): string {
+  const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
+  if (parts.length < 2) return "";
+  return parts.slice(-2).join(", ");
 }
 
 const NOMINATIM_HEADERS = {
@@ -60,32 +70,49 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const fullAddress = address.trim();
 
+    function setCoordsFromResult(r: NominatimResult, usedFallbackAddress: boolean) {
+      setCoords({ lat: Number.parseFloat(r.lat), lng: Number.parseFloat(r.lon) });
+      if (usedFallbackAddress) setUsedFallback(true);
+    }
+
+    function tryNextQuery(query: string, usedFallbackAddress: boolean) {
+      if (cancelled) return;
+      fetchNominatim(query).then((retryData: NominatimResult[]) => {
+        if (cancelled) return;
+        if (retryData && retryData[0]) {
+          setCoordsFromResult(retryData[0], usedFallbackAddress);
+        } else {
+          setError(MAP_ERROR_MSG);
+        }
+      }).catch(() => {
+        if (!cancelled) setError("Could not load map");
+      });
+    }
+
     fetchNominatim(fullAddress)
       .then((data: NominatimResult[]) => {
         if (cancelled) return;
         if (data && data[0]) {
-          setCoords({ lat: Number.parseFloat(data[0].lat), lng: Number.parseFloat(data[0].lon) });
+          setCoordsFromResult(data[0], false);
           return;
         }
         const simplified = simplifyAddressForGeocode(fullAddress);
-        if (!simplified || simplified === fullAddress) {
-          setError(MAP_ERROR_MSG);
+        const cityStateZip = getCityStateZip(fullAddress);
+        if (simplified && simplified !== fullAddress) {
+          timeoutId = setTimeout(() => {
+            if (cancelled) return;
+            tryNextQuery(simplified, true);
+          }, 1100);
           return;
         }
-        timeoutId = setTimeout(() => {
-          if (cancelled) return;
-          fetchNominatim(simplified).then((retryData: NominatimResult[]) => {
+        if (cityStateZip && cityStateZip !== fullAddress) {
+          timeoutId = setTimeout(() => {
             if (cancelled) return;
-            if (retryData && retryData[0]) {
-              setCoords({ lat: Number.parseFloat(retryData[0].lat), lng: Number.parseFloat(retryData[0].lon) });
-              setUsedFallback(true);
-            } else {
-              setError(MAP_ERROR_MSG);
-            }
-          }).catch(() => {
-            if (!cancelled) setError("Could not load map");
-          });
-        }, 1100);
+            tryNextQuery(cityStateZip, true);
+          }, 1100);
+          return;
+        }
+        setError(MAP_ERROR_MSG);
       })
       .catch(() => {
         if (!cancelled) setError("Could not load map");

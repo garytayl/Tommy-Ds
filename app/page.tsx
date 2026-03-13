@@ -1,18 +1,16 @@
 import Link from "next/link";
 
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
+import { PublicShell } from "@/components/PublicShell";
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col bg-background">
-      <Header />
-      {/* Compact hero – template vibe without full scroll animation */}
-      <section className="relative flex min-h-[42vh] flex-col items-center justify-center overflow-hidden bg-primary px-4 py-16 md:min-h-[50vh] md:py-24">
-        <p className="text-xs tracking-[0.25em] uppercase text-primary-foreground/80 md:text-sm">
+    <PublicShell aurora>
+      {/* Hero with cliste-style fade-in animations */}
+      <section className="relative flex min-h-[42vh] flex-col items-center justify-center overflow-hidden px-4 py-20 md:min-h-[50vh] md:py-24">
+        <p className="animate-fade-in-badge text-xs uppercase tracking-[0.25em] text-primary-foreground/80 md:text-sm">
           Tommy D&apos;s Windows, Doors, & More
         </p>
-        <h1 className="mt-3 max-w-2xl text-center font-medium tracking-tight text-primary-foreground md:text-4xl lg:text-5xl">
+        <h1 className="animate-fade-in-heading mt-3 max-w-2xl text-center font-medium tracking-tight text-primary-foreground md:text-4xl lg:text-5xl">
           Scheduling, invoicing,{" "}
           <span className="text-accent-gold">and payments</span>
           <br />
@@ -20,12 +18,12 @@ export default function Home() {
             for our team
           </span>
         </h1>
-        <p className="mt-4 text-center text-sm text-primary-foreground/70">
+        <p className="animate-fade-in-subheading mt-4 text-center text-sm text-primary-foreground/70">
           Internal proof of concept — no sign-in required
         </p>
         <a
           href="#hub"
-          className="mt-8 flex flex-col items-center gap-1 text-primary-foreground/80 transition hover:text-accent-gold"
+          className="animate-fade-in-buttons mt-8 flex flex-col items-center gap-1 text-primary-foreground/80 transition hover:text-accent-gold"
           aria-label="Scroll to get started"
         >
           <span className="text-xs uppercase tracking-widest">Get started</span>
@@ -35,7 +33,7 @@ export default function Home() {
         </a>
       </section>
 
-      <div className="flex-1 container mx-auto px-4 py-12 md:py-16 md:px-6 max-w-4xl">
+      <div className="container mx-auto max-w-4xl flex-1 px-4 py-12 md:px-6 md:py-16">
         <section className="rounded-xl border border-border bg-card p-4 sm:p-5 mb-10">
           <h2 className="text-sm font-semibold tracking-tight text-foreground">
             Pay your bill
@@ -100,7 +98,6 @@ export default function Home() {
           </Link>
         </div>
       </div>
-      <Footer />
-    </main>
+    </PublicShell>
   );
 }
