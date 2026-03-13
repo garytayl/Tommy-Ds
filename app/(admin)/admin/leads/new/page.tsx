@@ -28,7 +28,11 @@ const SOURCE_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-export default async function NewLeadPage() {
+type PageProps = { searchParams: Promise<{ added?: string }> };
+
+export default async function NewLeadPage({ searchParams }: PageProps) {
+  const { added: addedCustomerId } = await searchParams;
+
   async function createLead(formData: FormData) {
     "use server";
     const customerId = String(formData.get("customer_id") ?? "").trim();
@@ -49,6 +53,25 @@ export default async function NewLeadPage() {
     redirect("/admin/leads");
   }
 
+  async function addCustomer(formData: FormData) {
+    "use server";
+    const name = String(formData.get("name") ?? "").trim();
+    const phone = String(formData.get("phone") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+    if (!name) return;
+    const supabase = await createSupabaseServerClientForData();
+    const { data: row } = await supabase
+      .from("customers")
+      .insert({ name, phone: phone || null, email: email || null })
+      .select("id")
+      .single();
+    if (!row) return;
+    await setToastCookie("Customer added — select them above");
+    revalidatePath("/admin/leads/new");
+    revalidatePath("/admin/customers");
+    redirect(`/admin/leads/new?added=${row.id}`);
+  }
+
   const supabase = await createSupabaseServerClientForData();
   const { data: customers } = await supabase
     .from("customers")
@@ -61,7 +84,7 @@ export default async function NewLeadPage() {
         <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Admin</p>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">New lead</h1>
         <p className="text-muted-foreground text-[15px] leading-relaxed">
-          Record a new lead. Select the customer (or add one under Customers first), then convert to a job when ready.
+          Record a new lead. Select the customer or add one below, then convert to a job when ready.
         </p>
       </header>
 
@@ -69,7 +92,13 @@ export default async function NewLeadPage() {
         <form action={createLead} className="grid gap-6 sm:grid-cols-2">
           <div className="form-group sm:col-span-2">
             <label htmlFor="customer_id" className="form-label">Customer</label>
-            <select id="customer_id" name="customer_id" required className="field">
+            <select
+              id="customer_id"
+              name="customer_id"
+              required
+              className="field"
+              defaultValue={addedCustomerId ?? ""}
+            >
               <option value="">Select customer</option>
               {(customers ?? []).map((c) => (
                 <option key={c.id} value={c.id}>
@@ -77,9 +106,6 @@ export default async function NewLeadPage() {
                 </option>
               ))}
             </select>
-            <p className="form-hint">
-              <Link href="/admin/customers" className="link">Add a customer</Link> first if needed.
-            </p>
           </div>
           <div className="form-group">
             <label htmlFor="source" className="form-label">Source</label>
@@ -105,6 +131,26 @@ export default async function NewLeadPage() {
               Cancel
             </Link>
           </div>
+        </form>
+      </section>
+
+      <section className="form-card">
+        <h2 className="text-base font-semibold text-foreground">Add a new customer</h2>
+        <p className="form-hint mt-1">Not in the list? Add them here, then select them above.</p>
+        <form action={addCustomer} className="mt-4 grid gap-3 sm:grid-cols-4">
+          <input
+            type="text"
+            name="name"
+            required
+            placeholder="Name"
+            className="field sm:col-span-2"
+            aria-label="New customer name"
+          />
+          <input type="text" name="phone" placeholder="Phone" className="field" aria-label="New customer phone" />
+          <input type="email" name="email" placeholder="Email" className="field" aria-label="New customer email" />
+          <button type="submit" className="btn-secondary whitespace-nowrap">
+            Add customer
+          </button>
         </form>
       </section>
     </div>
