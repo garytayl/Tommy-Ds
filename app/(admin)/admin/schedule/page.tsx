@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { setToastCookie } from "@/lib/toast";
 
 import { ScheduleCalendar } from "@/components/ScheduleCalendar";
+import { ScheduleControls } from "@/components/ScheduleControls";
 import { ScheduleDragDrop, type ScheduleJob } from "@/components/ScheduleDragDrop";
+import { ScheduleMobileWeekRedirect } from "@/components/ScheduleMobileWeekRedirect";
+import { ScheduleScrollToToday } from "@/components/ScheduleScrollToToday";
+import { ScheduleTodayStrip } from "@/components/ScheduleTodayStrip";
+import { ScheduleUnscheduledBlock } from "@/components/ScheduleUnscheduledBlock";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 const DAYS_AHEAD = 90;
@@ -44,6 +49,7 @@ export default async function SchedulePage({
 
   const [
     { data: jobs },
+    { data: unscheduledJobs },
     { data: crews },
     { data: installers },
   ] = await Promise.all([
@@ -55,6 +61,12 @@ export default async function SchedulePage({
       .gte("scheduled_start", start.toISOString())
       .lt("scheduled_start", end.toISOString())
       .order("scheduled_start", { ascending: true, nullsFirst: false }),
+    supabase
+      .from("jobs")
+      .select("id,title,status,customers(name),assigned_installer_id,assigned_crew_id")
+      .is("scheduled_start", null)
+      .in("status", ["lead", "scheduled"])
+      .order("title", { ascending: true }),
     supabase
       .from("crews")
       .select("id,name,specialty,crew_members(user_id)")
@@ -91,6 +103,16 @@ export default async function SchedulePage({
   }
 
   const rows = allRows.filter((job) => {
+    if (viewCrewId) return job.assigned_crew_id === viewCrewId;
+    if (viewPersonId) {
+      if (job.assigned_installer_id === viewPersonId) return true;
+      if (job.assigned_crew_id && crewIdsForPerson.has(job.assigned_crew_id)) return true;
+      return false;
+    }
+    return true;
+  });
+
+  const unscheduledRows = (unscheduledJobs ?? []).filter((job: { assigned_crew_id: string | null; assigned_installer_id: string | null }) => {
     if (viewCrewId) return job.assigned_crew_id === viewCrewId;
     if (viewPersonId) {
       if (job.assigned_installer_id === viewPersonId) return true;
@@ -155,6 +177,7 @@ export default async function SchedulePage({
 
   return (
     <div className="space-y-6 sm:space-y-8">
+      <ScheduleMobileWeekRedirect hasLayoutParam={layoutParam !== undefined} />
       <div>
         <p className="text-xs uppercase tracking-widest text-muted-foreground">
           Admin
@@ -167,42 +190,16 @@ export default async function SchedulePage({
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2.5 sm:px-4">
-        <span className="text-xs font-medium text-muted-foreground sm:text-sm">Layout:</span>
-        <Link
-          href={view !== "all" ? `/admin/schedule?view=${view}` : "/admin/schedule"}
-          className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
-            !isWeekView ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
-          }`}
-        >
-          Month
-        </Link>
-        <Link
-          href={view !== "all" ? `/admin/schedule?view=${view}&layout=week` : "/admin/schedule?layout=week"}
-          className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
-            isWeekView ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
-          }`}
-        >
-          Week
-        </Link>
-        {isWeekView && (
-          <>
-            <span className="text-muted-foreground">|</span>
-            <Link
-              href={`/admin/schedule?layout=week&week=${new Date(weekStart.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)}${view !== "all" ? `&view=${view}` : ""}`}
-              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              Previous week
-            </Link>
-            <Link
-              href={`/admin/schedule?layout=week&week=${weekEndStr}${view !== "all" ? `&view=${view}` : ""}`}
-              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              Next week
-            </Link>
-          </>
-        )}
-      </div>
+      <ScheduleControls
+        view={view}
+        isWeekView={isWeekView}
+        weekStartStr={weekStartStr}
+        weekEndStr={weekEndStr}
+        crews={crews ?? []}
+        installers={installers ?? []}
+        viewCrewId={viewCrewId}
+        viewPersonId={viewPersonId}
+      />
 
       <div className="flex flex-wrap gap-2 sm:gap-3">
         <Link
@@ -219,52 +216,22 @@ export default async function SchedulePage({
         </Link>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2.5 sm:px-4">
-        <span className="text-xs font-medium text-muted-foreground sm:text-sm">View:</span>
-        <Link
-          href="/admin/schedule"
-          className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
-            view === "all"
-              ? "bg-primary text-primary-foreground"
-              : "text-foreground hover:bg-muted"
-          }`}
-        >
-          All
-        </Link>
-        {(crews ?? []).map((crew) => (
-          <Link
-            key={crew.id}
-            href={viewCrewId === crew.id ? "/admin/schedule" : `/admin/schedule?view=crew:${crew.id}`}
-            className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
-              viewCrewId === crew.id
-                ? "bg-primary text-primary-foreground"
-                : "text-foreground hover:bg-muted"
-            }`}
-          >
-            {crew.name}
-          </Link>
-        ))}
-        {(installers ?? []).map((inst) => (
-          <Link
-            key={inst.user_id}
-            href={viewPersonId === inst.user_id ? "/admin/schedule" : `/admin/schedule?view=person:${inst.user_id}`}
-            className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
-              viewPersonId === inst.user_id
-                ? "bg-primary text-primary-foreground"
-                : "text-foreground hover:bg-muted"
-            }`}
-          >
-            {inst.full_name ?? inst.user_id}
-          </Link>
-        ))}
-      </div>
+      <ScheduleUnscheduledBlock jobs={unscheduledRows} />
+
+      <ScheduleTodayStrip
+        todayDateKey={today.toISOString().slice(0, 10)}
+        jobs={(byDate[today.toISOString().slice(0, 10)] ?? []) as ScheduleJob[]}
+      />
 
       <ScheduleCalendar
         jobsByDate={jobsByDateCount}
         startDate={startDateStr}
         endDate={endDateStr}
+        visibleStart={isWeekView ? weekStartStr : undefined}
+        visibleEnd={isWeekView ? weekEndStr : undefined}
       />
 
+      <ScheduleScrollToToday todayDateKey={today.toISOString().slice(0, 10)} />
       <ScheduleDragDrop
         jobsByDate={byDate as Record<string, ScheduleJob[]>}
         sortedDates={sortedDates}

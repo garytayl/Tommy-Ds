@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState, useCallback } from "react";
 
 import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
@@ -34,20 +35,30 @@ export function ScheduleDragDrop({
   rescheduleJob,
 }: ScheduleDragDropProps) {
   const router = useRouter();
+  const [dragOverDateKey, setDragOverDateKey] = useState<string | null>(null);
+  const [reschedulingJobId, setReschedulingJobId] = useState<string | null>(null);
 
-  function handleDragStart(e: React.DragEvent, jobId: string, currentStart: string | null) {
+  const handleDragStart = useCallback((e: React.DragEvent, jobId: string, currentStart: string | null) => {
     e.dataTransfer.setData("application/x-job-id", jobId);
     e.dataTransfer.setData("application/x-job-start", currentStart ?? "");
     e.dataTransfer.effectAllowed = "move";
-  }
+  }, []);
 
-  function handleDragOver(e: React.DragEvent) {
+  const handleDragOver = useCallback((e: React.DragEvent, dateKey: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-  }
+    setDragOverDateKey(dateKey);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) {
+      setDragOverDateKey(null);
+    }
+  }, []);
 
   async function handleDrop(e: React.DragEvent, dateKey: string) {
     e.preventDefault();
+    setDragOverDateKey(null);
     const jobId = e.dataTransfer.getData("application/x-job-id");
     const currentStart = e.dataTransfer.getData("application/x-job-start");
     if (!jobId) return;
@@ -56,9 +67,29 @@ export function ScheduleDragDrop({
       ? currentStart.split("T")[1].slice(0, 8)
       : "08:00:00";
     const newStart = `${dateKey}T${timePart}`;
+    setReschedulingJobId(jobId);
+    try {
+      await rescheduleJob(jobId, newStart);
+      router.refresh();
+    } finally {
+      setReschedulingJobId(null);
+    }
+  }
 
-    await rescheduleJob(jobId, newStart);
-    router.refresh();
+  async function handleMoveTo(job: ScheduleJob, newDateKey: string) {
+    const currentKey = job.scheduled_start?.slice(0, 10);
+    if (currentKey === newDateKey) return;
+    const timePart = job.scheduled_start?.includes("T")
+      ? job.scheduled_start.split("T")[1].slice(0, 8)
+      : "08:00:00";
+    const newStart = `${newDateKey}T${timePart}`;
+    setReschedulingJobId(job.id);
+    try {
+      await rescheduleJob(job.id, newStart);
+      router.refresh();
+    } finally {
+      setReschedulingJobId(null);
+    }
   }
 
   return (
@@ -71,19 +102,25 @@ export function ScheduleDragDrop({
           month: "short",
           day: "numeric",
         });
+        const isDropTarget = dragOverDateKey === dateKey;
         return (
           <div
             key={dateKey}
             id={`day-${dateKey}`}
-            className="scroll-mt-4 rounded-xl border border-border bg-card overflow-hidden shadow-sm"
-            onDragOver={handleDragOver}
+            className={`scroll-mt-4 rounded-xl border overflow-hidden shadow-sm transition-colors ${
+              isDropTarget ? "border-accent-gold bg-accent-gold/10 ring-2 ring-accent-gold/50" : "border-border bg-card"
+            }`}
+            onDragOver={(e) => handleDragOver(e, dateKey)}
+            onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, dateKey)}
           >
-            <div className="border-b border-border bg-muted/30 px-3 py-2.5 sm:px-5">
+            <div className="sticky top-0 z-10 border-b border-border bg-card px-3 py-2.5 sm:px-5 shadow-[0_1px_0_0_var(--border)]">
               <h2 className="text-sm font-semibold text-foreground">{label}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Drop jobs here to reschedule
-              </p>
+              {dayJobs.length === 0 && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Drop jobs here to reschedule
+                </p>
+              )}
             </div>
             <ul className="divide-y divide-border">
               {dayJobs.length === 0 ? (
@@ -101,12 +138,17 @@ export function ScheduleDragDrop({
                     : job.profiles?.full_name;
                   const invoice = Array.isArray(job.invoices) ? job.invoices[0] : job.invoices;
                   const hasBalanceDue = invoice && invoice.balance_due_cents > 0;
+                  const isRescheduling = reschedulingJobId === job.id;
+                  const currentDateKey = job.scheduled_start?.slice(0, 10);
                   return (
                     <li
                       key={job.id}
-                      draggable
+                      draggable={!isRescheduling}
                       onDragStart={(e) => handleDragStart(e, job.id, job.scheduled_start)}
-                      className="flex flex-wrap items-center gap-2 px-3 py-3 sm:px-5 cursor-grab active:cursor-grabbing border-b border-border bg-card hover:bg-muted/20 transition"
+                      onDragEnd={() => setDragOverDateKey(null)}
+                      className={`flex flex-wrap items-center gap-2 px-3 py-3 sm:px-5 border-b border-border bg-card transition ${
+                        isRescheduling ? "opacity-60 pointer-events-none" : "cursor-grab active:cursor-grabbing hover:bg-muted/20"
+                      } ${hasBalanceDue ? "border-l-2 border-l-accent-gold" : ""}`}
                     >
                       <Link
                         href={`/jobs/${job.id}`}
@@ -152,6 +194,28 @@ export function ScheduleDragDrop({
                           compact
                         />
                       )}
+                      <select
+                        aria-label={`Move ${job.title} to another day`}
+                        value=""
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val) handleMoveTo(job, val);
+                          e.target.value = "";
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded-md border border-border bg-muted/50 py-1.5 pl-2 pr-6 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="">Move to…</option>
+                        {sortedDates.map((d) => {
+                          const dayDate = new Date(d + "T12:00:00");
+                          const dayLabel = dayDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+                          return (
+                            <option key={d} value={d} disabled={d === currentDateKey}>
+                              {d === currentDateKey ? `${dayLabel} (current)` : dayLabel}
+                            </option>
+                          );
+                        })}
+                      </select>
                     </li>
                   );
                 })
