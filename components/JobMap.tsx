@@ -2,6 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import { useEffect, useState } from "react";
+import { MapErrorBoundary } from "@/components/MapErrorBoundary";
 
 type JobMapProps = {
   /** Full address string to geocode and show on map */
@@ -58,6 +59,7 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
   const [error, setError] = useState<string | null>(null);
   const [usedFallback, setUsedFallback] = useState(false);
   const [MapContent, setMapContent] = useState<React.ComponentType<{ center: [number, number]; title?: string }> | null>(null);
+  const DEFAULT_CENTER: [number, number] = [39.7684, -86.1581];
 
   useEffect(() => {
     if (!address.trim()) return;
@@ -143,7 +145,12 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
           shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
         });
       }
-      setMapContent(function MapContent({ center, title: popupTitle }: { center: [number, number]; title?: string }) {
+      setMapContent(function MapContent(props: { center?: [number, number] | null; title?: string }) {
+        const center: [number, number] =
+          Array.isArray(props.center) && props.center.length >= 2
+            ? [Number(props.center[0]), Number(props.center[1])]
+            : DEFAULT_CENTER;
+        const popupTitle = props.title;
         return (
           <MapContainer
             center={center}
@@ -156,7 +163,7 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <Marker position={center}>
-              {popupTitle && <Popup>{popupTitle}</Popup>}
+              {popupTitle ? <Popup>{popupTitle}</Popup> : null}
             </Marker>
           </MapContainer>
         );
@@ -183,6 +190,12 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
     );
   }
 
+  const center: [number, number] = [coords.lat, coords.lng];
+  const mapFallback = (
+    <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground flex items-center justify-center" style={{ minHeight: height }}>
+      <p>{MAP_ERROR_MSG}</p>
+    </div>
+  );
   return (
     <div
       className="rounded-lg border border-border overflow-hidden bg-muted/30 flex flex-col"
@@ -194,7 +207,9 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
         </p>
       ) : null}
       <div className="min-h-0 flex-1">
-        <MapContent center={[coords.lat, coords.lng]} title={title} />
+        <MapErrorBoundary fallback={mapFallback}>
+          <MapContent center={center} title={title} />
+        </MapErrorBoundary>
       </div>
     </div>
   );
