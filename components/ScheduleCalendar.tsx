@@ -75,14 +75,14 @@ export function ScheduleCalendar({
 
   return (
     <section
-      className="rounded-xl border border-border bg-card overflow-hidden shadow-sm"
+      className="rounded-xl border border-white/20 bg-white/5 overflow-hidden shadow-lg backdrop-blur-sm"
       aria-label="Calendar"
     >
-      <div className="flex items-center justify-between border-b border-border bg-muted/50 px-3 py-2.5 sm:px-4">
+      <div className="flex items-center justify-between border-b border-white/15 bg-white/10 px-3 py-2.5 sm:px-4">
         <button
           type="button"
           onClick={goPrev}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-foreground transition hover:bg-muted touch-manipulation"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-foreground transition hover:bg-white/15 touch-manipulation"
           aria-label="Previous month"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -95,7 +95,7 @@ export function ScheduleCalendar({
         <button
           type="button"
           onClick={goNext}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-foreground transition hover:bg-muted touch-manipulation"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-foreground transition hover:bg-white/15 touch-manipulation"
           aria-label="Next month"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -105,11 +105,11 @@ export function ScheduleCalendar({
       </div>
 
       <div className="p-2 sm:p-3">
-        <div className="grid grid-cols-7 gap-0.5 text-center">
+        <div className="grid grid-cols-7 gap-1 text-center">
           {WEEKDAYS.map((wd) => (
             <div
               key={wd}
-              className="py-1.5 text-[10px] font-medium text-muted-foreground sm:text-xs"
+              className="py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
             >
               {wd}
             </div>
@@ -135,15 +135,15 @@ export function ScheduleCalendar({
                 className={`
                   relative flex aspect-square min-h-[36px] min-w-0 items-center justify-center rounded-lg text-sm font-medium transition touch-manipulation
                   sm:min-h-[44px]
-                  ${!inRange ? "cursor-default text-muted-foreground/50" : "hover:bg-muted active:bg-muted/80"}
-                  ${isToday ? "ring-2 ring-primary ring-offset-2 ring-offset-card" : ""}
-                  ${count > 0 && inRange ? "bg-primary/10 text-foreground" : "text-foreground"}
+                  ${!inRange ? "cursor-default text-muted-foreground/60" : "hover:bg-white/15 active:bg-white/20"}
+                  ${isToday ? "ring-2 ring-accent-gold ring-offset-2 ring-offset-background" : ""}
+                  ${count > 0 && inRange ? "bg-accent-gold/15 text-foreground" : "text-foreground"}
                 `}
               >
                 <span>{day}</span>
                 {count > 0 && inRange && (
                   <span
-                    className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary sm:bottom-1"
+                    className="absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-accent-gold sm:bottom-1.5"
                     aria-hidden
                   />
                 )}
