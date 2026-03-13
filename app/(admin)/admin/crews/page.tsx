@@ -85,7 +85,7 @@ export default async function CrewsPage() {
           Crews
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Organize crews for schedule and jobs. Assign installers to crews; then assign crews to jobs.
+          Organize crews for schedule and jobs. Add installers as members below — the crew name will show as their names (e.g. Joe & Michael). If you see no installers to add, create users in Supabase Auth and set their role to &quot;installer&quot; in the profiles table.
         </p>
       </div>
 
@@ -156,24 +156,40 @@ export default async function CrewsPage() {
                     )}
                   </div>
                   {(() => {
-                    const available = (installers ?? []).filter(
+                    const allInstallers = installers ?? [];
+                    const available = allInstallers.filter(
                       (i) => !members.some((m) => m.user_id === i.user_id)
                     );
-                    return available.length > 0 ? (
-                      <form action={addMember} className="flex flex-wrap items-center gap-2">
-                        <input type="hidden" name="crew_id" value={crew.id} />
-                        <select name="user_id" className="field flex-1 min-w-0 max-w-[200px]" required>
-                          <option value="">Add installer to this crew…</option>
-                          {available.map((i) => (
-                            <option key={i.user_id} value={i.user_id}>
-                              {i.full_name ?? i.user_id}
-                            </option>
-                          ))}
-                        </select>
-                        <button type="submit" className="btn-secondary text-sm py-2">Add</button>
-                      </form>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">All installers are in a crew. Add more in auth/profiles.</p>
+                    if (available.length > 0) {
+                      return (
+                        <form action={addMember} className="flex flex-wrap items-center gap-2">
+                          <input type="hidden" name="crew_id" value={crew.id} />
+                          <select name="user_id" className="field flex-1 min-w-0 max-w-[200px]" required>
+                            <option value="">Add installer to this crew…</option>
+                            {available.map((i) => (
+                              <option key={i.user_id} value={i.user_id}>
+                                {i.full_name ?? i.user_id}
+                              </option>
+                            ))}
+                          </select>
+                          <button type="submit" className="btn-secondary text-sm py-2">Add</button>
+                        </form>
+                      );
+                    }
+                    if (allInstallers.length === 0) {
+                      return (
+                        <p className="text-sm text-muted-foreground">
+                          No installers in the system yet. Add users in Supabase{" "}
+                          <strong>Authentication</strong>, then set their <strong>role</strong> to{" "}
+                          <code className="rounded bg-muted px-1 text-xs">installer</code> in the{" "}
+                          <strong>profiles</strong> table (e.g. in the Table Editor or via an auth hook). They will then appear here to add to crews.
+                        </p>
+                      );
+                    }
+                    return (
+                      <p className="text-xs text-muted-foreground">
+                        All installers are already in a crew. Add more users with the installer role in auth/profiles to assign them here.
+                      </p>
                     );
                   })()}
                   <div className="pt-2 border-t border-border">
