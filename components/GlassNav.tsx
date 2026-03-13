@@ -26,13 +26,14 @@ export function GlassNav() {
       if (typeof window === "undefined") return;
       const currentScrollY = window.scrollY;
 
-      if (currentScrollY > 50) {
+      // Hide after a small scroll down; show when near top or scrolling up
+      if (currentScrollY > 24) {
         if (
           currentScrollY > lastScrollY.current &&
-          currentScrollY - lastScrollY.current > 5
+          currentScrollY - lastScrollY.current > 3
         ) {
           setIsVisible(false);
-        } else if (lastScrollY.current - currentScrollY > 5) {
+        } else if (lastScrollY.current - currentScrollY > 3) {
           setIsVisible(true);
         }
       } else {

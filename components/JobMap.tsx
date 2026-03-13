@@ -18,14 +18,13 @@ type NominatimResult = {
   display_name?: string;
 };
 
-const UNIT_PATTERN = /,?\s*(Unit|Apt|Suite|Ste\.?|Bldg\.?|#)\s*[\w-]+/gi;
-
 /** Removes unit/apt/suite from address so Nominatim can geocode the building. */
 function simplifyAddressForGeocode(address: string): string {
   const trimmed = address.trim();
   if (!trimmed) return trimmed;
+  const unitPattern = /,?\s*(Unit|Apt|Suite|Ste\.?|Bldg\.?|#)\s*[\w-]+/gi;
   const simplified = trimmed
-    .replace(UNIT_PATTERN, "")
+    .replace(unitPattern, "")
     .replace(/\s*,\s*,/g, ",")
     .replace(/^\s*,|,\s*$/g, "")
     .trim();
@@ -68,6 +67,7 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
     setCoords(null);
     let cancelled = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let timeoutId2: ReturnType<typeof setTimeout> | undefined;
     const fullAddress = address.trim();
 
     function setCoordsFromResult(r: NominatimResult, usedFallbackAddress: boolean) {
@@ -75,12 +75,19 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
       if (usedFallbackAddress) setUsedFallback(true);
     }
 
-    function tryNextQuery(query: string, usedFallbackAddress: boolean) {
+    function tryNextQuery(query: string, usedFallbackAddress: boolean, nextFallback?: string) {
       if (cancelled) return;
       fetchNominatim(query).then((retryData: NominatimResult[]) => {
         if (cancelled) return;
         if (retryData && retryData[0]) {
           setCoordsFromResult(retryData[0], usedFallbackAddress);
+          return;
+        }
+        if (nextFallback && nextFallback !== query) {
+          timeoutId2 = setTimeout(() => {
+            if (cancelled) return;
+            tryNextQuery(nextFallback, true);
+          }, 1100);
         } else {
           setError(MAP_ERROR_MSG);
         }
@@ -101,7 +108,7 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
         if (simplified && simplified !== fullAddress) {
           timeoutId = setTimeout(() => {
             if (cancelled) return;
-            tryNextQuery(simplified, true);
+            tryNextQuery(simplified, true, cityStateZip);
           }, 1100);
           return;
         }
@@ -121,6 +128,7 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
     return () => {
       cancelled = true;
       if (timeoutId != null) clearTimeout(timeoutId);
+      if (timeoutId2 != null) clearTimeout(timeoutId2);
     };
   }, [address]);
 
