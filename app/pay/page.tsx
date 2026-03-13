@@ -36,6 +36,7 @@ export default function PayInvoicePage() {
       const data = (await res.json().catch(() => null)) as {
         error?: string;
         invoiceId?: string;
+        invoiceNumber?: number;
         balanceDueCents?: number;
         alreadyPaid?: boolean;
         customerName?: string | null;
