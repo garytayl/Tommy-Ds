@@ -64,18 +64,19 @@ export default async function InstallerTodayPage() {
   return (
     <div className="space-y-6 pb-6">
       <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Field</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-          Today
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          My jobs
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Your jobs for today. Open a job to start, add notes, photos, and collect payment.
+          {todayJobs.length > 0
+            ? "Today and upcoming. Tap a job to open it, add notes, photos, and collect payment."
+            : "Your assigned jobs for today and the next week. Tap a job to open it."}
         </p>
       </div>
 
       {nextJob && (
         <div className="rounded-xl border-2 border-primary/30 bg-card p-5 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Next job</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Next</p>
           <h2 className="mt-1 text-lg font-semibold text-foreground">{nextJob.title}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {nextJob.address_line1}, {nextJob.city}, {nextJob.state} {nextJob.zip}
@@ -98,7 +99,7 @@ export default async function InstallerTodayPage() {
                 )}
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
-                    href={`/jobs/${nextJob.id}`}
+                    href={`/m/jobs/${nextJob.id}`}
                     className="inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-95"
                   >
                     Open job
@@ -132,7 +133,7 @@ export default async function InstallerTodayPage() {
 
       {rows.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground shadow-sm">
-          No jobs scheduled today or in the next week.
+          No jobs assigned for today or the next week.
         </div>
       ) : (
         <div>
@@ -146,7 +147,7 @@ export default async function InstallerTodayPage() {
               return (
                 <li key={job.id} className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
                   <Link
-                    href={`/jobs/${job.id}`}
+                    href={`/m/jobs/${job.id}`}
                     className="block p-4 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <div className="mb-2 flex items-center justify-between">

@@ -21,19 +21,15 @@ const ADMIN_NAV = [
   { href: "/admin/future-features", label: "Future features" },
 ] as const;
 
-const FIELD_NAV = [
-  { href: "/m", label: "Today" },
-  { href: "/m", label: "My Jobs" },
-  { href: "/m#photos", label: "Photos" },
-  { href: "/m#payments", label: "Payments" },
-] as const;
+const FIELD_NAV = [{ href: "/m", label: "My jobs" }] as const;
 
 function navFor(mode: Mode) {
   return mode === "admin" ? ADMIN_NAV : FIELD_NAV;
 }
 
 function isActive(href: string, pathname: string): boolean {
-  if (href === "/admin" || href === "/m") return pathname === href;
+  if (href === "/admin") return pathname === href;
+  if (href === "/m") return pathname === "/m" || pathname.startsWith("/m/");
   if (href === "/admin/jobs") return pathname.startsWith("/admin/jobs") || pathname.startsWith("/jobs/");
   return pathname.startsWith(href);
 }
@@ -49,7 +45,7 @@ export function AppShell({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const nav = navFor(mode);
   const otherModeHref = mode === "admin" ? "/m" : "/admin";
-  const otherModeLabel = mode === "admin" ? "Field" : "Admin";
+  const otherModeLabel = mode === "admin" ? "Installer" : "Admin";
 
   const hubLinkStyle = (href: string) =>
     pathname === href
@@ -75,20 +71,31 @@ export function AppShell({
             Tommy D&apos;s
           </Link>
 
-          <div className="hidden flex-1 justify-center sm:flex">
-            <Link
-              href="/admin/search"
-              className="flex w-full max-w-md items-center rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-primary-foreground/80 backdrop-blur-sm transition hover:bg-white/15 hover:text-primary-foreground"
-            >
-              <span className="mr-2 shrink-0 text-muted-foreground">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.35-4.35" />
-                </svg>
-              </span>
-              Search customer / job / address
-            </Link>
-          </div>
+          {mode === "admin" ? (
+            <div className="hidden flex-1 justify-center sm:flex">
+              <Link
+                href="/admin/search"
+                className="flex w-full max-w-md items-center rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-primary-foreground/80 backdrop-blur-sm transition hover:bg-white/15 hover:text-primary-foreground"
+              >
+                <span className="mr-2 shrink-0 text-muted-foreground">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                  </svg>
+                </span>
+                Search customer / job / address
+              </Link>
+            </div>
+          ) : (
+            <div className="hidden flex-1 justify-center sm:flex">
+              <Link
+                href="/admin/search"
+                className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-primary-foreground/80 backdrop-blur-sm transition hover:bg-white/15 hover:text-primary-foreground"
+              >
+                Search
+              </Link>
+            </div>
+          )}
 
           <div className="flex flex-1 items-center justify-end gap-2 sm:flex-initial">
             <Link
@@ -164,7 +171,7 @@ export function AppShell({
 
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-around border-t border-white/10 bg-card/95 px-2 py-2 backdrop-blur-md safe-area-pb sm:hidden">
-        {nav.slice(0, 4).map((item) => {
+        {(mode === "field" ? [...nav, { href: otherModeHref, label: otherModeLabel }] : nav.slice(0, 4)).map((item) => {
           const active = isActive(item.href, pathname);
           return (
             <Link
