@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useCallback, useMemo, useEffect } from "react";
 
 type ScheduleCalendarProps = {
@@ -13,6 +14,8 @@ type ScheduleCalendarProps = {
   visibleStart?: string;
   /** When in week view: first day after visible week (YYYY-MM-DD) */
   visibleEnd?: string;
+  /** When in week view: URLs for prev/next week navigation */
+  weekNavigation?: { prevUrl: string; nextUrl: string };
 };
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -48,6 +51,7 @@ export function ScheduleCalendar({
   endDate,
   visibleStart,
   visibleEnd,
+  weekNavigation,
 }: ScheduleCalendarProps) {
   const today = new Date();
   const initial = useMemo(() => getInitialYearMonth(visibleStart), [visibleStart]);
@@ -96,11 +100,116 @@ export function ScheduleCalendar({
     return key >= startDate && key <= endDate;
   };
 
-  const isInVisibleWeek =
-    visibleStart && visibleEnd
-      ? (key: string) => key >= visibleStart && key < visibleEnd
-      : () => false;
+  const isWeekView = Boolean(visibleStart && visibleEnd && weekNavigation);
 
+  // Week view: single row of 7 days
+  const weekDays = useMemo(() => {
+    if (!visibleStart || !visibleEnd) return [];
+    const out: string[] = [];
+    const start = new Date(visibleStart + "T12:00:00");
+    const end = new Date(visibleEnd + "T12:00:00");
+    for (const d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+      out.push(d.toISOString().slice(0, 10));
+    }
+    return out;
+  }, [visibleStart, visibleEnd]);
+
+  if (isWeekView && weekDays.length === 7) {
+    const weekStartDate = new Date(weekDays[0] + "T12:00:00");
+    const weekEndDate = new Date(weekDays[6] + "T12:00:00");
+    const weekLabel = `${weekStartDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} – ${weekEndDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+
+    return (
+      <section
+        className="rounded-xl border border-white/20 bg-white/5 overflow-hidden shadow-lg backdrop-blur-sm"
+        aria-label="Week calendar"
+      >
+        <div className="flex items-center justify-between border-b border-white/15 bg-white/10 px-3 py-2.5 sm:px-4">
+          <Link
+            href={weekNavigation!.prevUrl}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-foreground transition hover:bg-white/15 touch-manipulation"
+            aria-label="Previous week"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </Link>
+          <h2 className="text-sm font-semibold text-foreground sm:text-base">
+            {weekLabel}
+          </h2>
+          <Link
+            href={weekNavigation!.nextUrl}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-foreground transition hover:bg-white/15 touch-manipulation"
+            aria-label="Next week"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </Link>
+        </div>
+
+        <div className="p-2 sm:p-3">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center">
+            {WEEKDAYS.map((wd) => (
+              <div
+                key={wd}
+                className="py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              >
+                {wd}
+              </div>
+            ))}
+            {weekDays.map((key) => {
+              const count = jobsByDate[key] ?? 0;
+              const d = new Date(key + "T12:00:00");
+              const dayNum = d.getDate();
+              const isToday =
+                today.getFullYear() === d.getFullYear() &&
+                today.getMonth() === d.getMonth() &&
+                today.getDate() === dayNum;
+              const inRange = isInRange(key);
+
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => inRange && scrollToDay(key)}
+                  disabled={!inRange}
+                  className={`
+                    relative flex min-h-[48px] min-w-0 flex-col items-center justify-center rounded-xl py-2 text-sm font-medium transition touch-manipulation
+                    sm:min-h-[56px]
+                    ${!inRange ? "cursor-default text-muted-foreground/60" : "hover:bg-white/15 active:bg-white/20"}
+                    ${isToday ? "ring-2 ring-accent-gold ring-offset-2 ring-offset-background" : ""}
+                    ${count > 0 && inRange ? "bg-accent-gold/15 text-foreground" : "text-foreground"}
+                  `}
+                >
+                  <span>{dayNum}</span>
+                  {count > 0 && inRange && (
+                    <>
+                      {count <= 9 ? (
+                        <span
+                          className="mt-0.5 min-w-[18px] rounded-full bg-accent-gold px-1.5 py-0.5 text-[10px] font-semibold text-background leading-tight"
+                          aria-hidden
+                        >
+                          {count}
+                        </span>
+                      ) : (
+                        <span
+                          className="mt-1 h-2 w-2 rounded-full bg-accent-gold"
+                          aria-hidden
+                        />
+                      )}
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Month view
   return (
     <section
       className="rounded-xl border border-white/20 bg-white/5 overflow-hidden shadow-lg backdrop-blur-sm"
@@ -153,7 +262,6 @@ export function ScheduleCalendar({
               today.getMonth() === viewMonth &&
               today.getDate() === day;
             const inRange = isInRange(key);
-            const inVisibleWeek = isInVisibleWeek(key);
 
             return (
               <button
@@ -167,7 +275,6 @@ export function ScheduleCalendar({
                   ${!inRange ? "cursor-default text-muted-foreground/60" : "hover:bg-white/15 active:bg-white/20"}
                   ${isToday ? "ring-2 ring-accent-gold ring-offset-2 ring-offset-background" : ""}
                   ${count > 0 && inRange ? "bg-accent-gold/15 text-foreground" : "text-foreground"}
-                  ${inVisibleWeek && inRange ? "ring-2 ring-primary/50 ring-offset-2 ring-offset-background" : ""}
                 `}
               >
                 <span>{day}</span>

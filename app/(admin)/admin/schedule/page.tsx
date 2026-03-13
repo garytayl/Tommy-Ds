@@ -244,6 +244,17 @@ export default async function SchedulePage({
         endDate={endDateStr}
         visibleStart={isWeekView ? weekStartStr : undefined}
         visibleEnd={isWeekView ? weekEndStr : undefined}
+        weekNavigation={
+          isWeekView
+            ? (() => {
+                const prev = new Date(weekStart);
+                prev.setDate(prev.getDate() - 7);
+                const prevStr = prev.toISOString().slice(0, 10);
+                const base = view === "all" ? "/admin/schedule?layout=week&week=" : `/admin/schedule?view=${encodeURIComponent(view)}&layout=week&week=`;
+                return { prevUrl: base + prevStr, nextUrl: base + weekEndStr };
+              })()
+            : undefined
+        }
       />
 
       <ScheduleScrollToToday todayDateKey={today.toISOString().slice(0, 10)} />
