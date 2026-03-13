@@ -11,39 +11,39 @@ export function NavigationTransition() {
 
   useEffect(() => {
     const handleLinkClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const link = target.closest("a");
+      try {
+        const target = e.target as HTMLElement;
+        const link = target?.closest?.("a");
+        if (!link?.href) return;
 
-      if (link?.href?.startsWith(window.location.origin)) {
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        if (!origin || !link.href.startsWith(origin)) return;
+
         const url = new URL(link.href);
-
         if (url.pathname !== pathname && !url.hash) {
           e.preventDefault();
           setIsTransitioning(true);
-
+          const nextPath = url.pathname + (url.search || "");
           setTimeout(() => {
-            router.push(url.pathname);
+            router.push(nextPath);
           }, 300);
         }
+      } catch {
+        // ignore URL or navigation errors
       }
     };
 
     document.addEventListener("click", handleLinkClick);
-
-    return () => {
-      document.removeEventListener("click", handleLinkClick);
-    };
+    return () => document.removeEventListener("click", handleLinkClick);
   }, [pathname, router]);
 
   useEffect(() => {
     if (pathname !== previousPathname.current) {
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 50);
-
       previousPathname.current = pathname;
+      const t = setTimeout(() => setIsTransitioning(false), 50);
+      return () => clearTimeout(t);
     }
-  }, [pathname, isTransitioning]);
+  }, [pathname]);
 
   return (
     <div

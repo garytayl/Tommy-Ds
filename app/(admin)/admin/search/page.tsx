@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { SearchForm } from "./SearchForm";
@@ -66,7 +67,9 @@ export default async function SearchPage({
         </p>
       </div>
 
-      <SearchForm initialValue={query} />
+      <Suspense fallback={<div className="rounded-xl border border-white/20 bg-white/5 p-4 h-[60px]" />}>
+        <SearchForm initialValue={query} />
+      </Suspense>
 
       {query.length >= 1 && (
         <section className="space-y-6">

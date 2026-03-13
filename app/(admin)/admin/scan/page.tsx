@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { BarcodeLookup } from "./BarcodeLookup";
@@ -61,7 +62,9 @@ export default async function ScanPage({
         </p>
       </div>
 
-      <BarcodeLookup initialValue={barcode} />
+      <Suspense fallback={<div className="rounded-xl border border-border bg-card p-5 h-[80px]" />}>
+        <BarcodeLookup initialValue={barcode} />
+      </Suspense>
 
       {barcode && (
         <section className="space-y-4">

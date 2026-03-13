@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ClientErrorBoundary } from "@/components/ClientErrorBoundary";
 import { PageTransition } from "@/components/page-transition";
 import { NavigationTransition } from "@/components/navigation-transition";
 import { ToastViewer } from "@/components/ToastViewer";
@@ -30,11 +31,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${geistSans.variable}`}>
       <body className={`font-sans ${geistMono.variable} antialiased`}>
-        <Suspense fallback={null}>
-          <NavigationTransition />
-          <PageTransition>{children}</PageTransition>
-          <ToastViewer />
-        </Suspense>
+        <ClientErrorBoundary>
+          <Suspense fallback={null}>
+            <NavigationTransition />
+            <PageTransition>{children}</PageTransition>
+            <ToastViewer />
+          </Suspense>
+        </ClientErrorBoundary>
       </body>
     </html>
   );

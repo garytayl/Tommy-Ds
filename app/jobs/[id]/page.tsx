@@ -729,9 +729,9 @@ export default async function JobWorkspacePage({
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <CollectPaymentButton
                   invoiceId={invoice.id}
-                  disabled={invoice.balance_due_cents <= 0}
+                  disabled={(invoice.balance_due_cents ?? 0) <= 0}
                 />
-                {invoice.deposit_paid_cents > 0 && (
+                {(invoice.deposit_paid_cents ?? 0) > 0 && (
                   <Link
                     href={`/receipt/${invoice.id}`}
                     className="inline-flex items-center rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
@@ -758,14 +758,14 @@ export default async function JobWorkspacePage({
                   </tr>
                 </thead>
                 <tbody>
-                  {payments.length === 0 ? (
+                  {(payments ?? []).length === 0 ? (
                     <tr>
                       <td colSpan={3} className="py-6 text-center text-muted-foreground">
                         No payments yet.
                       </td>
                     </tr>
                   ) : (
-                    payments.map((p) => (
+                    (payments ?? []).map((p) => (
                       <tr key={p.id} className="border-b border-border">
                         <td className="py-3 pl-5 pr-4 text-muted-foreground">
                           {new Date(p.created_at).toLocaleString()}
