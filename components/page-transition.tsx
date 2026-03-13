@@ -12,6 +12,10 @@ export function PageTransition({
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
+    // Scroll to top on route change so new pages don’t keep previous scroll position
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
     setIsAnimating(true);
     const timer = setTimeout(() => {
       setIsAnimating(false);
