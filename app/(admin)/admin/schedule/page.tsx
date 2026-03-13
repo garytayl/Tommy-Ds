@@ -133,12 +133,15 @@ export default async function SchedulePage({
 
   const byDate: Record<string, JobRow[]> = {};
   const jobsByDateCount: Record<string, number> = {};
+  type CalendarItem = { id: string; title: string; type: "job" | "activity"; href: string };
+  const itemsByDate: Record<string, CalendarItem[]> = {};
   for (let d = 0; d < DAYS_PAST + DAYS_AHEAD; d++) {
     const date = new Date(start);
     date.setDate(date.getDate() + d);
     const key = date.toISOString().slice(0, 10);
     byDate[key] = [];
     jobsByDateCount[key] = 0;
+    itemsByDate[key] = [];
   }
   for (const job of rows) {
     if (!job.scheduled_start) continue;
@@ -146,12 +149,16 @@ export default async function SchedulePage({
     if (!byDate[key]) byDate[key] = [];
     byDate[key].push(job);
     jobsByDateCount[key] = (jobsByDateCount[key] ?? 0) + 1;
+    if (itemsByDate[key]) itemsByDate[key].push({ id: job.id, title: job.title, type: "job", href: `/admin/jobs/${job.id}` });
   }
+  const rowIds = new Set(rows.map((r) => r.id));
   for (const act of activitiesInRange ?? []) {
-    const a = act as { scheduled_date: string };
-    if (!a.scheduled_date) continue;
+    const a = act as { id: string; job_id: string; type: string; title: string | null; scheduled_date: string };
+    if (!a.scheduled_date || !rowIds.has(a.job_id)) continue;
     const key = a.scheduled_date.slice(0, 10);
     if (byDate[key] !== undefined) jobsByDateCount[key] = (jobsByDateCount[key] ?? 0) + 1;
+    const title = (a.title || a.type || "Activity").trim() || "Activity";
+    if (itemsByDate[key]) itemsByDate[key].push({ id: a.id, title, type: "activity", href: `/admin/jobs/${a.job_id}` });
   }
 
   const startDateStr = start.toISOString().slice(0, 10);
@@ -240,6 +247,7 @@ export default async function SchedulePage({
 
       <ScheduleCalendar
         jobsByDate={jobsByDateCount}
+        itemsByDate={itemsByDate}
         startDate={startDateStr}
         endDate={endDateStr}
         visibleStart={isWeekView ? weekStartStr : undefined}

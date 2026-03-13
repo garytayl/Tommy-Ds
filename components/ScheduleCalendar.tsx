@@ -3,9 +3,13 @@
 import Link from "next/link";
 import { useState, useCallback, useMemo, useEffect } from "react";
 
+export type CalendarItem = { id: string; title: string; type: "job" | "activity"; href: string };
+
 type ScheduleCalendarProps = {
   /** Map of date string (YYYY-MM-DD) to number of jobs */
   jobsByDate: Record<string, number>;
+  /** Map of date to job/activity details for display in cells */
+  itemsByDate?: Record<string, CalendarItem[]>;
   /** First day to show (YYYY-MM-DD) */
   startDate: string;
   /** Last day to show (YYYY-MM-DD) */
@@ -45,8 +49,12 @@ function getInitialYearMonth(visibleStart?: string): { year: number; month: numb
   return { year: today.getFullYear(), month: today.getMonth() };
 }
 
+const MAX_ITEMS_MONTH = 2;
+const MAX_ITEMS_WEEK = 8;
+
 export function ScheduleCalendar({
   jobsByDate,
+  itemsByDate = {},
   startDate,
   endDate,
   visibleStart,
@@ -159,7 +167,8 @@ export function ScheduleCalendar({
               </div>
             ))}
             {weekDays.map((key) => {
-              const count = jobsByDate[key] ?? 0;
+              const items = itemsByDate[key] ?? [];
+              const count = items.length || jobsByDate[key] ?? 0;
               const d = new Date(key + "T12:00:00");
               const dayNum = d.getDate();
               const isToday =
@@ -167,40 +176,51 @@ export function ScheduleCalendar({
                 today.getMonth() === d.getMonth() &&
                 today.getDate() === dayNum;
               const inRange = isInRange(key);
+              const visible = items.slice(0, MAX_ITEMS_WEEK);
+              const more = items.length - visible.length;
 
               return (
-                <button
+                <div
                   key={key}
-                  type="button"
-                  onClick={() => inRange && scrollToDay(key)}
-                  disabled={!inRange}
                   className={`
-                    relative flex min-h-[48px] min-w-0 flex-col items-center justify-center rounded-xl py-2 text-sm font-medium transition touch-manipulation
-                    sm:min-h-[56px]
-                    ${!inRange ? "cursor-default text-muted-foreground/60" : "hover:bg-white/15 active:bg-white/20"}
+                    relative flex min-h-[80px] min-w-0 flex-col rounded-xl border border-transparent py-1.5 text-left sm:min-h-[100px]
+                    ${count > 0 && inRange ? "bg-accent-gold/10" : ""}
                     ${isToday ? "ring-2 ring-accent-gold ring-offset-2 ring-offset-background" : ""}
-                    ${count > 0 && inRange ? "bg-accent-gold/15 text-foreground" : "text-foreground"}
                   `}
                 >
-                  <span>{dayNum}</span>
-                  {count > 0 && inRange && (
-                    <>
-                      {count <= 9 ? (
-                        <span
-                          className="mt-0.5 min-w-[18px] rounded-full bg-accent-gold px-1.5 py-0.5 text-[10px] font-semibold text-background leading-tight"
-                          aria-hidden
-                        >
-                          {count}
-                        </span>
-                      ) : (
-                        <span
-                          className="mt-1 h-2 w-2 rounded-full bg-accent-gold"
-                          aria-hidden
-                        />
-                      )}
-                    </>
-                  )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => inRange && scrollToDay(key)}
+                    disabled={!inRange}
+                    className={`
+                      mb-1 shrink-0 self-center rounded-lg px-1.5 py-0.5 text-sm font-semibold transition touch-manipulation
+                      ${!inRange ? "cursor-default text-muted-foreground/60" : "hover:bg-white/15"}
+                      ${isToday ? "text-accent-gold" : "text-foreground"}
+                    `}
+                  >
+                    {dayNum}
+                  </button>
+                  <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-1">
+                    {visible.map((item) => (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        className={`
+                          block truncate rounded px-1 py-0.5 text-[11px] leading-tight transition hover:bg-white/15 sm:text-xs
+                          ${item.type === "activity" ? "text-muted-foreground" : "text-foreground font-medium"}
+                        `}
+                        title={item.title}
+                      >
+                        {item.title}
+                      </Link>
+                    ))}
+                    {more > 0 && (
+                      <span className="px-1 text-[10px] text-muted-foreground sm:text-xs">
+                        +{more} more
+                      </span>
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -256,46 +276,57 @@ export function ScheduleCalendar({
               return <div key={`empty-${i}`} className="aspect-square" />;
             }
             const key = dateKey(viewYear, viewMonth, day);
-            const count = jobsByDate[key] ?? 0;
+            const items = itemsByDate[key] ?? [];
+            const count = items.length || jobsByDate[key] ?? 0;
             const isToday =
               today.getFullYear() === viewYear &&
               today.getMonth() === viewMonth &&
               today.getDate() === day;
             const inRange = isInRange(key);
+            const visible = items.slice(0, MAX_ITEMS_MONTH);
+            const more = items.length - visible.length;
 
             return (
-              <button
+              <div
                 key={key}
-                type="button"
-                onClick={() => inRange && scrollToDay(key)}
-                disabled={!inRange}
                 className={`
-                  relative flex aspect-square min-h-[36px] min-w-0 items-center justify-center rounded-lg text-sm font-medium transition touch-manipulation
+                  relative flex aspect-square min-h-[36px] min-w-0 flex-col rounded-lg overflow-hidden
                   sm:min-h-[44px]
-                  ${!inRange ? "cursor-default text-muted-foreground/60" : "hover:bg-white/15 active:bg-white/20"}
-                  ${isToday ? "ring-2 ring-accent-gold ring-offset-2 ring-offset-background" : ""}
-                  ${count > 0 && inRange ? "bg-accent-gold/15 text-foreground" : "text-foreground"}
+                  ${count > 0 && inRange ? "bg-accent-gold/10" : ""}
+                  ${isToday ? "ring-2 ring-accent-gold ring-offset-1 ring-offset-background" : ""}
                 `}
               >
-                <span>{day}</span>
-                {count > 0 && inRange && (
-                  <>
-                    {count <= 9 ? (
-                      <span
-                        className="absolute bottom-0.5 right-0.5 min-w-[14px] rounded-full bg-accent-gold px-1 text-[10px] font-semibold text-background leading-tight"
-                        aria-hidden
-                      >
-                        {count}
-                      </span>
-                    ) : (
-                      <span
-                        className="absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-accent-gold sm:bottom-1.5"
-                        aria-hidden
-                      />
-                    )}
-                  </>
-                )}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => inRange && scrollToDay(key)}
+                  disabled={!inRange}
+                  className={`
+                    shrink-0 py-0.5 text-center text-sm font-medium transition touch-manipulation
+                    ${!inRange ? "cursor-default text-muted-foreground/60" : "hover:bg-white/10"}
+                    ${isToday ? "text-accent-gold font-semibold" : "text-foreground"}
+                  `}
+                >
+                  {day}
+                </button>
+                <div className="flex min-h-0 flex-1 flex-col justify-start overflow-hidden px-0.5 pb-0.5">
+                  {visible.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      className="block truncate px-0.5 text-[10px] leading-tight text-foreground hover:bg-white/10 rounded"
+                      title={item.title}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {item.title}
+                    </Link>
+                  ))}
+                  {more > 0 && (
+                    <span className="truncate px-0.5 text-[9px] text-muted-foreground" aria-hidden>
+                      +{more}
+                    </span>
+                  )}
+                </div>
+              </div>
             );
           })}
         </div>
