@@ -41,6 +41,9 @@ function fetchNominatim(query: string): Promise<NominatimResult[]> {
   }).then((res) => res.json());
 }
 
+const MAP_ERROR_MSG =
+  "Map couldn\u2019t be loaded for this address. Use \u201cOpen in Maps\u201d above for directions.";
+
 export function JobMap({ address, title, height = 240 }: JobMapProps) {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,25 +54,47 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
     if (!address.trim()) return;
 
     setError(null);
-    const q = encodeURIComponent(address.trim());
-    fetch(
-      `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
-      {
-        headers: {
-          Accept: "application/json",
-          "User-Agent": "TommyDsJobMap/1.0 (field service job map)",
-        },
-      }
-    )
-      .then((res) => res.json())
+    setUsedFallback(false);
+    setCoords(null);
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const fullAddress = address.trim();
+
+    fetchNominatim(fullAddress)
       .then((data: NominatimResult[]) => {
+        if (cancelled) return;
         if (data && data[0]) {
           setCoords({ lat: Number.parseFloat(data[0].lat), lng: Number.parseFloat(data[0].lon) });
-        } else {
-          setError("Map couldn’t be loaded for this address. Use “Open in Maps” above for directions.");
+          return;
         }
+        const simplified = simplifyAddressForGeocode(fullAddress);
+        if (!simplified || simplified === fullAddress) {
+          setError(MAP_ERROR_MSG);
+          return;
+        }
+        timeoutId = setTimeout(() => {
+          if (cancelled) return;
+          fetchNominatim(simplified).then((retryData: NominatimResult[]) => {
+            if (cancelled) return;
+            if (retryData && retryData[0]) {
+              setCoords({ lat: Number.parseFloat(retryData[0].lat), lng: Number.parseFloat(retryData[0].lon) });
+              setUsedFallback(true);
+            } else {
+              setError(MAP_ERROR_MSG);
+            }
+          }).catch(() => {
+            if (!cancelled) setError("Could not load map");
+          });
+        }, 1100);
       })
-      .catch(() => setError("Could not load map"));
+      .catch(() => {
+        if (!cancelled) setError("Could not load map");
+      });
+
+    return () => {
+      cancelled = true;
+      if (timeoutId != null) clearTimeout(timeoutId);
+    };
   }, [address]);
 
   useEffect(() => {
@@ -124,8 +149,18 @@ export function JobMap({ address, title, height = 240 }: JobMapProps) {
   }
 
   return (
-    <div className="rounded-lg border border-border overflow-hidden bg-muted/30" style={{ height }}>
-      <MapContent center={[coords.lat, coords.lng]} title={title} />
+    <div
+      className="rounded-lg border border-border overflow-hidden bg-muted/30 flex flex-col"
+      style={{ height }}
+    >
+      {usedFallback ? (
+        <p className="shrink-0 px-2 py-1.5 text-xs text-muted-foreground bg-muted/50">
+          Showing building location (unit not shown on map).
+        </p>
+      ) : null}
+      <div className="min-h-0 flex-1">
+        <MapContent center={[coords.lat, coords.lng]} title={title} />
+      </div>
     </div>
   );
 }
