@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 
+import { getCrewDisplayName } from "@/lib/crews";
 import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
@@ -91,12 +92,15 @@ export default async function CrewsPage() {
       <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <span className="block h-1 w-12 rounded-full bg-primary/80" />
         <h2 className="mt-3 text-base font-semibold text-foreground">Add crew</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Add a crew, then add 2–3 installers as members. The crew name will show as the members’ names (e.g. Joe & Michael).
+        </p>
         <form action={createCrew} className="mt-4 grid gap-3 sm:grid-cols-3">
           <input
             type="text"
             name="name"
             required
-            placeholder="Crew name (e.g. Joe & Michael)"
+            placeholder="Placeholder name until you add members"
             className="field"
           />
           <select name="specialty" className="field">
@@ -118,51 +122,39 @@ export default async function CrewsPage() {
               const fullName = Array.isArray(p) ? (p[0] as { full_name?: string | null })?.full_name : (p as { full_name?: string | null } | null)?.full_name;
               return { user_id: m.user_id, full_name: fullName ?? null };
             });
-            const memberNames = members.map((m) => m.full_name ?? m.user_id);
+            const displayName = getCrewDisplayName({ name: crew.name, crew_members: crew.crew_members });
             return (
               <div
                 key={crew.id}
                 className="rounded-xl border border-border bg-card overflow-hidden shadow-sm"
               >
                 <div className="border-b border-border bg-muted/30 px-4 py-3 sm:px-5">
-                  <h3 className="font-semibold text-foreground">{crew.name}</h3>
+                  <h3 className="font-semibold text-foreground">{displayName}</h3>
                   <p className="text-sm text-muted-foreground">{crew.specialty}</p>
-                </div>
-                <div className="p-4 sm:p-5 space-y-3">
-                  <form action={updateCrew} className="grid gap-2 sm:grid-cols-3">
-                    <input type="hidden" name="crew_id" value={crew.id} />
-                    <input
-                      type="text"
-                      name="name"
-                      required
-                      defaultValue={crew.name}
-                      placeholder="Crew name"
-                      className="field"
-                    />
-                    <select name="specialty" className="field" defaultValue={crew.specialty}>
-                      {SPECIALTIES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                    <button type="submit" className="btn-secondary text-sm py-2">Save changes</button>
-                  </form>
-                  <p className="text-sm text-muted-foreground">
-                    Members: {memberNames.length ? memberNames.join(", ") : "None"}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {members.length ? `${members.length} member${members.length !== 1 ? "s" : ""}` : "No members yet — add installers below"}
                   </p>
-                  {members.length > 0 && (
-                    <ul className="flex flex-wrap gap-2">
-                      {members.map((m) => (
-                        <li key={m.user_id} className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-sm">
-                          <span>{m.full_name ?? m.user_id}</span>
-                          <form action={removeMember} className="inline">
-                            <input type="hidden" name="crew_id" value={crew.id} />
-                            <input type="hidden" name="user_id" value={m.user_id} />
-                            <button type="submit" className="text-muted-foreground hover:text-destructive" aria-label="Remove">×</button>
-                          </form>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                </div>
+                <div className="p-4 sm:p-5 space-y-4">
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Members</h4>
+                    {members.length > 0 ? (
+                      <ul className="flex flex-wrap gap-2">
+                        {members.map((m) => (
+                          <li key={m.user_id} className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-sm">
+                            <span>{m.full_name ?? m.user_id}</span>
+                            <form action={removeMember} className="inline">
+                              <input type="hidden" name="crew_id" value={crew.id} />
+                              <input type="hidden" name="user_id" value={m.user_id} />
+                              <button type="submit" className="text-muted-foreground hover:text-destructive" aria-label="Remove">×</button>
+                            </form>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">None yet. Add installers below — the crew name will become their names.</p>
+                    )}
+                  </div>
                   {(() => {
                     const available = (installers ?? []).filter(
                       (i) => !members.some((m) => m.user_id === i.user_id)
@@ -171,7 +163,7 @@ export default async function CrewsPage() {
                       <form action={addMember} className="flex flex-wrap items-center gap-2">
                         <input type="hidden" name="crew_id" value={crew.id} />
                         <select name="user_id" className="field flex-1 min-w-0 max-w-[200px]" required>
-                          <option value="">Add installer…</option>
+                          <option value="">Add installer to this crew…</option>
                           {available.map((i) => (
                             <option key={i.user_id} value={i.user_id}>
                               {i.full_name ?? i.user_id}
@@ -184,6 +176,26 @@ export default async function CrewsPage() {
                       <p className="text-xs text-muted-foreground">All installers are in a crew. Add more in auth/profiles.</p>
                     );
                   })()}
+                  <div className="pt-2 border-t border-border">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Crew details</h4>
+                    <form action={updateCrew} className="grid gap-2 sm:grid-cols-3">
+                      <input type="hidden" name="crew_id" value={crew.id} />
+                      <input
+                        type="text"
+                        name="name"
+                        required
+                        defaultValue={crew.name}
+                        placeholder="Fallback name (when no members)"
+                        className="field"
+                      />
+                      <select name="specialty" className="field" defaultValue={crew.specialty}>
+                        {SPECIALTIES.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                      <button type="submit" className="btn-secondary text-sm py-2">Save</button>
+                    </form>
+                  </div>
                 </div>
               </div>
             );

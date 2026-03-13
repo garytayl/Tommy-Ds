@@ -2,6 +2,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
 import { CollectPaymentButton } from "@/components/CollectPaymentButton";
+import { getCrewDisplayName } from "@/lib/crews";
 import { setToastCookie } from "@/lib/toast";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
@@ -88,7 +89,7 @@ export default async function JobsPage({
   const supabase = await createSupabaseServerClientForData();
   let jobsQuery = supabase
     .from("jobs")
-    .select("id,title,status,scheduled_start,customers(name),profiles(full_name),crews(name,specialty),invoices(id,invoice_number,balance_due_cents)")
+    .select("id,title,status,scheduled_start,assigned_crew_id,customers(name),profiles(full_name),crews(name,specialty),invoices(id,invoice_number,balance_due_cents)")
     .order("created_at", { ascending: false });
   if (filterCrewId) jobsQuery = jobsQuery.eq("assigned_crew_id", filterCrewId);
 
@@ -104,8 +105,18 @@ export default async function JobsPage({
       .from("crew_members")
       .select("user_id,profiles(user_id,full_name)")
       .order("user_id"),
-    supabase.from("crews").select("id,name,specialty").order("name", { ascending: true }),
+    supabase
+      .from("crews")
+      .select("id,name,specialty,crew_members(user_id,profiles(user_id,full_name))")
+      .order("name", { ascending: true }),
   ]);
+
+  const crewsRaw = crewsResult.data ?? [];
+  const crews = crewsRaw.map((c: { id: string; name: string; specialty: string; crew_members?: unknown }) => ({
+    id: c.id,
+    name: getCrewDisplayName({ name: c.name, crew_members: c.crew_members }),
+    specialty: c.specialty,
+  }));
 
   const installersList = (installersResult.data ?? []) as { user_id: string; full_name: string | null }[];
   const crewMembers = (crewMembersResult.data ?? []) as { user_id: string; profiles: { user_id: string; full_name: string | null } | { user_id: string; full_name: string | null }[] | null }[];
@@ -126,6 +137,7 @@ export default async function JobsPage({
     title: string;
     status: string;
     scheduled_start: string | null;
+    assigned_crew_id: string | null;
     customers: { name: string } | { name: string }[] | null;
     profiles: { full_name: string | null } | { full_name: string | null }[] | null;
     crews: { name: string; specialty: string } | { name: string; specialty: string }[] | null;
@@ -133,7 +145,6 @@ export default async function JobsPage({
   };
 
   const jobs = (jobsResult.data ?? []) as JobRow[];
-  const crews = crewsResult.data ?? [];
 
   return (
     <div className="space-y-8">
@@ -328,7 +339,10 @@ export default async function JobsPage({
                 const customer = Array.isArray(job.customers)
                   ? job.customers[0]?.name
                   : job.customers?.name;
-                const crew = Array.isArray(job.crews) ? job.crews[0] : job.crews;
+                const jobCrew = Array.isArray(job.crews) ? job.crews[0] : job.crews;
+                const crewDisplayName = job.assigned_crew_id
+                  ? crews.find((c) => c.id === job.assigned_crew_id)?.name ?? jobCrew?.name
+                  : jobCrew?.name;
                 const installer = Array.isArray(job.profiles)
                   ? job.profiles[0]?.full_name
                   : job.profiles?.full_name;
@@ -348,7 +362,7 @@ export default async function JobsPage({
                         "—"
                       )}
                     </td>
-                    <td className="py-3 pr-4 text-muted-foreground">{crew?.name ?? "—"}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{crewDisplayName ?? "—"}</td>
                     <td className="py-3 pr-4 text-muted-foreground">{installer ?? "Unassigned"}</td>
                     <td className="py-3 pr-4 text-muted-foreground">
                       {job.scheduled_start

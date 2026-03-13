@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 
 import { setToastCookie } from "@/lib/toast";
 
+import { getCrewDisplayName } from "@/lib/crews";
 import { ScheduleCalendar } from "@/components/ScheduleCalendar";
 import { ScheduleControls } from "@/components/ScheduleControls";
 import { ScheduleDragDrop, type ScheduleJob } from "@/components/ScheduleDragDrop";
@@ -69,7 +70,7 @@ export default async function SchedulePage({
       .order("title", { ascending: true }),
     supabase
       .from("crews")
-      .select("id,name,specialty,crew_members(user_id)")
+      .select("id,name,specialty,crew_members(user_id,profiles(user_id,full_name))")
       .order("name", { ascending: true }),
     supabase
       .from("profiles")
@@ -195,7 +196,7 @@ export default async function SchedulePage({
         isWeekView={isWeekView}
         weekStartStr={weekStartStr}
         weekEndStr={weekEndStr}
-        crews={crews ?? []}
+        crews={(crews ?? []).map((c) => ({ id: c.id, name: getCrewDisplayName({ name: c.name, crew_members: c.crew_members }), specialty: c.specialty }))}
         installers={installers ?? []}
         viewCrewId={viewCrewId}
         viewPersonId={viewPersonId}
@@ -236,6 +237,10 @@ export default async function SchedulePage({
         jobsByDate={byDate as Record<string, ScheduleJob[]>}
         sortedDates={sortedDates}
         rescheduleJob={rescheduleJob}
+        crewDisplayNames={(crews ?? []).reduce<Record<string, string>>((acc, c) => {
+          acc[c.id] = getCrewDisplayName({ name: c.name, crew_members: c.crew_members });
+          return acc;
+        }, {})}
       />
     </div>
   );

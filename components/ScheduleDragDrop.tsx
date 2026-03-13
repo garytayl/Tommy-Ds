@@ -27,12 +27,15 @@ type ScheduleDragDropProps = {
   sortedDates: string[];
   /** Server action: (jobId: string, newDateStr: string) => Promise<void> */
   rescheduleJob: (jobId: string, newDateStr: string) => Promise<void>;
+  /** Optional map of crew id to display name (e.g. "Joe & Michael") */
+  crewDisplayNames?: Record<string, string>;
 };
 
 export function ScheduleDragDrop({
   jobsByDate,
   sortedDates,
   rescheduleJob,
+  crewDisplayNames = {},
 }: ScheduleDragDropProps) {
   const router = useRouter();
   const [dragOverDateKey, setDragOverDateKey] = useState<string | null>(null);
@@ -133,6 +136,8 @@ export function ScheduleDragDrop({
                     ? job.customers[0]?.name
                     : job.customers?.name;
                   const crew = Array.isArray(job.crews) ? job.crews[0] : job.crews;
+                  const crewName =
+                    (job.assigned_crew_id && crewDisplayNames[job.assigned_crew_id]) ?? crew?.name;
                   const installer = Array.isArray(job.profiles)
                     ? job.profiles[0]?.full_name
                     : job.profiles?.full_name;
@@ -163,9 +168,9 @@ export function ScheduleDragDrop({
                               })
                             : "—"}
                         </span>
-                        {crew?.name && (
+                        {crewName && (
                           <span className="text-xs font-medium text-muted-foreground">
-                            {crew.name}
+                            {crewName}
                           </span>
                         )}
                         {customer && (

@@ -9,6 +9,7 @@ import { JobMapDynamic } from "@/components/JobMapDynamic";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { JobStickyActions } from "@/components/JobStickyActions";
 import { JobWorkspaceTabs } from "@/components/JobWorkspaceTabs";
+import { getCrewDisplayName } from "@/lib/crews";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
 import { setToastCookie } from "@/lib/toast";
@@ -102,7 +103,10 @@ export default async function JobWorkspacePage({
         .order("created_at", { ascending: true }),
       supabase.from("materials").select("id,name,unit").order("name", { ascending: true }),
       supabase.from("locations").select("id,name,code").order("code", { ascending: true }),
-      supabase.from("crews").select("id,name,specialty").order("name", { ascending: true }),
+      supabase
+        .from("crews")
+        .select("id,name,specialty,crew_members(user_id,profiles(user_id,full_name))")
+        .order("name", { ascending: true }),
     ]);
 
   const invoiceId = invoiceResult.data?.id ?? null;
@@ -146,7 +150,12 @@ export default async function JobWorkspacePage({
   const jobRecord = jobResult.data as JobRow | null;
   const invoice = invoiceResult.data;
   const installers = installersResult.data ?? [];
-  const crews = crewsResult.data ?? [];
+  const crewsRaw = crewsResult.data ?? [];
+  const crews = crewsRaw.map((c: { id: string; name: string; specialty: string; crew_members?: unknown }) => ({
+    id: c.id,
+    name: getCrewDisplayName({ name: c.name, crew_members: c.crew_members }),
+    specialty: c.specialty,
+  }));
   const photos = photosResult.data ?? [];
   const jobMaterials = jobMaterialsResult.data ?? [];
   const payments = paymentsResult.data ?? [];
@@ -420,7 +429,7 @@ export default async function JobWorkspacePage({
                 className="field"
               >
                 <option value="">No crew</option>
-                {crews.map((c) => (
+                {crews.map((c: { id: string; name: string; specialty: string }) => (
                   <option key={c.id} value={c.id}>
                     {c.name} ({c.specialty})
                   </option>
