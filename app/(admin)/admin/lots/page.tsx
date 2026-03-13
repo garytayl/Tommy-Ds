@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
+import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 export default async function LotsPage() {
@@ -20,6 +21,7 @@ export default async function LotsPage() {
       barcode,
     });
 
+    await setToastCookie("Lot added");
     revalidatePath("/admin/lots");
   }
 

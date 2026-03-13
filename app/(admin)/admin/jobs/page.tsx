@@ -2,6 +2,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
 import { CollectPaymentButton } from "@/components/CollectPaymentButton";
+import { setToastCookie } from "@/lib/toast";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
@@ -78,6 +79,7 @@ export default async function JobsPage({
       notes: String(formData.get("notes") ?? "").trim() || null,
     });
 
+    await setToastCookie("Job created");
     revalidatePath("/admin/jobs");
     revalidatePath("/admin/schedule");
     revalidatePath("/admin");

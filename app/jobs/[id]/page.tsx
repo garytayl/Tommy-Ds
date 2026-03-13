@@ -11,6 +11,7 @@ import { JobStickyActions } from "@/components/JobStickyActions";
 import { JobWorkspaceTabs } from "@/components/JobWorkspaceTabs";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
+import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -210,6 +211,7 @@ export default async function JobWorkspacePage({
       status: "draft",
       tax_cents: 0,
     });
+    await setToastCookie("Invoice created");
     revalidatePath(`/jobs/${id}`);
     revalidatePath("/admin/jobs");
   }
@@ -218,6 +220,7 @@ export default async function JobWorkspacePage({
     "use server";
     const supabase = await createSupabaseServerClientForData();
     await supabase.from("jobs").update({ status: "completed" }).eq("id", id);
+    await setToastCookie("Job marked complete");
     revalidatePath(`/jobs/${id}`);
     revalidatePath("/m");
     revalidatePath("/admin/jobs");
@@ -228,6 +231,7 @@ export default async function JobWorkspacePage({
     const supabase = await createSupabaseServerClientForData();
     const notes = String(formData.get("notes") ?? "").trim();
     await supabase.from("jobs").update({ notes: notes || null }).eq("id", id);
+    await setToastCookie("Notes saved");
     revalidatePath(`/jobs/${id}`);
   }
 
@@ -254,6 +258,7 @@ export default async function JobWorkspacePage({
       storage_path: storagePath,
       caption: caption || null,
     });
+    await setToastCookie("Photo uploaded");
     revalidatePath(`/jobs/${id}`);
   }
 
@@ -280,6 +285,7 @@ export default async function JobWorkspacePage({
       await supabase.from("invoices").update({ tax_cents: taxCents }).eq("id", invoice.id);
       await supabase.rpc("recompute_invoice_totals", { p_invoice_id: invoice.id });
     }
+    await setToastCookie("Line item added");
     revalidatePath(`/jobs/${id}`);
     revalidatePath(`/admin/invoices/${invoice.id}`);
   }
@@ -291,6 +297,7 @@ export default async function JobWorkspacePage({
     const supabase = await createSupabaseServerClientForData();
     await supabase.from("invoices").update({ tax_cents: taxCents }).eq("id", invoice.id);
     await supabase.rpc("recompute_invoice_totals", { p_invoice_id: invoice.id });
+    await setToastCookie("Tax updated");
     revalidatePath(`/jobs/${id}`);
     revalidatePath(`/admin/invoices/${invoice.id}`);
   }
@@ -310,6 +317,7 @@ export default async function JobWorkspacePage({
       location_id: locationId || null,
       notes,
     });
+    await setToastCookie("Material added");
     revalidatePath(`/jobs/${id}`);
   }
 
@@ -319,6 +327,7 @@ export default async function JobWorkspacePage({
     if (!rowId) return;
     const supabase = await createSupabaseServerClientForData();
     await supabase.from("job_materials").delete().eq("id", rowId).eq("job_id", id);
+    await setToastCookie("Material removed");
     revalidatePath(`/jobs/${id}`);
   }
 

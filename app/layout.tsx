@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { PageTransition } from "@/components/page-transition";
 import { NavigationTransition } from "@/components/navigation-transition";
+import { ToastViewer } from "@/components/ToastViewer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <NavigationTransition />
           <PageTransition>{children}</PageTransition>
+          <ToastViewer />
         </Suspense>
       </body>
     </html>

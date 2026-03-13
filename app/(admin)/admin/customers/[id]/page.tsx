@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
 import { JobStatusBadge } from "@/components/JobStatusBadge";
+import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 export default async function CustomerDetailPage({
@@ -49,6 +50,7 @@ export default async function CustomerDetailPage({
       })
       .eq("id", id);
 
+    await setToastCookie("Customer saved");
     revalidatePath(`/admin/customers/${id}`);
     revalidatePath("/admin/customers");
   }

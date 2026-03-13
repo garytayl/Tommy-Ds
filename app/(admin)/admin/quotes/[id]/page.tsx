@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
+import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 const QUOTE_STATUSES = ["draft", "sent", "accepted", "declined"];
@@ -62,6 +63,7 @@ export default async function QuoteDetailPage({
       await supabase.rpc("recompute_quote_totals", { p_quote_id: id });
     }
 
+    await setToastCookie("Line item added");
     revalidatePath(`/admin/quotes/${id}`);
   }
 
@@ -73,6 +75,7 @@ export default async function QuoteDetailPage({
     await supabase.from("quotes").update({ tax_cents: taxCents }).eq("id", id);
     await supabase.rpc("recompute_quote_totals", { p_quote_id: id });
 
+    await setToastCookie("Tax updated");
     revalidatePath(`/admin/quotes/${id}`);
   }
 
@@ -84,6 +87,7 @@ export default async function QuoteDetailPage({
 
     const supabase = await createSupabaseServerClientForData();
     await supabase.from("quotes").update({ status }).eq("id", id);
+    await setToastCookie("Quote updated");
     revalidatePath(`/admin/quotes/${id}`);
   }
 
@@ -153,6 +157,7 @@ export default async function QuoteDetailPage({
       .update({ job_id: newJob.id, status: "accepted" })
       .eq("id", quoteId);
 
+    await setToastCookie("Quote converted to job");
     revalidatePath("/admin/quotes");
     revalidatePath(`/admin/quotes/${id}`);
     revalidatePath("/admin/jobs");

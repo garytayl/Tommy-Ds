@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { InvoiceSummary } from "@/components/InvoiceSummary";
 import { formatCents, dollarsToCents } from "@/lib/money";
+import { setToastCookie } from "@/lib/toast";
 import { computeTaxCents } from "@/lib/tax";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { SendReceiptForSignature } from "./SendReceiptForSignature";
@@ -76,6 +77,7 @@ export default async function InvoiceDetailPage({
       await supabase.rpc("recompute_invoice_totals", { p_invoice_id: id });
     }
 
+    await setToastCookie("Line item added");
     revalidatePath(`/admin/invoices/${id}`);
     revalidatePath(`/jobs/${invoiceJobId}`);
     revalidatePath(`/admin/jobs/${invoiceJobId}`);
@@ -89,6 +91,7 @@ export default async function InvoiceDetailPage({
     await supabase.from("invoices").update({ tax_cents: taxCents }).eq("id", id);
     await supabase.rpc("recompute_invoice_totals", { p_invoice_id: id });
 
+    await setToastCookie("Tax updated");
     revalidatePath(`/admin/invoices/${id}`);
     revalidatePath(`/jobs/${invoiceJobId}`);
     revalidatePath(`/admin/jobs/${invoiceJobId}`);
@@ -102,6 +105,7 @@ export default async function InvoiceDetailPage({
 
     const supabase = await createSupabaseServerClientForData();
     await supabase.from("invoices").update({ status }).eq("id", id);
+    await setToastCookie("Invoice updated");
     revalidatePath(`/admin/invoices/${id}`);
     revalidatePath(`/jobs/${invoiceJobId}`);
     revalidatePath(`/admin/jobs/${invoiceJobId}`);

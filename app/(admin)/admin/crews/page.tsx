@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 
+import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 const SPECIALTIES = ["Windows and Doors", "Garage Doors"] as const;
@@ -12,6 +13,7 @@ export default async function CrewsPage() {
     if (!name) return;
     const supabase = await createSupabaseServerClientForData();
     await supabase.from("crews").insert({ name, specialty });
+    await setToastCookie("Crew added");
     revalidatePath("/admin/crews");
   }
 
@@ -22,6 +24,7 @@ export default async function CrewsPage() {
     if (!crewId || !userId) return;
     const supabase = await createSupabaseServerClientForData();
     await supabase.from("crew_members").insert({ crew_id: crewId, user_id: userId });
+    await setToastCookie("Member added");
     revalidatePath("/admin/crews");
   }
 
@@ -36,6 +39,7 @@ export default async function CrewsPage() {
       .from("crews")
       .update({ name, specialty })
       .eq("id", crewId);
+    await setToastCookie("Crew saved");
     revalidatePath("/admin/crews");
   }
 
@@ -50,6 +54,7 @@ export default async function CrewsPage() {
       .delete()
       .eq("crew_id", crewId)
       .eq("user_id", userId);
+    await setToastCookie("Member removed");
     revalidatePath("/admin/crews");
   }
 

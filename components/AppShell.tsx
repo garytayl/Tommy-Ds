@@ -1,8 +1,13 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+
+const Aurora = dynamic(() => import("@/components/Aurora").then((m) => m.default), {
+  ssr: false,
+});
 
 type Mode = "admin" | "field";
 
@@ -48,7 +53,15 @@ export function AppShell({
   const otherModeLabel = mode === "admin" ? "Field" : "Admin";
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
+      <div className="fixed inset-0 h-full w-full">
+        <Aurora
+          colorStops={["#0f0809", "#1a1210", "#0f0809"]}
+          amplitude={0.35}
+          blend={0.2}
+        />
+      </div>
+      <div className="relative z-10 flex min-h-screen flex-col">
       <header className="sticky top-0 z-20 shrink-0 rounded-b-xl border-b border-white/10 bg-primary/90 backdrop-blur-md sm:rounded-b-2xl">
         <div className="relative mx-auto flex w-full max-w-6xl items-center gap-2 px-3 py-2.5 sm:px-6 sm:py-3">
           <Link
@@ -177,6 +190,7 @@ export function AppShell({
           </ul>
         </div>
       )}
+      </div>
     </div>
   );
 }

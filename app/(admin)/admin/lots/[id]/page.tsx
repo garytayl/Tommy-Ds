@@ -2,6 +2,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 
+import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 export default async function LotDetailPage({
@@ -63,6 +64,7 @@ export default async function LotDetailPage({
       });
     }
 
+    await setToastCookie("Inventory updated");
     revalidatePath(`/admin/lots/${id}`);
   }
 
@@ -91,6 +93,7 @@ export default async function LotDetailPage({
         .eq("id", inventoryId);
     }
 
+    await setToastCookie("Quantity updated");
     revalidatePath(`/admin/lots/${id}`);
   }
 

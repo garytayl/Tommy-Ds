@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
+import { setToastCookie } from "@/lib/toast";
+
 import { ScheduleCalendar } from "@/components/ScheduleCalendar";
 import { ScheduleDragDrop, type ScheduleJob } from "@/components/ScheduleDragDrop";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
@@ -145,6 +147,7 @@ export default async function SchedulePage({
         ...(newEnd && { scheduled_end: newEnd }),
       })
       .eq("id", jobId);
+    await setToastCookie("Schedule updated");
     revalidatePath("/admin/schedule");
     revalidatePath("/admin/jobs");
     revalidatePath("/m");

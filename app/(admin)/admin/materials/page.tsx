@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 
+import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 export default async function MaterialsPage() {
@@ -23,6 +24,7 @@ export default async function MaterialsPage() {
       barcode,
     });
 
+    await setToastCookie("Material added");
     revalidatePath("/admin/materials");
   }
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
+import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 export default async function CustomersPage() {
@@ -20,6 +21,7 @@ export default async function CustomersPage() {
       email: email || null,
     });
 
+    await setToastCookie("Customer added");
     revalidatePath("/admin/customers");
   }
 

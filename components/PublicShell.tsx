@@ -9,6 +9,9 @@ const Aurora = dynamic(() => import("@/components/Aurora").then((m) => m.default
   ssr: false,
 });
 
+const VIBRANT_STOPS = ["#7A1D2B", "#F5A623", "#7A1D2B"];
+const SUBTLE_STOPS = ["#0f0809", "#1a1210", "#0f0809"];
+
 type PublicShellProps = {
   children: React.ReactNode;
   aurora?: boolean;
@@ -17,15 +20,13 @@ type PublicShellProps = {
 export function PublicShell({ children, aurora = false }: PublicShellProps) {
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
-      {aurora && (
-        <div className="fixed inset-0 h-full w-full">
-          <Aurora
-            colorStops={["#7A1D2B", "#F5A623", "#7A1D2B"]}
-            amplitude={1.2}
-            blend={0.6}
-          />
-        </div>
-      )}
+      <div className="fixed inset-0 h-full w-full">
+        <Aurora
+          colorStops={aurora ? VIBRANT_STOPS : SUBTLE_STOPS}
+          amplitude={aurora ? 1.2 : 0.35}
+          blend={aurora ? 0.6 : 0.2}
+        />
+      </div>
 
       <div className="relative z-10 flex min-h-screen flex-col">
         <GlassNav />

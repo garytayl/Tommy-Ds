@@ -2,6 +2,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 export default async function NewQuotePage() {
@@ -41,6 +42,7 @@ export default async function NewQuotePage() {
       .single();
 
     if (quote) {
+      await setToastCookie("Quote created");
       revalidatePath("/admin/quotes");
       redirect(`/admin/quotes/${quote.id}`);
     }
