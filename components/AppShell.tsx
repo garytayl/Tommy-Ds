@@ -76,9 +76,18 @@ export function AppShell({
           </Link>
 
           <div className="hidden flex-1 justify-center sm:flex">
-            <div className="w-full max-w-md rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-primary-foreground/80 backdrop-blur-sm">
+            <Link
+              href="/admin/search"
+              className="flex w-full max-w-md items-center rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-primary-foreground/80 backdrop-blur-sm transition hover:bg-white/15 hover:text-primary-foreground"
+            >
+              <span className="mr-2 shrink-0 text-muted-foreground">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
+              </span>
               Search customer / job / address
-            </div>
+            </Link>
           </div>
 
           <div className="flex flex-1 items-center justify-end gap-2 sm:flex-initial">
@@ -201,6 +210,17 @@ export function AppShell({
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Pay invoice
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/admin/search"
+                className={`block rounded-lg px-3 py-2.5 text-sm font-medium text-primary-foreground touch-manipulation ${
+                  pathname === "/admin/search" ? "bg-primary-foreground/20" : "hover:bg-primary-foreground/10"
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Search
               </Link>
             </li>
             <li className="my-1 border-t border-primary-foreground/20" aria-hidden />

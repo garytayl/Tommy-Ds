@@ -4,7 +4,7 @@ import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 /**
  * Public invoice lookup for the "pay your invoice" page.
- * GET ?id= or ?number= — full UUID or short prefix (e.g. first 8 chars).
+ * GET ?id= or ?number= — simple invoice number (1, 2, 3…), full UUID, or short UUID prefix.
  * Returns minimal safe fields for display and to call checkout/create.
  */
 export async function GET(request: Request) {
@@ -22,23 +22,36 @@ export async function GET(request: Request) {
 
     const supabase = await createSupabaseServerClientForData();
 
-    // Full UUID: 32 hex chars (no dashes). Re-insert dashes for DB eq().
-    const isFullId = input.length >= 32 && /^[0-9a-fA-F]+$/.test(input);
-    const fullUuid =
-      isFullId && input.length === 32
-        ? `${input.slice(0, 8)}-${input.slice(8, 12)}-${input.slice(12, 16)}-${input.slice(16, 20)}-${input.slice(20, 32)}`
-        : null;
-
     type InvoiceRow = { id: string; job_id: string; invoice_number: number; balance_due_cents: number; status: string };
     let invoiceResult: { data: InvoiceRow | null };
 
-    if (fullUuid) {
-      invoiceResult = await supabase
-        .from("invoices")
-        .select("id,job_id,invoice_number,balance_due_cents,status")
-        .eq("id", fullUuid)
-        .maybeSingle();
+    // Simple numeric invoice number (e.g. 1, 2, 3)
+    if (/^\d+$/.test(input)) {
+      const invoiceNumber = parseInt(input, 10);
+      if (invoiceNumber > 0) {
+        invoiceResult = await supabase
+          .from("invoices")
+          .select("id,job_id,invoice_number,balance_due_cents,status")
+          .eq("invoice_number", invoiceNumber)
+          .maybeSingle();
+      } else {
+        invoiceResult = { data: null };
+      }
     } else {
+      // Full UUID: 32 hex chars (no dashes). Re-insert dashes for DB eq().
+      const isFullId = input.length >= 32 && /^[0-9a-fA-F]+$/.test(input);
+      const fullUuid =
+        isFullId && input.length === 32
+          ? `${input.slice(0, 8)}-${input.slice(8, 12)}-${input.slice(12, 16)}-${input.slice(16, 20)}-${input.slice(20, 32)}`
+          : null;
+
+      if (fullUuid) {
+        invoiceResult = await supabase
+          .from("invoices")
+          .select("id,job_id,invoice_number,balance_due_cents,status")
+          .eq("id", fullUuid)
+          .maybeSingle();
+      } else {
       // Short code: filter in memory (Supabase may not support LIKE on uuid). Fetch recent and match prefix.
       const { data: rows } = await supabase
         .from("invoices")
@@ -57,6 +70,7 @@ export async function GET(request: Request) {
         );
       } else {
         invoiceResult = { data: list[0] };
+      }
       }
     }
 

@@ -78,8 +78,7 @@ export default function PayInvoicePage() {
           Pay your invoice
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Enter your invoice number from your bill, or use the link we sent you to pay by card
-          online.
+          Enter the number from your bill (e.g. 1 or 2) to pay by card.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
@@ -91,7 +90,7 @@ export default function PayInvoicePage() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="e.g. first 8 characters or full ID"
+            placeholder="e.g. 1 or 2"
             className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
             autoComplete="off"
           />
@@ -110,7 +109,8 @@ export default function PayInvoicePage() {
               {result.error ?? "Invoice not found."}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              Check the number and try again, or pay by check to the address on your bill.
+              Use only the number on your bill (like 1 or 2). Check and try again, or pay by check
+              to the address on your bill.
             </p>
           </div>
         )}
