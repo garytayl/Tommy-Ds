@@ -168,7 +168,7 @@ export function ScheduleCalendar({
             ))}
             {weekDays.map((key) => {
               const items = itemsByDate[key] ?? [];
-              const count = items.length || jobsByDate[key] ?? 0;
+              const count = items.length || (jobsByDate[key] ?? 0);
               const d = new Date(key + "T12:00:00");
               const dayNum = d.getDate();
               const isToday =
@@ -277,7 +277,7 @@ export function ScheduleCalendar({
             }
             const key = dateKey(viewYear, viewMonth, day);
             const items = itemsByDate[key] ?? [];
-            const count = items.length || jobsByDate[key] ?? 0;
+            const count = items.length || (jobsByDate[key] ?? 0);
             const isToday =
               today.getFullYear() === viewYear &&
               today.getMonth() === viewMonth &&
