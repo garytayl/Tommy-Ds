@@ -48,8 +48,8 @@ export default async function InstallerTodayPage() {
     scheduled_start: string | null;
     customers: { name: string; phone: string | null } | { name: string; phone: string | null }[] | null;
     invoices:
-      | { id: string; status: string; balance_due_cents: number }[]
-      | { id: string; status: string; balance_due_cents: number }
+      | { id: string; invoice_number: number; status: string; balance_due_cents: number }[]
+      | { id: string; invoice_number: number; status: string; balance_due_cents: number }
       | null;
   };
 
