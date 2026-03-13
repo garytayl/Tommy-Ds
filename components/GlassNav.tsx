@@ -53,28 +53,30 @@ export function GlassNav() {
 
   return (
     <nav
-      className={`fixed top-4 left-1/2 z-50 w-[90vw] max-w-xs md:top-8 md:max-w-4xl -translate-x-1/2 transition-all duration-500 ${
-        isVisible ? "translate-y-0 opacity-100" : "-translate-y-20 md:-translate-y-24 opacity-0"
-      } ${hasLoaded ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
+      className={`fixed left-1/2 z-50 w-[90vw] max-w-xs -translate-x-1/2 transition-all duration-500 md:max-w-4xl ${
+        isVisible ? "top-3 translate-y-0 opacity-100 md:top-4" : "-translate-y-full opacity-0"
+      } ${hasLoaded ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"} ${
+        !isVisible ? "pointer-events-none" : ""
+      }`}
       style={{
         transition: hasLoaded
-          ? "all 0.5s ease-out"
+          ? "all 0.35s ease-out"
           : "opacity 0.8s ease-out, transform 0.8s ease-out",
       }}
     >
       <div className="mx-auto">
-        <div className="rounded-full border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-md md:px-6 md:py-2">
+        <div className="rounded-full border border-white/20 bg-white/10 px-3 py-2 backdrop-blur-md md:px-5 md:py-1.5">
           <div className="flex items-center justify-between">
             <Link
               href="/"
               className="flex items-center transition-transform duration-200 hover:scale-105"
             >
-              <div className="relative h-10 w-10 md:h-12 md:w-12">
+              <div className="relative h-8 w-8 md:h-9 md:w-9">
                 <Image
                   src="/images/tommyds-logo.png"
                   alt="Tommy D's"
-                  width={48}
-                  height={48}
+                  width={36}
+                  height={36}
                   className="h-full w-full object-contain"
                 />
               </div>
