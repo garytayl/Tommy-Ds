@@ -56,11 +56,14 @@ export default async function TeamPage() {
         revalidatePath("/admin/team");
         return;
       }
-      const { error: profileError } = await supabase.from("profiles").insert({
-        user_id: userData.user.id,
-        role,
-        full_name: fullName,
-      });
+      const { error: profileError } = await supabase.from("profiles").upsert(
+        {
+          user_id: userData.user.id,
+          role,
+          full_name: fullName,
+        },
+        { onConflict: "user_id" }
+      );
       if (profileError) {
         await setToastCookie(profileError.message);
         revalidatePath("/admin/team");
@@ -169,6 +172,9 @@ export default async function TeamPage() {
               Supabase project
             </a>
             , open <strong>Authentication → Users</strong> to add a user manually. Then add a row to the <code className="rounded bg-muted px-1">profiles</code> table with that user&apos;s <code className="rounded bg-muted px-1">user_id</code> and <code className="rounded bg-muted px-1">role</code> (admin, installer, or manager) or they won&apos;t be able to sign in to this app.
+          </li>
+          <li>
+            <strong>“Database error creating new user”:</strong> Usually a trigger on <code className="rounded bg-muted px-1">auth.users</code> is failing. Apply the migration <code className="rounded bg-muted px-1">20260314100000_fix_auth_user_triggers.sql</code> (drops common broken triggers), or in Supabase SQL Editor run it manually. Check Postgres logs in the Dashboard if it persists.
           </li>
           <li>
             <strong>Invite by email:</strong> Supabase supports{" "}
