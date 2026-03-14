@@ -149,7 +149,7 @@ export default async function SchedulePage({
     if (!byDate[key]) byDate[key] = [];
     byDate[key].push(job);
     jobsByDateCount[key] = (jobsByDateCount[key] ?? 0) + 1;
-    if (itemsByDate[key]) itemsByDate[key].push({ id: job.id, title: job.title, type: "job", href: `/admin/jobs/${job.id}` });
+    if (itemsByDate[key]) itemsByDate[key].push({ id: job.id, title: job.title, type: "job", href: `/jobs/${job.id}` });
   }
   const rowIds = new Set(rows.map((r) => r.id));
   for (const act of activitiesInRange ?? []) {
@@ -158,7 +158,7 @@ export default async function SchedulePage({
     const key = a.scheduled_date.slice(0, 10);
     if (byDate[key] !== undefined) jobsByDateCount[key] = (jobsByDateCount[key] ?? 0) + 1;
     const title = (a.title || a.type || "Activity").trim() || "Activity";
-    if (itemsByDate[key]) itemsByDate[key].push({ id: a.id, title, type: "activity", href: `/admin/jobs/${a.job_id}` });
+    if (itemsByDate[key]) itemsByDate[key].push({ id: a.id, title, type: "activity", href: `/jobs/${a.job_id}` });
   }
 
   const startDateStr = start.toISOString().slice(0, 10);
