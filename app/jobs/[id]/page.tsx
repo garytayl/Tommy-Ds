@@ -77,8 +77,32 @@ export default async function JobWorkspacePage({
   const { tab = "overview" } = await searchParams;
   const supabase = await createSupabaseServerClientForData();
 
+  // Prefer session client; if job not found and service role is available, retry so
+  // calendar/links work when session isn't sent (e.g. some navigations).
+  let jobResult = await supabase
+    .from("jobs")
+    .select(
+      "id,title,status,notes,project_type,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone)",
+    )
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!jobResult.data && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      const service = createSupabaseServiceClient();
+      jobResult = await service
+        .from("jobs")
+        .select(
+          "id,title,status,notes,project_type,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone)",
+        )
+        .eq("id", id)
+        .maybeSingle();
+    } catch {
+      // ignore
+    }
+  }
+
   const [
-    jobResult,
     invoiceResult,
     installersResult,
     photosResult,
@@ -90,13 +114,6 @@ export default async function JobWorkspacePage({
     jobNotesResult,
     quoteResult,
   ] = await Promise.all([
-      supabase
-        .from("jobs")
-        .select(
-          "id,title,status,notes,project_type,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone)",
-        )
-        .eq("id", id)
-        .maybeSingle(),
       supabase
         .from("invoices")
         .select(
