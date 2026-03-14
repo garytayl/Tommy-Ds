@@ -3,7 +3,23 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
+import {
+  Home,
+  CreditCard,
+  Search,
+  LayoutDashboard,
+  UserPlus,
+  Calendar,
+  Briefcase,
+  FileText,
+  Users,
+  UserCircle,
+  DollarSign,
+  BarChart3,
+  Sparkles,
+  Smartphone,
+} from "lucide-react";
 
 const Aurora = dynamic(() => import("@/components/Aurora").then((m) => m.default), {
   ssr: false,
@@ -195,72 +211,108 @@ export function AppShell({
         })}
       </nav>
 
-      {/* Full-screen overlay menu (maniafueled-style) */}
+      {/* Mobile overlay menu — card panel with icons and sections */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-30 flex flex-col bg-background/95 backdrop-blur-lg sm:hidden"
+          className="fixed inset-0 z-30 flex flex-col items-center justify-center bg-background/90 p-4 backdrop-blur-xl sm:hidden"
           role="dialog"
           aria-modal="true"
           aria-label="Menu"
           onClick={() => setMobileMenuOpen(false)}
         >
-          <nav
-            className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-8"
+          <div
+            className="w-full max-w-sm rounded-2xl border border-border bg-card shadow-xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <Link
-              href="/"
-              className={`min-h-[48px] flex items-center justify-center text-2xl font-medium tracking-tight transition sm:text-3xl ${
-                pathname === "/" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Home
-            </Link>
-            <Link
-              href="/pay"
-              className={`min-h-[48px] flex items-center justify-center text-2xl font-medium tracking-tight transition sm:text-3xl ${
-                pathname === "/pay" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Pay invoice
-            </Link>
-            {mode === "admin" && (
+            <div className="border-b border-border bg-muted/40 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Menu</p>
+            </div>
+            <nav className="flex flex-col py-2">
+              <div className="px-2 py-1.5">
+                <p className="mb-1 px-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Quick links</p>
+                <div className="flex flex-col gap-0.5">
+                  <Link
+                    href="/"
+                    className={`flex items-center gap-3 rounded-xl px-3 py-3 transition ${
+                      pathname === "/" ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Home className="h-5 w-5 shrink-0" />
+                    <span className="font-medium">Home</span>
+                  </Link>
+                  <Link
+                    href="/pay"
+                    className={`flex items-center gap-3 rounded-xl px-3 py-3 transition ${
+                      pathname === "/pay" ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <CreditCard className="h-5 w-5 shrink-0" />
+                    <span className="font-medium">Pay invoice</span>
+                  </Link>
+                  {mode === "admin" && (
+                    <Link
+                      href="/admin/search"
+                      className={`flex items-center gap-3 rounded-xl px-3 py-3 transition ${
+                        pathname === "/admin/search" ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+                      }`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Search className="h-5 w-5 shrink-0" />
+                      <span className="font-medium">Search</span>
+                    </Link>
+                  )}
+                </div>
+              </div>
+              <div className="border-t border-border px-2 py-1.5">
+                <p className="mb-1 px-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  {mode === "admin" ? "Admin" : "Field"}
+                </p>
+                <div className="flex flex-col gap-0.5">
+                  {nav.map((item) => {
+                    const active = isActive(item.href, pathname) || (item.href === "/admin" && pathname.startsWith("/jobs"));
+                    const icons: Record<string, ReactNode> = {
+                      "/admin": <LayoutDashboard className="h-5 w-5 shrink-0" />,
+                      "/admin/leads": <UserPlus className="h-5 w-5 shrink-0" />,
+                      "/admin/schedule": <Calendar className="h-5 w-5 shrink-0" />,
+                      "/admin/jobs": <Briefcase className="h-5 w-5 shrink-0" />,
+                      "/admin/quotes": <FileText className="h-5 w-5 shrink-0" />,
+                      "/admin/crews": <Users className="h-5 w-5 shrink-0" />,
+                      "/admin/customers": <UserCircle className="h-5 w-5 shrink-0" />,
+                      "/admin/invoices": <DollarSign className="h-5 w-5 shrink-0" />,
+                      "/admin/reports": <BarChart3 className="h-5 w-5 shrink-0" />,
+                      "/admin/future-features": <Sparkles className="h-5 w-5 shrink-0" />,
+                      "/m": <Briefcase className="h-5 w-5 shrink-0" />,
+                    };
+                    return (
+                      <Link
+                        key={`${item.href}-${item.label}`}
+                        href={item.href}
+                        className={`flex items-center gap-3 rounded-xl px-3 py-3 transition ${
+                          active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+                        }`}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {icons[item.href] ?? <LayoutDashboard className="h-5 w-5 shrink-0" />}
+                        <span className="font-medium">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </nav>
+            <div className="border-t border-border bg-muted/30 p-3">
               <Link
-                href="/admin/search"
-                className={`min-h-[48px] flex items-center justify-center text-2xl font-medium tracking-tight transition sm:text-3xl ${
-                  pathname === "/admin/search" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
+                href={otherModeHref}
+                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-muted transition"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Search
+                <Smartphone className="h-4 w-4 shrink-0" />
+                {otherModeLabel}
               </Link>
-            )}
-            <div className="my-2 h-px w-16 bg-border" aria-hidden />
-            {nav.map((item, index) => (
-              <Link
-                key={`${item.href}-${item.label}`}
-                href={item.href}
-                className={`min-h-[48px] flex items-center justify-center text-2xl font-medium tracking-tight transition sm:text-3xl ${
-                  isActive(item.href, pathname) || (item.href === "/admin" && pathname.startsWith("/jobs"))
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <div className="my-2 h-px w-16 bg-border" aria-hidden />
-            <Link
-              href={otherModeHref}
-              className="min-h-[48px] flex items-center justify-center rounded-xl border border-border bg-muted/50 px-6 py-3 text-lg font-medium text-foreground hover:bg-muted"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {otherModeLabel}
-            </Link>
-          </nav>
+            </div>
+          </div>
         </div>
       )}
       </div>
