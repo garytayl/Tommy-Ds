@@ -1,9 +1,11 @@
-import { features } from "@/lib/config";
 import { AppShell } from "@/components/AppShell";
+import { getCurrentUserAndProfile } from "@/lib/auth";
+import { features } from "@/lib/config";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default function InstallerLayout({
+export default async function InstallerLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   if (!features.supabase) {
@@ -21,5 +23,28 @@ export default function InstallerLayout({
     );
   }
 
-  return <AppShell mode="field">{children}</AppShell>;
+  const auth = await getCurrentUserAndProfile();
+  if (!auth) redirect("/auth/login?next=/m");
+  if (!auth.profile) {
+    return (
+      <div className="min-h-screen bg-background p-4 sm:p-6 flex items-center justify-center">
+        <div className="mx-auto max-w-md rounded-xl border border-border bg-card p-6 text-center">
+          <h1 className="text-lg font-semibold text-foreground">No access</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your account doesn’t have a role yet. Contact your admin to get access.
+          </p>
+          <form action="/auth/logout" method="post" className="mt-4">
+            <button type="submit" className="btn-primary">Sign out</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+  if (auth.profile.role !== "installer") redirect("/admin");
+
+  return (
+    <AppShell mode="field" role={auth.profile.role}>
+      {children}
+    </AppShell>
+  );
 }

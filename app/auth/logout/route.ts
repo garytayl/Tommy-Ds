@@ -1,14 +1,15 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
-  return NextResponse.redirect(new URL("/", process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "http://localhost:3000"), {
-    status: 302,
-  });
+  const url = request.nextUrl.clone();
+  url.pathname = "/";
+  url.search = "";
+  return NextResponse.redirect(url, { status: 302 });
 }
 
-export async function GET() {
-  return POST();
+export async function GET(request: NextRequest) {
+  return POST(request);
 }

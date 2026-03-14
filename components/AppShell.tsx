@@ -19,7 +19,9 @@ import {
   BarChart3,
   Sparkles,
   Smartphone,
+  LogOut,
 } from "lucide-react";
+import type { ProfileRole } from "@/lib/auth";
 
 const Aurora = dynamic(() => import("@/components/Aurora").then((m) => m.default), {
   ssr: false,
@@ -40,10 +42,23 @@ const ADMIN_NAV = [
   { href: "/admin/future-features", label: "Future features" },
 ] as const;
 
+/** Office (manager) role: no Installers, Reports, or Future features. */
+const OFFICE_NAV = [
+  { href: "/admin", label: "Today" },
+  { href: "/admin/leads", label: "Leads" },
+  { href: "/admin/schedule", label: "Schedule" },
+  { href: "/admin/jobs", label: "Jobs" },
+  { href: "/admin/quotes", label: "Quotes" },
+  { href: "/admin/customers", label: "Customers" },
+  { href: "/admin/invoices", label: "Money" },
+] as const;
+
 const FIELD_NAV = [{ href: "/m", label: "My jobs" }] as const;
 
-function navFor(mode: Mode) {
-  return mode === "admin" ? ADMIN_NAV : FIELD_NAV;
+function navFor(mode: Mode, role?: ProfileRole) {
+  if (mode === "field") return FIELD_NAV;
+  if (role === "manager") return OFFICE_NAV;
+  return ADMIN_NAV;
 }
 
 function isActive(href: string, pathname: string): boolean {
@@ -55,14 +70,16 @@ function isActive(href: string, pathname: string): boolean {
 
 export function AppShell({
   mode,
+  role,
   children,
 }: {
   mode: Mode;
+  role?: ProfileRole;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const nav = navFor(mode);
+  const nav = navFor(mode, role);
   const otherModeHref = mode === "admin" ? "/m" : "/admin";
   const otherModeLabel = mode === "admin" ? "Installer" : "Admin";
 
@@ -131,7 +148,7 @@ export function AppShell({
             </Link>
             <Link
               href={otherModeHref}
-              className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition touch-manipulation sm:px-3 ${
+              className={`hidden rounded-xl px-2.5 py-1.5 text-sm font-medium transition touch-manipulation sm:inline-flex sm:px-3 ${
                 pathname.startsWith(otherModeHref)
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "border border-white/30 bg-white/10 text-primary-foreground hover:bg-white/20"
@@ -139,6 +156,13 @@ export function AppShell({
             >
               {otherModeLabel}
             </Link>
+            <a
+              href="/auth/logout"
+              className="rounded-xl border border-white/30 bg-white/10 px-2.5 py-1.5 text-sm font-medium text-primary-foreground transition hover:bg-white/20 touch-manipulation sm:px-3 inline-flex items-center gap-1.5"
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Sign out</span>
+            </a>
             <button
               type="button"
               className="relative flex min-h-[44px] min-w-[44px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl text-primary-foreground hover:bg-white/10 sm:hidden touch-manipulation"
@@ -302,7 +326,7 @@ export function AppShell({
                 </div>
               </div>
             </nav>
-            <div className="border-t border-border bg-muted/30 p-3">
+            <div className="border-t border-border bg-muted/30 p-3 flex flex-col gap-2">
               <Link
                 href={otherModeHref}
                 className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-muted transition"
@@ -311,6 +335,14 @@ export function AppShell({
                 <Smartphone className="h-4 w-4 shrink-0" />
                 {otherModeLabel}
               </Link>
+              <a
+                href="/auth/logout"
+                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-muted transition"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                Sign out
+              </a>
             </div>
           </div>
         </div>
