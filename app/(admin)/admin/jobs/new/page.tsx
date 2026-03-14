@@ -135,9 +135,9 @@ export default async function NewJobPage({ searchParams }: PageProps) {
     specialty: c.specialty,
   }));
 
-  const profilesFromCrew = (crewMembers ?? []).map((m: { profiles: unknown }) => {
+  const profilesFromCrew = (crewMembers ?? []).map((m: { user_id: string; profiles: unknown }) => {
     const p = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
-    return { user_id: (m as { user_id: string }).user_id, full_name: (p as { full_name: string | null })?.full_name ?? null };
+    return { user_id: m.user_id, full_name: (p as { full_name: string | null })?.full_name ?? null };
   });
   const installerIds = new Set((installersList ?? []).map((i: { user_id: string }) => i.user_id));
   const installers = [
