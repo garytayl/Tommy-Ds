@@ -15,10 +15,9 @@ export interface AuthUser {
   email?: string;
 }
 
-export interface CurrentUserResult {
-  user: AuthUser;
-  profile: Profile;
-} | null;
+export type CurrentUserResult =
+  | { user: AuthUser; profile: Profile }
+  | null;
 
 /**
  * Returns the current session user and their profile, or null if not signed in
