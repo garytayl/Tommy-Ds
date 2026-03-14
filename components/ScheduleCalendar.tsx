@@ -205,6 +205,7 @@ export function ScheduleCalendar({
                       <Link
                         key={item.id}
                         href={item.href}
+                        prefetch={false}
                         className={`
                           block truncate rounded px-1 py-0.5 text-[11px] leading-tight transition hover:bg-white/15 sm:text-xs
                           ${item.type === "activity" ? "text-muted-foreground" : "text-foreground font-medium"}
@@ -313,6 +314,7 @@ export function ScheduleCalendar({
                     <Link
                       key={item.id}
                       href={item.href}
+                      prefetch={false}
                       className="block truncate px-0.5 text-[10px] leading-tight text-foreground hover:bg-white/10 rounded"
                       title={item.title}
                       onClick={(e) => e.stopPropagation()}
