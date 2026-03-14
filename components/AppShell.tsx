@@ -15,6 +15,7 @@ import {
   FileText,
   Users,
   UserCircle,
+  UserCog,
   DollarSign,
   BarChart3,
   Sparkles,
@@ -38,6 +39,7 @@ const ADMIN_NAV = [
   { href: "/admin/crews", label: "Installers" },
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/invoices", label: "Money" },
+  { href: "/admin/team", label: "Team" },
   { href: "/admin/reports", label: "Reports" },
   { href: "/admin/future-features", label: "Future features" },
 ] as const;
@@ -305,6 +307,7 @@ export function AppShell({
                       "/admin/crews": <Users className="h-5 w-5 shrink-0" />,
                       "/admin/customers": <UserCircle className="h-5 w-5 shrink-0" />,
                       "/admin/invoices": <DollarSign className="h-5 w-5 shrink-0" />,
+                      "/admin/team": <UserCog className="h-5 w-5 shrink-0" />,
                       "/admin/reports": <BarChart3 className="h-5 w-5 shrink-0" />,
                       "/admin/future-features": <Sparkles className="h-5 w-5 shrink-0" />,
                       "/m": <Briefcase className="h-5 w-5 shrink-0" />,
