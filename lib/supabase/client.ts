@@ -22,3 +22,6 @@ export function createSupabaseBrowserClient(): SupabaseClient {
   browserClient = createBrowserClient(supabaseUrl, supabaseAnonKey);
   return browserClient;
 }
+
+/** Alias for createSupabaseBrowserClient (e.g. auth forms). */
+export const createClient = createSupabaseBrowserClient;
