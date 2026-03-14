@@ -140,9 +140,9 @@ export default async function TodayCommandCenterPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <DevHint message="Creates a job in public.jobs (customer_id, address, schedule). Form at /admin/jobs#create.">
+        <DevHint message="Creates a job in public.jobs (customer_id, address, schedule). Form at /admin/jobs/new.">
           <Link
-            href="/admin/jobs#create"
+            href="/admin/jobs/new"
             className="inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-95"
           >
             New job
@@ -300,7 +300,7 @@ export default async function TodayCommandCenterPage() {
                     className="py-8 text-center text-sm text-muted-foreground"
                   >
                     No jobs yet.{" "}
-                    <Link href="/admin/jobs#create" className="link">
+                    <Link href="/admin/jobs/new" className="link">
                       Create a job
                     </Link>{" "}
                     to get started.

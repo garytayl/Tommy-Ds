@@ -225,7 +225,7 @@ export default async function SchedulePage({
 
       <div className="flex flex-wrap gap-2 sm:gap-3">
         <Link
-          href="/admin/jobs#create"
+          href="/admin/jobs/new"
           className="inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-95 touch-manipulation"
         >
           New job

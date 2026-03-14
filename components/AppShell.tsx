@@ -125,21 +125,26 @@ export function AppShell({
             </Link>
             <button
               type="button"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-primary-foreground hover:bg-white/10 sm:hidden touch-manipulation"
+              className="relative flex min-h-[44px] min-w-[44px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl text-primary-foreground hover:bg-white/10 sm:hidden touch-manipulation"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              ) : (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <line x1="4" y1="8" x2="20" y2="8" />
-                  <line x1="4" y1="16" x2="20" y2="16" />
-                </svg>
-              )}
+              <span
+                className={`block h-px w-6 origin-center bg-current transition-all duration-300 ease-out ${
+                  mobileMenuOpen ? "translate-y-[5px] rotate-45" : ""
+                }`}
+              />
+              <span
+                className={`block h-px w-6 bg-current transition-all duration-200 ${
+                  mobileMenuOpen ? "opacity-0 -translate-x-2" : "opacity-100 translate-x-0"
+                }`}
+              />
+              <span
+                className={`block h-px w-6 origin-center bg-current transition-all duration-300 ease-out ${
+                  mobileMenuOpen ? "-translate-y-[5px] -rotate-45" : ""
+                }`}
+              />
             </button>
           </div>
         </div>
@@ -190,74 +195,72 @@ export function AppShell({
         })}
       </nav>
 
+      {/* Full-screen overlay menu (maniafueled-style) */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 sm:hidden"
-          aria-hidden
+          className="fixed inset-0 z-30 flex flex-col bg-background/95 backdrop-blur-lg sm:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu"
           onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-      {mobileMenuOpen && (
-        <div className="fixed left-0 right-0 top-[57px] z-40 max-h-[calc(100vh-57px)] overflow-y-auto border-t border-white/20 bg-primary/95 px-3 py-3 backdrop-blur-md sm:hidden">
-          <ul className="flex flex-col gap-0.5">
-            <li>
-              <Link
-                href="/"
-                className={`block rounded-lg px-3 py-2.5 text-sm font-medium text-primary-foreground touch-manipulation ${
-                  pathname === "/" ? "bg-primary-foreground/20" : "hover:bg-primary-foreground/10"
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/pay"
-                className={`block rounded-lg px-3 py-2.5 text-sm font-medium text-primary-foreground touch-manipulation ${
-                  pathname === "/pay" ? "bg-primary-foreground/20" : "hover:bg-primary-foreground/10"
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Pay invoice
-              </Link>
-            </li>
-            <li>
+        >
+          <nav
+            className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Link
+              href="/"
+              className={`min-h-[48px] flex items-center justify-center text-2xl font-medium tracking-tight transition sm:text-3xl ${
+                pathname === "/" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
+              href="/pay"
+              className={`min-h-[48px] flex items-center justify-center text-2xl font-medium tracking-tight transition sm:text-3xl ${
+                pathname === "/pay" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Pay invoice
+            </Link>
+            {mode === "admin" && (
               <Link
                 href="/admin/search"
-                className={`block rounded-lg px-3 py-2.5 text-sm font-medium text-primary-foreground touch-manipulation ${
-                  pathname === "/admin/search" ? "bg-primary-foreground/20" : "hover:bg-primary-foreground/10"
+                className={`min-h-[48px] flex items-center justify-center text-2xl font-medium tracking-tight transition sm:text-3xl ${
+                  pathname === "/admin/search" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Search
               </Link>
-            </li>
-            <li className="my-1 border-t border-primary-foreground/20" aria-hidden />
-            {nav.map((item) => (
-              <li key={`${item.href}-${item.label}`}>
-                <Link
-                  href={item.href}
-                  className={`block rounded-lg px-3 py-2.5 text-sm font-medium text-primary-foreground touch-manipulation ${
-                    isActive(item.href, pathname) ? "bg-primary-foreground/20" : "hover:bg-primary-foreground/10"
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-            <li className="my-1 border-t border-primary-foreground/20" aria-hidden />
-            <li>
+            )}
+            <div className="my-2 h-px w-16 bg-border" aria-hidden />
+            {nav.map((item, index) => (
               <Link
-                href={otherModeHref}
-                className="block rounded-lg border border-primary-foreground/30 px-3 py-2.5 text-sm font-medium text-primary-foreground touch-manipulation"
+                key={`${item.href}-${item.label}`}
+                href={item.href}
+                className={`min-h-[48px] flex items-center justify-center text-2xl font-medium tracking-tight transition sm:text-3xl ${
+                  isActive(item.href, pathname) || (item.href === "/admin" && pathname.startsWith("/jobs"))
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Switch to {otherModeLabel}
+                {item.label}
               </Link>
-            </li>
-          </ul>
+            ))}
+            <div className="my-2 h-px w-16 bg-border" aria-hidden />
+            <Link
+              href={otherModeHref}
+              className="min-h-[48px] flex items-center justify-center rounded-xl border border-border bg-muted/50 px-6 py-3 text-lg font-medium text-foreground hover:bg-muted"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {otherModeLabel}
+            </Link>
+          </nav>
         </div>
       )}
       </div>
