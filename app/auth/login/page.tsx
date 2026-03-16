@@ -32,14 +32,19 @@ export default function LoginPage() {
       setError("Sign-in failed. Please try again.");
       return;
     }
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role")
       .eq("user_id", data.user.id)
       .single();
-    if (!profile) {
+    if (profileError || !profile) {
       await supabase.auth.signOut();
-      setError("You don’t have access. Contact your admin to get a role.");
+      const isServerOrNoRows = profileError?.code === "PGRST116" || profileError?.message?.includes("500") || (profileError?.code && String(profileError.code).startsWith("5"));
+      setError(
+        isServerOrNoRows
+          ? "Your account isn’t set up yet. Ask your admin to run the “auto create profile” migration, or run this in Supabase SQL Editor: INSERT INTO public.profiles (user_id, role) SELECT id, 'admin' FROM auth.users WHERE email = 'your@email.com' ON CONFLICT (user_id) DO UPDATE SET role = 'admin';"
+          : "You don’t have access. Contact your admin to get a role."
+      );
       return;
     }
     if (profile.role === "installer") {
