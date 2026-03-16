@@ -111,7 +111,7 @@ export function ScheduleTable({
       : "Schedule";
 
   return (
-    <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm" aria-label="Schedule table">
+    <section className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl" aria-label="Schedule table">
       <div className="border-b border-border bg-muted/30 px-4 py-3 sm:px-6">
         <h2 className="text-base font-semibold text-foreground">Jobs by date</h2>
         <p className="text-xs text-muted-foreground mt-0.5">{rangeLabel}</p>
@@ -147,8 +147,8 @@ export function ScheduleTable({
                   <tr
                     key={`${dateKey}-empty`}
                     id={isFirstForDate ? `day-${dateKey}` : undefined}
-                    className={`border-b border-border transition ${
-                      isDropTarget ? "bg-accent-gold/15" : "bg-muted/10"
+                    className={`border-b border-border transition-all duration-200 ${
+                      isDropTarget ? "bg-accent-gold/15 animate-schedule-drop-zone" : "bg-muted/10"
                     } ${isToday ? "ring-inset ring-1 ring-accent-gold/50" : ""}`}
                     onDragOver={(e) => handleDragOver(e, dateKey)}
                     onDragLeave={handleDragLeave}
@@ -185,10 +185,10 @@ export function ScheduleTable({
                   onDragOver={(e) => handleDragOver(e, dateKey)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, dateKey)}
-                  className={`border-b border-border transition ${
+                  className={`border-b border-border transition-all duration-200 ${
                     isRescheduling ? "opacity-60 pointer-events-none" : "hover:bg-muted/30"
                   } ${!isRescheduling ? "cursor-grab active:cursor-grabbing" : ""} ${
-                    isDropTarget ? "bg-accent-gold/15" : ""
+                    isDropTarget ? "bg-accent-gold/15 animate-schedule-drop-zone" : ""
                   } ${hasBalanceDue ? "border-l-2 border-l-accent-gold" : ""} ${
                     isToday ? "bg-accent-gold/5" : ""
                   }`}
@@ -205,7 +205,7 @@ export function ScheduleTable({
                       : "—"}
                   </td>
                   <td className="py-3 pr-4 font-medium text-foreground">
-                    <Link href={`/jobs/${job.id}`} className="link">
+                    <Link href={`/jobs/${job.id}`} className="link transition-colors duration-200 hover:underline">
                       {job.title}
                     </Link>
                   </td>

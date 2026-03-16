@@ -41,7 +41,7 @@ export function ScheduleTodayStrip({ todayDateKey, jobs }: ScheduleTodayStripPro
 
   return (
     <section
-      className="rounded-xl border border-border bg-card overflow-hidden shadow-sm"
+      className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl"
       aria-label={`Today: ${label}`}
     >
       <div className="border-b border-border bg-muted/30 px-3 py-2 sm:px-4">
@@ -60,7 +60,7 @@ export function ScheduleTodayStrip({ todayDateKey, jobs }: ScheduleTodayStripPro
             </div>
           ))}
         </div>
-        <div className="relative h-16 w-full rounded-lg bg-muted/30">
+        <div className="relative h-16 w-full rounded-xl bg-muted/30">
           {jobs.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
               No jobs today
@@ -72,7 +72,7 @@ export function ScheduleTodayStrip({ todayDateKey, jobs }: ScheduleTodayStripPro
               return (
                 <div
                   key={job.id}
-                  className="absolute top-1 bottom-1 rounded-md bg-primary/90 text-primary-foreground overflow-hidden shadow-sm cursor-grab active:cursor-grabbing touch-manipulation hover:bg-primary flex items-center"
+                  className="absolute top-1 bottom-1 rounded-lg bg-primary/90 text-primary-foreground overflow-hidden shadow-md cursor-grab active:cursor-grabbing touch-manipulation flex items-center transition-all duration-200 hover:bg-primary hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
                   style={{
                     left: `${left}%`,
                     width: `${width}%`,

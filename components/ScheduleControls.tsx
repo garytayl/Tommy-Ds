@@ -77,31 +77,31 @@ export function ScheduleControls({
   const currentLayout: "month" | "week" | "day" = isDayView ? "day" : isWeekView ? "week" : "month";
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center rounded-xl border border-border bg-muted/30 px-3 py-2.5 sm:px-4">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center rounded-2xl border border-border bg-muted/30 px-3 py-2.5 sm:px-4 shadow-sm transition-shadow duration-200 hover:shadow-md">
       {/* Layout: Month | Week | Day + nav for week/day */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-medium text-muted-foreground sm:text-sm">Layout</span>
         <div className="flex items-center gap-1">
           <Link
             href={viewHref(view, "month", weekStartStr, dayViewDateKey)}
-            className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition touch-manipulation ${
-              !isWeekView && !isDayView ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+            className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 touch-manipulation hover:scale-105 active:scale-95 ${
+              !isWeekView && !isDayView ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground hover:bg-muted"
             }`}
           >
             Month
           </Link>
           <Link
             href={viewHref(view, "week", weekStartStr, dayViewDateKey)}
-            className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition touch-manipulation ${
-              isWeekView ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+            className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 touch-manipulation hover:scale-105 active:scale-95 ${
+              isWeekView ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground hover:bg-muted"
             }`}
           >
             Week
           </Link>
           <Link
             href={viewHref(view, "day", weekStartStr, dayViewDateKey)}
-            className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition touch-manipulation ${
-              isDayView ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+            className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 touch-manipulation hover:scale-105 active:scale-95 ${
+              isDayView ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground hover:bg-muted"
             }`}
           >
             Day
@@ -112,13 +112,13 @@ export function ScheduleControls({
             <span className="text-muted-foreground hidden sm:inline">|</span>
             <Link
               href={viewHref(view, "week", prevWeekStr, dayViewDateKey)}
-              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted touch-manipulation"
+              className="rounded-xl px-2.5 py-1.5 text-sm font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted active:scale-95 touch-manipulation"
             >
               Previous week
             </Link>
             <Link
               href={viewHref(view, "week", weekEndStr, dayViewDateKey)}
-              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted touch-manipulation"
+              className="rounded-xl px-2.5 py-1.5 text-sm font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted active:scale-95 touch-manipulation"
             >
               Next week
             </Link>
@@ -129,19 +129,19 @@ export function ScheduleControls({
             <span className="text-muted-foreground hidden sm:inline">|</span>
             <Link
               href={viewHref(view, "day", weekStartStr, prevDayStr)}
-              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted touch-manipulation"
+              className="rounded-xl px-2.5 py-1.5 text-sm font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted active:scale-95 touch-manipulation"
             >
               Previous day
             </Link>
             <Link
               href={viewHref(view, "day", weekStartStr, todayStr)}
-              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted touch-manipulation"
+              className="rounded-xl px-2.5 py-1.5 text-sm font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted active:scale-95 touch-manipulation"
             >
               Today
             </Link>
             <Link
               href={viewHref(view, "day", weekStartStr, nextDayStr)}
-              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted touch-manipulation"
+              className="rounded-xl px-2.5 py-1.5 text-sm font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted active:scale-95 touch-manipulation"
             >
               Next day
             </Link>
@@ -157,8 +157,8 @@ export function ScheduleControls({
           <div className="hidden sm:flex flex-wrap items-center gap-1">
             <Link
               href={viewHref("all", currentLayout, weekStartStr, dayViewDateKey)}
-              className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
-                view === "all" ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+              className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${
+                view === "all" ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground hover:bg-muted"
               }`}
             >
               All
@@ -167,8 +167,8 @@ export function ScheduleControls({
               <Link
                 key={crew.id}
                 href={viewCrewId === crew.id ? viewHref("all", currentLayout, weekStartStr, dayViewDateKey) : viewHref(`crew:${crew.id}`, currentLayout, weekStartStr, dayViewDateKey)}
-                className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
-                  viewCrewId === crew.id ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+                className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${
+                  viewCrewId === crew.id ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground hover:bg-muted"
                 }`}
               >
                 {crew.name}
@@ -178,8 +178,8 @@ export function ScheduleControls({
               <Link
                 key={inst.user_id}
                 href={viewPersonId === inst.user_id ? viewHref("all", currentLayout, weekStartStr, dayViewDateKey) : viewHref(`person:${inst.user_id}`, currentLayout, weekStartStr, dayViewDateKey)}
-                className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
-                  viewPersonId === inst.user_id ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+                className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${
+                  viewPersonId === inst.user_id ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground hover:bg-muted"
                 }`}
               >
                 {inst.full_name ?? inst.user_id}
@@ -196,7 +196,7 @@ export function ScheduleControls({
               aria-haspopup="listbox"
             >
               {viewLabel(view, crews, installers, viewCrewId, viewPersonId)}
-              <ChevronDown className={`h-4 w-4 transition ${viewOpen ? "rotate-180" : ""}`} />
+              <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${viewOpen ? "rotate-180" : ""}`} />
             </button>
             {viewOpen && (
               <>

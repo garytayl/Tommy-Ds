@@ -19,11 +19,11 @@ export function ScheduleUnscheduledBlock({ jobs }: ScheduleUnscheduledBlockProps
 
   return (
     <section
-      className="rounded-xl border border-dashed border-border bg-muted/20 px-3 py-3 sm:px-4"
+      className="rounded-2xl border border-dashed border-border bg-muted/20 px-3 py-3 sm:px-4 shadow-sm transition-shadow duration-200 hover:shadow-md"
       aria-label="Unscheduled jobs"
     >
       <div className="flex items-center gap-2">
-        <CalendarX className="h-4 w-4 text-muted-foreground" aria-hidden />
+        <CalendarX className="h-4 w-4 text-muted-foreground transition-transform duration-200" aria-hidden />
         <h2 className="text-sm font-semibold text-foreground">No schedule yet</h2>
       </div>
       <p className="mt-0.5 text-xs text-muted-foreground">
@@ -36,7 +36,7 @@ export function ScheduleUnscheduledBlock({ jobs }: ScheduleUnscheduledBlockProps
             <li key={job.id}>
               <Link
                 href={`/jobs/${job.id}`}
-                className="inline-flex items-center rounded-lg border border-border bg-card px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition touch-manipulation"
+                className="inline-flex items-center rounded-xl border border-border bg-card px-2.5 py-1.5 text-sm font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted hover:shadow-sm active:scale-95 touch-manipulation"
               >
                 {job.title}
                 {customer && <span className="ml-1.5 text-muted-foreground">({customer})</span>}

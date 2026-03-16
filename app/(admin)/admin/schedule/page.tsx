@@ -271,7 +271,7 @@ export default async function SchedulePage({
   return (
     <div className="space-y-6 sm:space-y-8">
       <ScheduleMobileWeekRedirect hasLayoutParam={layoutParam !== undefined} />
-      <div>
+      <div className="animate-fade-in-section schedule-delay-0">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">
           Admin
         </p>
@@ -283,6 +283,7 @@ export default async function SchedulePage({
         </p>
       </div>
 
+      <div className="animate-fade-in-section schedule-delay-75">
       <ScheduleControls
         view={view}
         isWeekView={isWeekView}
@@ -295,24 +296,28 @@ export default async function SchedulePage({
         viewCrewId={viewCrewId}
         viewPersonId={viewPersonId}
       />
+      </div>
 
-      <div className="flex flex-wrap gap-2 sm:gap-3">
+      <div className="flex flex-wrap gap-2 sm:gap-3 animate-fade-in-section schedule-delay-150">
         <Link
           href="/admin/jobs/new"
-          className="inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-95 touch-manipulation"
+          className="inline-flex items-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:scale-105 hover:opacity-95 hover:shadow-lg active:scale-95 touch-manipulation"
         >
           New job
         </Link>
         <Link
           href="/admin/jobs"
-          className="inline-flex items-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted touch-manipulation"
+          className="inline-flex items-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted hover:shadow-sm active:scale-95 touch-manipulation"
         >
           All jobs
         </Link>
       </div>
 
-      <ScheduleUnscheduledBlock jobs={unscheduledRows} />
+      <div className="animate-fade-in-section schedule-delay-225">
+        <ScheduleUnscheduledBlock jobs={unscheduledRows} />
+      </div>
 
+      <div className="animate-fade-in-section schedule-delay-300">
       {isDayView ? (
         <ScheduleDayView
           dateKey={dayViewDateKey}
@@ -325,8 +330,10 @@ export default async function SchedulePage({
           jobs={(byDate[today.toISOString().slice(0, 10)] ?? []) as ScheduleJob[]}
         />
       )}
+      </div>
 
       {!isDayView && (
+      <div className="animate-schedule-calendar-in schedule-delay-400">
       <ScheduleCalendar
         jobsByDate={jobsByDateCount}
         itemsByDate={itemsByDate}
@@ -346,10 +353,11 @@ export default async function SchedulePage({
             : undefined
         }
       />
+      </div>
       )}
 
       <ScheduleScrollToToday todayDateKey={today.toISOString().slice(0, 10)} />
-      <div className="space-y-3">
+      <div className="space-y-3 animate-fade-in-section schedule-delay-500">
         <ScheduleTableNav
           tableStartStr={tableDates[0] ?? tableStart.toISOString().slice(0, 10)}
           view={view}

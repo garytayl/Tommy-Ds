@@ -47,13 +47,13 @@ export function ScheduleTableNav({
     <div className="flex flex-wrap items-center gap-2 text-sm">
       <Link
         href={`/admin/schedule${prefix}table_start=${prevStr}`}
-        className="rounded-lg border border-border bg-card px-2.5 py-1.5 font-medium text-foreground transition hover:bg-muted touch-manipulation"
+        className="rounded-xl border border-border bg-card px-2.5 py-1.5 font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted hover:shadow-sm active:scale-95 touch-manipulation"
       >
         Previous 2 weeks
       </Link>
       <Link
         href={`/admin/schedule${prefix}table_start=${nextStr}`}
-        className="rounded-lg border border-border bg-card px-2.5 py-1.5 font-medium text-foreground transition hover:bg-muted touch-manipulation"
+        className="rounded-xl border border-border bg-card px-2.5 py-1.5 font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted hover:shadow-sm active:scale-95 touch-manipulation"
       >
         Next 2 weeks
       </Link>

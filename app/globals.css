@@ -845,6 +845,64 @@
   opacity: 0;
 }
 
+/* Schedule page animations */
+@keyframes schedule-calendar-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-schedule-calendar-in {
+  animation: schedule-calendar-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+@keyframes schedule-cell-hover {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.02);
+  }
+}
+@keyframes schedule-drop-zone {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(251, 146, 60, 0.15);
+  }
+}
+.animate-schedule-drop-zone {
+  animation: schedule-drop-zone 1.2s ease-in-out infinite;
+}
+@keyframes schedule-today-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px var(--color-accent-gold, rgba(251, 146, 60, 0.5));
+  }
+  50% {
+    box-shadow: 0 0 0 2px var(--color-accent-gold, rgba(251, 146, 60, 0.8));
+  }
+}
+.animate-schedule-today-glow {
+  animation: schedule-today-glow 2s ease-in-out infinite;
+}
+.schedule-delay-0 { animation-delay: 0ms; }
+.schedule-delay-75 { animation-delay: 75ms; }
+.schedule-delay-150 { animation-delay: 150ms; }
+.schedule-delay-225 { animation-delay: 225ms; }
+.schedule-delay-300 { animation-delay: 300ms; }
+.schedule-delay-400 { animation-delay: 400ms; }
+.schedule-delay-500 { animation-delay: 500ms; }
+.schedule-delay-600 { animation-delay: 600ms; }
+.schedule-delay-700 { animation-delay: 700ms; }
+.schedule-delay-800 { animation-delay: 800ms; }
+
 @media print {
   body {
     print-color-adjust: exact;

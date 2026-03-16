@@ -61,7 +61,7 @@ export function ScheduleDayView({
 
   return (
     <section
-      className="rounded-xl border border-border bg-card overflow-hidden shadow-sm"
+      className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl"
       aria-label={isToday ? `Today: ${label}` : `Day: ${label}`}
     >
       <div className="border-b border-border bg-muted/30 px-3 py-2 sm:px-4">
@@ -82,7 +82,7 @@ export function ScheduleDayView({
             </div>
           ))}
         </div>
-        <div className="relative min-h-[200px] w-full rounded-lg bg-muted/30">
+        <div className="relative min-h-[200px] w-full rounded-xl bg-muted/30">
           {jobs.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
               No jobs this day
@@ -99,7 +99,7 @@ export function ScheduleDayView({
               return (
                 <div
                   key={job.id}
-                  className="absolute top-1 bottom-1 rounded-md bg-primary/90 text-primary-foreground overflow-hidden shadow-sm cursor-grab active:cursor-grabbing touch-manipulation hover:bg-primary flex flex-col justify-center min-w-[min(6rem,100%)]"
+                  className="absolute top-1 bottom-1 rounded-lg bg-primary/90 text-primary-foreground overflow-hidden shadow-md cursor-grab active:cursor-grabbing touch-manipulation flex flex-col justify-center min-w-[min(6rem,100%)] transition-all duration-200 hover:bg-primary hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
                   style={{
                     left: `${left}%`,
                     width: `${width}%`,

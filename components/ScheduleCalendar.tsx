@@ -140,13 +140,13 @@ export function ScheduleCalendar({
 
     return (
       <section
-        className="rounded-xl border border-white/20 bg-white/5 overflow-hidden shadow-lg backdrop-blur-sm"
+        className="rounded-2xl border border-white/20 bg-gradient-to-b from-white/10 to-white/5 overflow-hidden shadow-xl shadow-black/5 backdrop-blur-sm transition-shadow duration-300 hover:shadow-2xl hover:shadow-black/10"
         aria-label="Week calendar"
       >
         <div className="flex items-center justify-between border-b border-white/15 bg-white/10 px-3 py-2.5 sm:px-4">
           <Link
             href={weekNavigation!.prevUrl}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-foreground transition hover:bg-white/15 touch-manipulation"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-foreground transition-all duration-200 hover:scale-105 hover:bg-white/15 active:scale-95 touch-manipulation"
             aria-label="Previous week"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -158,7 +158,7 @@ export function ScheduleCalendar({
           </h2>
           <Link
             href={weekNavigation!.nextUrl}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-foreground transition hover:bg-white/15 touch-manipulation"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-foreground transition-all duration-200 hover:scale-105 hover:bg-white/15 active:scale-95 touch-manipulation"
             aria-label="Next week"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -195,8 +195,10 @@ export function ScheduleCalendar({
                   key={key}
                   className={`
                     relative flex min-h-[80px] min-w-0 flex-col rounded-xl border border-transparent py-1.5 text-left sm:min-h-[100px]
+                    transition-all duration-200 ease-out
                     ${count > 0 && inRange ? "bg-accent-gold/10" : ""}
-                    ${isToday ? "ring-2 ring-accent-gold ring-offset-2 ring-offset-background" : ""}
+                    ${inRange ? "hover:bg-white/10" : ""}
+                    ${isToday ? "ring-2 ring-accent-gold ring-offset-2 ring-offset-background animate-schedule-today-glow" : ""}
                   `}
                 >
                   <button
@@ -204,8 +206,8 @@ export function ScheduleCalendar({
                     onClick={() => inRange && scrollToDay(key)}
                     disabled={!inRange}
                     className={`
-                      mb-1 shrink-0 self-center rounded-lg px-1.5 py-0.5 text-sm font-semibold transition touch-manipulation
-                      ${!inRange ? "cursor-default text-muted-foreground/60" : "hover:bg-white/15"}
+                      mb-1 shrink-0 self-center rounded-lg px-1.5 py-0.5 text-sm font-semibold transition-all duration-200 touch-manipulation
+                      ${!inRange ? "cursor-default text-muted-foreground/60" : "hover:bg-white/15 hover:scale-105 active:scale-95"}
                       ${isToday ? "text-accent-gold" : "text-foreground"}
                     `}
                   >
@@ -226,7 +228,7 @@ export function ScheduleCalendar({
                           href={item.href}
                           prefetch={false}
                           className={`
-                            block truncate rounded px-1 py-0.5 text-[11px] leading-tight transition hover:bg-white/15 sm:text-xs
+                            block truncate rounded px-1 py-0.5 text-[11px] leading-tight transition-all duration-200 hover:bg-white/15 hover:translate-x-0.5 sm:text-xs
                             ${item.type === "activity" ? "text-muted-foreground" : "text-foreground font-medium"}
                           `}
                           title={tooltipParts.join(" · ")}
@@ -253,14 +255,14 @@ export function ScheduleCalendar({
   // Month view
   return (
     <section
-      className="rounded-xl border border-white/20 bg-white/5 overflow-hidden shadow-lg backdrop-blur-sm"
+      className="rounded-2xl border border-white/20 bg-gradient-to-b from-white/10 to-white/5 overflow-hidden shadow-xl shadow-black/5 backdrop-blur-sm transition-shadow duration-300 hover:shadow-2xl hover:shadow-black/10"
       aria-label="Calendar"
     >
       <div className="flex items-center justify-between border-b border-white/15 bg-white/10 px-3 py-2.5 sm:px-4">
         <button
           type="button"
           onClick={goPrev}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-foreground transition hover:bg-white/15 touch-manipulation"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-foreground transition-all duration-200 hover:scale-105 hover:bg-white/15 active:scale-95 touch-manipulation"
           aria-label="Previous month"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -273,7 +275,7 @@ export function ScheduleCalendar({
         <button
           type="button"
           onClick={goNext}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-foreground transition hover:bg-white/15 touch-manipulation"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-foreground transition-all duration-200 hover:scale-105 hover:bg-white/15 active:scale-95 touch-manipulation"
           aria-label="Next month"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -311,10 +313,11 @@ export function ScheduleCalendar({
               <div
                 key={key}
                 className={`
-                  relative flex aspect-square min-h-[36px] min-w-0 flex-col rounded-lg overflow-hidden
-                  sm:min-h-[44px]
+                  relative flex aspect-square min-h-[36px] min-w-0 flex-col rounded-xl overflow-hidden
+                  sm:min-h-[44px] transition-all duration-200 ease-out
                   ${count > 0 && inRange ? "bg-accent-gold/10" : ""}
-                  ${isToday ? "ring-2 ring-accent-gold ring-offset-1 ring-offset-background" : ""}
+                  ${inRange ? "hover:bg-white/10" : ""}
+                  ${isToday ? "ring-2 ring-accent-gold ring-offset-1 ring-offset-background animate-schedule-today-glow" : ""}
                 `}
               >
                 <button
@@ -322,8 +325,8 @@ export function ScheduleCalendar({
                   onClick={() => inRange && scrollToDay(key)}
                   disabled={!inRange}
                   className={`
-                    shrink-0 py-0.5 text-center text-sm font-medium transition touch-manipulation
-                    ${!inRange ? "cursor-default text-muted-foreground/60" : "hover:bg-white/10"}
+                    shrink-0 py-0.5 text-center text-sm font-medium transition-all duration-200 touch-manipulation
+                    ${!inRange ? "cursor-default text-muted-foreground/60" : "hover:bg-white/10 hover:scale-105 active:scale-95"}
                     ${isToday ? "text-accent-gold font-semibold" : "text-foreground"}
                   `}
                 >
@@ -343,7 +346,7 @@ export function ScheduleCalendar({
                         key={item.id}
                         href={item.href}
                         prefetch={false}
-                        className="block truncate px-0.5 text-[10px] leading-tight text-foreground hover:bg-white/10 rounded"
+                        className="block truncate px-0.5 text-[10px] leading-tight text-foreground hover:bg-white/10 rounded transition-all duration-200 hover:translate-x-0.5"
                         title={tooltipParts.join(" · ")}
                         onClick={(e) => e.stopPropagation()}
                       >
