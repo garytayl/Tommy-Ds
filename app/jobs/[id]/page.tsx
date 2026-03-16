@@ -13,7 +13,7 @@ import { getCrewDisplayName } from "@/lib/crews";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 const JOB_STATUSES = [
@@ -75,11 +75,11 @@ export default async function JobWorkspacePage({
 }) {
   const { id } = await params;
   const { tab = "overview" } = await searchParams;
-  const supabase = await createSupabaseServerClientForData();
 
-  // Prefer session client; if job not found and service role is available, retry so
-  // calendar/links work when session isn't sent (e.g. some navigations).
-  let jobResult = await supabase
+  // Use session client first so admins see the job via RLS. If job not found (e.g. session
+  // not available in this request), fall back to service role so list/detail stay consistent.
+  const sessionClient = await createSupabaseServerClient();
+  let jobResult = await sessionClient
     .from("jobs")
     .select(
       "id,title,status,notes,project_type,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone)",
@@ -87,16 +87,21 @@ export default async function JobWorkspacePage({
     .eq("id", id)
     .maybeSingle();
 
+  let supabase = sessionClient;
   if (!jobResult.data && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     try {
       const service = createSupabaseServiceClient();
-      jobResult = await service
+      const serviceJobResult = await service
         .from("jobs")
         .select(
           "id,title,status,notes,project_type,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone)",
         )
         .eq("id", id)
         .maybeSingle();
+      if (serviceJobResult.data) {
+        jobResult = serviceJobResult;
+        supabase = service;
+      }
     } catch {
       // ignore
     }
