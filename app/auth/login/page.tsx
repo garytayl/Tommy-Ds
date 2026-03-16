@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { withRetry } from "@/lib/retry";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -13,30 +14,44 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setRetrying(false);
     setLoading(true);
     const supabase = createClient();
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setLoading(false);
-    if (signInError) {
-      setError(signInError.message);
-      return;
-    }
-    if (!data.user) {
-      setError("Sign-in failed. Please try again.");
-      return;
-    }
-    // Redirect immediately; server will check profile and redirect back if no access
-    if (next.startsWith("/m")) {
-      router.replace("/m");
-    } else {
-      router.replace(next);
+    try {
+      const { data, error: signInError } = await withRetry(
+        () => supabase.auth.signInWithPassword({ email, password }),
+        {
+          attempts: 3,
+          delayMs: 1500,
+          onRetry: () => setRetrying(true),
+        }
+      );
+      if (signInError) {
+        setError(signInError.message);
+        return;
+      }
+      if (!data.user) {
+        setError("Sign-in failed. Please try again.");
+        return;
+      }
+      // Redirect immediately; server will check profile and redirect back if no access
+      if (next.startsWith("/m")) {
+        router.replace("/m");
+      } else {
+        router.replace(next);
+      }
+    } catch (e) {
+      setError(
+        "Connection problem. Check your network and try again, or wait a moment and retry."
+      );
+    } finally {
+      setLoading(false);
+      setRetrying(false);
     }
   }
 
@@ -82,7 +97,7 @@ export default function LoginPage() {
             </p>
           )}
           <button type="submit" className="btn-primary w-full" disabled={loading}>
-            {loading ? "Signing in…" : "Sign in"}
+            {loading ? (retrying ? "Connection issue, retrying…" : "Signing in…") : "Sign in"}
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
