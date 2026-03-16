@@ -71,7 +71,7 @@ export default async function JobWorkspacePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; debug?: string }>;
 }) {
   const { id } = await params;
   const searchParamsResolved = await searchParams;
