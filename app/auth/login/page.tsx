@@ -32,26 +32,12 @@ export default function LoginPage() {
       setError("Sign-in failed. Please try again.");
       return;
     }
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("user_id", data.user.id)
-      .single();
-    if (profileError || !profile) {
-      await supabase.auth.signOut();
-      const isServerOrNoRows = profileError?.code === "PGRST116" || profileError?.message?.includes("500") || (profileError?.code && String(profileError.code).startsWith("5"));
-      setError(
-        isServerOrNoRows
-          ? "No profile found for this account (or the server hit an error). Run the migration supabase/migrations/20260314110000_auto_create_profile_on_signup.sql, or use supabase/scripts/ensure_admin_profile.sql in SQL Editor (set your email in the script)."
-          : "You don’t have access. Contact your admin to get a role."
-      );
-      return;
-    }
-    if (profile.role === "installer") {
+    // Redirect immediately; server will check profile and redirect back if no access
+    if (next.startsWith("/m")) {
       router.replace("/m");
-      return;
+    } else {
+      router.replace(next);
     }
-    router.replace(next.startsWith("/m") ? "/admin" : next);
   }
 
   return (
