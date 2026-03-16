@@ -42,7 +42,7 @@ export default function LoginPage() {
       const isServerOrNoRows = profileError?.code === "PGRST116" || profileError?.message?.includes("500") || (profileError?.code && String(profileError.code).startsWith("5"));
       setError(
         isServerOrNoRows
-          ? "Your account isn’t set up yet. Ask your admin to run the “auto create profile” migration, or run this in Supabase SQL Editor: INSERT INTO public.profiles (user_id, role) SELECT id, 'admin' FROM auth.users WHERE email = 'your@email.com' ON CONFLICT (user_id) DO UPDATE SET role = 'admin';"
+          ? "No profile found for this account (or the server hit an error). Run the migration supabase/migrations/20260314110000_auto_create_profile_on_signup.sql, or use supabase/scripts/ensure_admin_profile.sql in SQL Editor (set your email in the script)."
           : "You don’t have access. Contact your admin to get a role."
       );
       return;
