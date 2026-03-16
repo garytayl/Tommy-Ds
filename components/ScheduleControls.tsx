@@ -10,26 +10,36 @@ type Installer = { user_id: string; full_name: string | null };
 type ScheduleControlsProps = {
   view: string;
   isWeekView: boolean;
+  isDayView: boolean;
   weekStartStr: string;
   weekEndStr: string;
+  /** When in day view: the selected date (YYYY-MM-DD) */
+  dayViewDateKey: string;
   crews: Crew[];
   installers: Installer[];
   viewCrewId: string | null;
   viewPersonId: string | null;
 };
 
+function buildLayoutParams(layout: "month" | "week" | "day", weekStartStr: string, dayViewDateKey: string): string {
+  const params = new URLSearchParams();
+  if (layout !== "month") params.set("layout", layout);
+  if (layout === "week") params.set("week", weekStartStr);
+  if (layout === "day") params.set("date", dayViewDateKey);
+  const q = params.toString();
+  return q ? `?${q}` : "";
+}
+
 function viewHref(
   viewValue: "all" | string,
-  isWeekView: boolean,
-  weekEndStr: string,
-  weekStartStr: string
+  layout: "month" | "week" | "day",
+  weekStartStr: string,
+  dayViewDateKey: string
 ): string {
-  if (viewValue === "all") {
-    return isWeekView ? `/admin/schedule?layout=week&week=${weekStartStr}` : "/admin/schedule";
-  }
-  const base = `/admin/schedule?view=${viewValue}`;
-  if (isWeekView) return `${base}&layout=week&week=${weekStartStr}`;
-  return base;
+  const layoutPart = buildLayoutParams(layout, weekStartStr, dayViewDateKey);
+  const viewPart = viewValue === "all" ? "" : `view=${encodeURIComponent(viewValue)}`;
+  const join = layoutPart ? (viewPart ? `${layoutPart}&${viewPart}` : layoutPart) : (viewPart ? `?${viewPart}` : "");
+  return `/admin/schedule${join}`;
 }
 
 function viewLabel(view: string, crews: Crew[], installers: Installer[], viewCrewId: string | null, viewPersonId: string | null) {
@@ -42,8 +52,10 @@ function viewLabel(view: string, crews: Crew[], installers: Installer[], viewCre
 export function ScheduleControls({
   view,
   isWeekView,
+  isDayView,
   weekStartStr,
   weekEndStr,
+  dayViewDateKey,
   crews,
   installers,
   viewCrewId,
@@ -53,44 +65,85 @@ export function ScheduleControls({
   const prevWeek = new Date(weekStartStr + "T12:00:00");
   prevWeek.setDate(prevWeek.getDate() - 7);
   const prevWeekStr = prevWeek.toISOString().slice(0, 10);
+  const prevDay = new Date(dayViewDateKey + "T12:00:00");
+  prevDay.setDate(prevDay.getDate() - 1);
+  const prevDayStr = prevDay.toISOString().slice(0, 10);
+  const nextDay = new Date(dayViewDateKey + "T12:00:00");
+  nextDay.setDate(nextDay.getDate() + 1);
+  const nextDayStr = nextDay.toISOString().slice(0, 10);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().slice(0, 10);
+  const currentLayout: "month" | "week" | "day" = isDayView ? "day" : isWeekView ? "week" : "month";
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center rounded-xl border border-border bg-muted/30 px-3 py-2.5 sm:px-4">
-      {/* Layout: Month | Week + prev/next */}
+      {/* Layout: Month | Week | Day + nav for week/day */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-medium text-muted-foreground sm:text-sm">Layout</span>
         <div className="flex items-center gap-1">
           <Link
-            href={viewHref(view, false, weekEndStr, weekStartStr)}
+            href={viewHref(view, "month", weekStartStr, dayViewDateKey)}
             className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition touch-manipulation ${
-              !isWeekView ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+              !isWeekView && !isDayView ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
             }`}
           >
             Month
           </Link>
           <Link
-            href={viewHref(view, true, weekEndStr, weekStartStr)}
+            href={viewHref(view, "week", weekStartStr, dayViewDateKey)}
             className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition touch-manipulation ${
               isWeekView ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
             }`}
           >
             Week
           </Link>
+          <Link
+            href={viewHref(view, "day", weekStartStr, dayViewDateKey)}
+            className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition touch-manipulation ${
+              isDayView ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
+            }`}
+          >
+            Day
+          </Link>
         </div>
         {isWeekView && (
           <>
             <span className="text-muted-foreground hidden sm:inline">|</span>
             <Link
-              href={viewHref(view, true, weekEndStr, prevWeekStr)}
+              href={viewHref(view, "week", prevWeekStr, dayViewDateKey)}
               className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted touch-manipulation"
             >
               Previous week
             </Link>
             <Link
-              href={viewHref(view, true, weekEndStr, weekEndStr)}
+              href={viewHref(view, "week", weekEndStr, dayViewDateKey)}
               className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted touch-manipulation"
             >
               Next week
+            </Link>
+          </>
+        )}
+        {isDayView && (
+          <>
+            <span className="text-muted-foreground hidden sm:inline">|</span>
+            <Link
+              href={viewHref(view, "day", weekStartStr, prevDayStr)}
+              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted touch-manipulation"
+            >
+              Previous day
+            </Link>
+            <Link
+              href={viewHref(view, "day", weekStartStr, todayStr)}
+              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted touch-manipulation"
+            >
+              Today
+            </Link>
+            <Link
+              href={viewHref(view, "day", weekStartStr, nextDayStr)}
+              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted touch-manipulation"
+            >
+              Next day
             </Link>
           </>
         )}
@@ -103,7 +156,7 @@ export function ScheduleControls({
           {/* Desktop: inline pills */}
           <div className="hidden sm:flex flex-wrap items-center gap-1">
             <Link
-              href={viewHref("all", isWeekView, weekEndStr, weekStartStr)}
+              href={viewHref("all", currentLayout, weekStartStr, dayViewDateKey)}
               className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
                 view === "all" ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
               }`}
@@ -113,7 +166,7 @@ export function ScheduleControls({
             {crews.map((crew) => (
               <Link
                 key={crew.id}
-                href={viewCrewId === crew.id ? viewHref("all", isWeekView, weekEndStr, weekStartStr) : viewHref(`crew:${crew.id}`, isWeekView, weekEndStr, weekStartStr)}
+                href={viewCrewId === crew.id ? viewHref("all", currentLayout, weekStartStr, dayViewDateKey) : viewHref(`crew:${crew.id}`, currentLayout, weekStartStr, dayViewDateKey)}
                 className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
                   viewCrewId === crew.id ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
                 }`}
@@ -124,7 +177,7 @@ export function ScheduleControls({
             {installers.map((inst) => (
               <Link
                 key={inst.user_id}
-                href={viewPersonId === inst.user_id ? viewHref("all", isWeekView, weekEndStr, weekStartStr) : viewHref(`person:${inst.user_id}`, isWeekView, weekEndStr, weekStartStr)}
+                href={viewPersonId === inst.user_id ? viewHref("all", currentLayout, weekStartStr, dayViewDateKey) : viewHref(`person:${inst.user_id}`, currentLayout, weekStartStr, dayViewDateKey)}
                 className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${
                   viewPersonId === inst.user_id ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"
                 }`}
@@ -154,7 +207,7 @@ export function ScheduleControls({
                 >
                   <li>
                     <Link
-                      href={viewHref("all", isWeekView, weekEndStr, weekStartStr)}
+                      href={viewHref("all", currentLayout, weekStartStr, dayViewDateKey)}
                       className="block px-3 py-2 text-sm text-foreground hover:bg-muted"
                       onClick={() => setViewOpen(false)}
                     >
@@ -164,7 +217,7 @@ export function ScheduleControls({
                   {crews.map((crew) => (
                     <li key={crew.id}>
                       <Link
-                        href={viewCrewId === crew.id ? viewHref("all", isWeekView, weekEndStr, weekStartStr) : viewHref(`crew:${crew.id}`, isWeekView, weekEndStr, weekStartStr)}
+                        href={viewCrewId === crew.id ? viewHref("all", currentLayout, weekStartStr, dayViewDateKey) : viewHref(`crew:${crew.id}`, currentLayout, weekStartStr, dayViewDateKey)}
                         className={`block px-3 py-2 text-sm ${viewCrewId === crew.id ? "bg-primary/20 font-medium text-foreground" : "text-foreground hover:bg-muted"}`}
                         onClick={() => setViewOpen(false)}
                       >
@@ -175,7 +228,7 @@ export function ScheduleControls({
                   {installers.map((inst) => (
                     <li key={inst.user_id}>
                       <Link
-                        href={viewPersonId === inst.user_id ? viewHref("all", isWeekView, weekEndStr, weekStartStr) : viewHref(`person:${inst.user_id}`, isWeekView, weekEndStr, weekStartStr)}
+                        href={viewPersonId === inst.user_id ? viewHref("all", currentLayout, weekStartStr, dayViewDateKey) : viewHref(`person:${inst.user_id}`, currentLayout, weekStartStr, dayViewDateKey)}
                         className={`block px-3 py-2 text-sm ${viewPersonId === inst.user_id ? "bg-primary/20 font-medium text-foreground" : "text-foreground hover:bg-muted"}`}
                         onClick={() => setViewOpen(false)}
                       >

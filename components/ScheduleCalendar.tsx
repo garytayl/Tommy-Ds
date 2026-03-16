@@ -3,7 +3,18 @@
 import Link from "next/link";
 import { useState, useCallback, useMemo, useEffect } from "react";
 
-export type CalendarItem = { id: string; title: string; type: "job" | "activity"; href: string };
+export type CalendarItem = {
+  id: string;
+  title: string;
+  type: "job" | "activity";
+  href: string;
+  /** Optional time for display (e.g. "9a", "2:30p") */
+  timeLabel?: string;
+  /** Optional customer name for tooltip/cell */
+  customer?: string;
+  /** Optional crew name for tooltip */
+  crewName?: string;
+};
 
 type ScheduleCalendarProps = {
   /** Map of date string (YYYY-MM-DD) to number of jobs */
@@ -201,20 +212,29 @@ export function ScheduleCalendar({
                     {dayNum}
                   </button>
                   <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-1">
-                    {visible.map((item) => (
-                      <Link
-                        key={item.id}
-                        href={item.href}
-                        prefetch={false}
-                        className={`
-                          block truncate rounded px-1 py-0.5 text-[11px] leading-tight transition hover:bg-white/15 sm:text-xs
-                          ${item.type === "activity" ? "text-muted-foreground" : "text-foreground font-medium"}
-                        `}
-                        title={item.title}
-                      >
-                        {item.title}
-                      </Link>
-                    ))}
+                    {visible.map((item) => {
+                      const cellLine = item.timeLabel
+                        ? `${item.timeLabel} ${item.title}`
+                        : item.title;
+                      const tooltipParts = [item.title];
+                      if (item.timeLabel) tooltipParts.unshift(item.timeLabel);
+                      if (item.customer) tooltipParts.push(`Customer: ${item.customer}`);
+                      if (item.crewName) tooltipParts.push(`Crew: ${item.crewName}`);
+                      return (
+                        <Link
+                          key={item.id}
+                          href={item.href}
+                          prefetch={false}
+                          className={`
+                            block truncate rounded px-1 py-0.5 text-[11px] leading-tight transition hover:bg-white/15 sm:text-xs
+                            ${item.type === "activity" ? "text-muted-foreground" : "text-foreground font-medium"}
+                          `}
+                          title={tooltipParts.join(" · ")}
+                        >
+                          {cellLine}
+                        </Link>
+                      );
+                    })}
                     {more > 0 && (
                       <span className="px-1 text-[10px] text-muted-foreground sm:text-xs">
                         +{more} more
@@ -310,18 +330,27 @@ export function ScheduleCalendar({
                   {day}
                 </button>
                 <div className="flex min-h-0 flex-1 flex-col justify-start overflow-hidden px-0.5 pb-0.5">
-                  {visible.map((item) => (
-                    <Link
-                      key={item.id}
-                      href={item.href}
-                      prefetch={false}
-                      className="block truncate px-0.5 text-[10px] leading-tight text-foreground hover:bg-white/10 rounded"
-                      title={item.title}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {item.title}
-                    </Link>
-                  ))}
+                  {visible.map((item) => {
+                    const cellLine = item.timeLabel
+                      ? `${item.timeLabel} ${item.title}`
+                      : item.title;
+                    const tooltipParts = [item.title];
+                    if (item.timeLabel) tooltipParts.unshift(item.timeLabel);
+                    if (item.customer) tooltipParts.push(`Customer: ${item.customer}`);
+                    if (item.crewName) tooltipParts.push(`Crew: ${item.crewName}`);
+                    return (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        prefetch={false}
+                        className="block truncate px-0.5 text-[10px] leading-tight text-foreground hover:bg-white/10 rounded"
+                        title={tooltipParts.join(" · ")}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {cellLine}
+                      </Link>
+                    );
+                  })}
                   {more > 0 && (
                     <span className="truncate px-0.5 text-[9px] text-muted-foreground" aria-hidden>
                       +{more}

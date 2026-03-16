@@ -6,9 +6,12 @@ import { setToastCookie } from "@/lib/toast";
 import { getCrewDisplayName } from "@/lib/crews";
 import { ScheduleCalendar } from "@/components/ScheduleCalendar";
 import { ScheduleControls } from "@/components/ScheduleControls";
-import { ScheduleDragDrop, type ScheduleJob } from "@/components/ScheduleDragDrop";
+import { type ScheduleJob } from "@/components/ScheduleDragDrop";
 import { ScheduleMobileWeekRedirect } from "@/components/ScheduleMobileWeekRedirect";
 import { ScheduleScrollToToday } from "@/components/ScheduleScrollToToday";
+import { ScheduleDayView } from "@/components/ScheduleDayView";
+import { ScheduleTable } from "@/components/ScheduleTable";
+import { ScheduleTableNav } from "@/components/ScheduleTableNav";
 import { ScheduleTodayStrip } from "@/components/ScheduleTodayStrip";
 import { ScheduleUnscheduledBlock } from "@/components/ScheduleUnscheduledBlock";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
@@ -16,16 +19,19 @@ import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 const DAYS_AHEAD = 90;
 const DAYS_PAST = 7;
 
+const TABLE_DAYS = 14;
+
 export default async function SchedulePage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; week?: string; layout?: string }>;
+  searchParams: Promise<{ view?: string; week?: string; layout?: string; date?: string; table_start?: string }>;
 }) {
-  const { view: viewParam, week: weekParam, layout: layoutParam } = await searchParams;
+  const { view: viewParam, week: weekParam, layout: layoutParam, date: dateParam, table_start: tableStartParam } = await searchParams;
   const view = viewParam ?? "all";
   const viewCrewId = view.startsWith("crew:") ? view.slice(5) : null;
   const viewPersonId = view.startsWith("person:") ? view.slice(7) : null;
   const isWeekView = layoutParam === "week";
+  const isDayView = layoutParam === "day";
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const weekStart = weekParam
@@ -39,6 +45,27 @@ export default async function SchedulePage({
   weekEnd.setDate(weekEnd.getDate() + 7);
   const weekStartStr = weekStart.toISOString().slice(0, 10);
   const weekEndStr = weekEnd.toISOString().slice(0, 10);
+
+  // Table range: 2 weeks starting from table_start (default: Sunday of current week)
+  const tableStart = tableStartParam
+    ? new Date(tableStartParam + "T12:00:00")
+    : (() => {
+        const d = new Date(today);
+        d.setDate(d.getDate() - d.getDay());
+        return d;
+      })();
+  const tableDates: string[] = [];
+  for (let i = 0; i < TABLE_DAYS; i++) {
+    const d = new Date(tableStart);
+    d.setDate(d.getDate() + i);
+    tableDates.push(d.toISOString().slice(0, 10));
+  }
+
+  // Day view: which single day to show
+  const dayViewDate = dateParam
+    ? new Date(dateParam + "T12:00:00")
+    : today;
+  const dayViewDateKey = dayViewDate.toISOString().slice(0, 10);
 
   const supabase = await createSupabaseServerClientForData();
 
@@ -133,7 +160,19 @@ export default async function SchedulePage({
 
   const byDate: Record<string, JobRow[]> = {};
   const jobsByDateCount: Record<string, number> = {};
-  type CalendarItem = { id: string; title: string; type: "job" | "activity"; href: string };
+  const crewDisplayNameMap = (crews ?? []).reduce<Record<string, string>>((acc, c) => {
+    acc[c.id] = getCrewDisplayName({ name: c.name, crew_members: c.crew_members });
+    return acc;
+  }, {});
+  type CalendarItem = {
+    id: string;
+    title: string;
+    type: "job" | "activity";
+    href: string;
+    timeLabel?: string;
+    customer?: string;
+    crewName?: string;
+  };
   const itemsByDate: Record<string, CalendarItem[]> = {};
   for (let d = 0; d < DAYS_PAST + DAYS_AHEAD; d++) {
     const date = new Date(start);
@@ -143,13 +182,36 @@ export default async function SchedulePage({
     jobsByDateCount[key] = 0;
     itemsByDate[key] = [];
   }
+  function formatTimeLabel(iso: string): string {
+    const d = new Date(iso);
+    const h = d.getHours();
+    const m = d.getMinutes();
+    if (h === 12 && m === 0) return "12p";
+    if (h === 0 && m === 0) return "12a";
+    if (h >= 12) return `${h === 12 ? 12 : h - 12}${m ? `:${String(m).padStart(2, "0")}` : ""}p`;
+    return `${h}${m ? `:${String(m).padStart(2, "0")}` : ""}a`;
+  }
   for (const job of rows) {
     if (!job.scheduled_start) continue;
     const key = job.scheduled_start.slice(0, 10);
     if (!byDate[key]) byDate[key] = [];
     byDate[key].push(job);
     jobsByDateCount[key] = (jobsByDateCount[key] ?? 0) + 1;
-    if (itemsByDate[key]) itemsByDate[key].push({ id: job.id, title: job.title, type: "job", href: `/jobs/${job.id}` });
+    const customer = Array.isArray(job.customers) ? job.customers[0]?.name : job.customers?.name;
+    const crew = Array.isArray(job.crews) ? job.crews[0] : job.crews;
+    const crewName =
+      (job.assigned_crew_id && crewDisplayNameMap[job.assigned_crew_id]) ?? crew?.name ?? undefined;
+    if (itemsByDate[key]) {
+      itemsByDate[key].push({
+        id: job.id,
+        title: job.title,
+        type: "job",
+        href: `/jobs/${job.id}`,
+        timeLabel: formatTimeLabel(job.scheduled_start),
+        customer: customer ?? undefined,
+        crewName,
+      });
+    }
   }
   const rowIds = new Set(rows.map((r) => r.id));
   for (const act of activitiesInRange ?? []) {
@@ -158,7 +220,16 @@ export default async function SchedulePage({
     const key = a.scheduled_date.slice(0, 10);
     if (byDate[key] !== undefined) jobsByDateCount[key] = (jobsByDateCount[key] ?? 0) + 1;
     const title = (a.title || a.type || "Activity").trim() || "Activity";
-    if (itemsByDate[key]) itemsByDate[key].push({ id: a.id, title, type: "activity", href: `/jobs/${a.job_id}` });
+    const timeLabel = a.scheduled_date.includes("T") ? formatTimeLabel(a.scheduled_date) : undefined;
+    if (itemsByDate[key]) {
+      itemsByDate[key].push({
+        id: a.id,
+        title,
+        type: "activity",
+        href: `/jobs/${a.job_id}`,
+        timeLabel,
+      });
+    }
   }
 
   const startDateStr = start.toISOString().slice(0, 10);
@@ -215,8 +286,10 @@ export default async function SchedulePage({
       <ScheduleControls
         view={view}
         isWeekView={isWeekView}
+        isDayView={isDayView}
         weekStartStr={weekStartStr}
         weekEndStr={weekEndStr}
+        dayViewDateKey={dayViewDateKey}
         crews={(crews ?? []).map((c) => ({ id: c.id, name: getCrewDisplayName({ name: c.name, crew_members: c.crew_members }), specialty: c.specialty }))}
         installers={installers ?? []}
         viewCrewId={viewCrewId}
@@ -240,11 +313,20 @@ export default async function SchedulePage({
 
       <ScheduleUnscheduledBlock jobs={unscheduledRows} />
 
-      <ScheduleTodayStrip
-        todayDateKey={today.toISOString().slice(0, 10)}
-        jobs={(byDate[today.toISOString().slice(0, 10)] ?? []) as ScheduleJob[]}
-      />
+      {isDayView ? (
+        <ScheduleDayView
+          dateKey={dayViewDateKey}
+          jobs={(byDate[dayViewDateKey] ?? []) as ScheduleJob[]}
+          crewDisplayNames={crewDisplayNameMap}
+        />
+      ) : (
+        <ScheduleTodayStrip
+          todayDateKey={today.toISOString().slice(0, 10)}
+          jobs={(byDate[today.toISOString().slice(0, 10)] ?? []) as ScheduleJob[]}
+        />
+      )}
 
+      {!isDayView && (
       <ScheduleCalendar
         jobsByDate={jobsByDateCount}
         itemsByDate={itemsByDate}
@@ -264,17 +346,26 @@ export default async function SchedulePage({
             : undefined
         }
       />
+      )}
 
       <ScheduleScrollToToday todayDateKey={today.toISOString().slice(0, 10)} />
-      <ScheduleDragDrop
-        jobsByDate={byDate as Record<string, ScheduleJob[]>}
-        sortedDates={sortedDates}
-        rescheduleJob={rescheduleJob}
-        crewDisplayNames={(crews ?? []).reduce<Record<string, string>>((acc, c) => {
-          acc[c.id] = getCrewDisplayName({ name: c.name, crew_members: c.crew_members });
-          return acc;
-        }, {})}
-      />
+      <div className="space-y-3">
+        <ScheduleTableNav
+          tableStartStr={tableDates[0] ?? tableStart.toISOString().slice(0, 10)}
+          view={view}
+          layout={layoutParam}
+          weekStartStr={weekStartStr}
+          dateStr={isDayView ? dayViewDateKey : undefined}
+        />
+        <ScheduleTable
+          jobsByDate={byDate as Record<string, ScheduleJob[]>}
+          tableDates={tableDates}
+          dateOptions={sortedDates}
+          rescheduleJob={rescheduleJob}
+          crewDisplayNames={crewDisplayNameMap}
+          todayDateKey={today.toISOString().slice(0, 10)}
+        />
+      </div>
     </div>
   );
 }
