@@ -73,7 +73,7 @@ export default async function JobsPage({
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <header className="animate-fade-in-section schedule-delay-0 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Admin</p>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Jobs</h1>
@@ -91,13 +91,13 @@ export default async function JobsPage({
         </div>
       </header>
 
-      <section className="form-card overflow-hidden p-0">
+      <section className="animate-card-in schedule-delay-75 form-card overflow-hidden rounded-2xl p-0 shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/30 px-4 py-3 sm:px-6">
           <h2 className="text-base font-semibold text-foreground">All jobs</h2>
           <div className="flex flex-wrap items-center gap-1">
             <Link
               href="/admin/jobs"
-              className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${!filterCrewId ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+              className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${!filterCrewId ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
             >
               All crews
             </Link>
@@ -105,7 +105,7 @@ export default async function JobsPage({
               <Link
                 key={crew.id}
                 href={filterCrewId === crew.id ? "/admin/jobs" : `/admin/jobs?crew_id=${crew.id}`}
-                className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition ${filterCrewId === crew.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${filterCrewId === crew.id ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
               >
                 {crew.name}
               </Link>
@@ -159,7 +159,7 @@ export default async function JobsPage({
                 const invoice = Array.isArray(job.invoices) ? job.invoices[0] : job.invoices;
                 const hasBalanceDue = invoice && invoice.balance_due_cents > 0;
                 return (
-                  <tr key={job.id} className="border-b border-border transition hover:bg-muted/30">
+                  <tr key={job.id} className="border-b border-border transition-all duration-200 hover:bg-muted/30">
                     <td className="py-3 pl-5 pr-4 font-medium text-foreground">{job.title}</td>
                     <td className="py-3 pr-4 text-muted-foreground">{customer ?? "-"}</td>
                     <td className="py-3 pr-4 tabular-nums text-muted-foreground">

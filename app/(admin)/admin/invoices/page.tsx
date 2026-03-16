@@ -26,7 +26,7 @@ export default async function InvoicesListPage() {
 
   return (
     <div className="space-y-8">
-      <div>
+      <div className="animate-fade-in-section schedule-delay-0">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">
           Admin
         </p>
@@ -38,7 +38,7 @@ export default async function InvoicesListPage() {
         </p>
       </div>
 
-      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      <section className="animate-card-in schedule-delay-75 rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
         <div className="table-wrap overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
@@ -71,7 +71,7 @@ export default async function InvoicesListPage() {
                   return (
                     <tr
                       key={inv.id}
-                      className="border-b border-border last:border-0 transition hover:bg-muted/30"
+                      className="border-b border-border last:border-0 transition-all duration-200 hover:bg-muted/30"
                     >
                       <td className="py-3 pl-5 pr-4 tabular-nums font-medium text-foreground">
                         <Link href={`/admin/invoices/${inv.id}`} className="hover:underline">

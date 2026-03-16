@@ -180,6 +180,10 @@
   .btn-primary:hover:not(:disabled) {
     filter: brightness(1.08);
     box-shadow: 0 4px 12px oklch(0.32 0.14 15 / 0.35);
+    transform: scale(1.05);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: scale(0.98);
   }
   .btn-primary:focus-visible {
     @apply outline-none ring-2 ring-offset-2 ring-offset-background;
@@ -197,6 +201,10 @@
   .btn-secondary:hover:not(:disabled) {
     background: var(--secondary);
     border-color: oklch(0.25 0.01 0);
+    transform: scale(1.05);
+  }
+  .btn-secondary:active:not(:disabled) {
+    transform: scale(0.98);
   }
   .btn-secondary:focus-visible {
     @apply outline-none ring-2 ring-offset-2 ring-offset-background;
@@ -902,6 +910,32 @@
 .schedule-delay-600 { animation-delay: 600ms; }
 .schedule-delay-700 { animation-delay: 700ms; }
 .schedule-delay-800 { animation-delay: 800ms; }
+
+/* Site-wide section/card entrance (use with animate-fade-in-section + schedule-delay-*) */
+.animate-in-delay-0 { animation-delay: 0ms; }
+.animate-in-delay-1 { animation-delay: 80ms; }
+.animate-in-delay-2 { animation-delay: 160ms; }
+.animate-in-delay-3 { animation-delay: 240ms; }
+.animate-in-delay-4 { animation-delay: 320ms; }
+.animate-in-delay-5 { animation-delay: 400ms; }
+.animate-in-delay-6 { animation-delay: 480ms; }
+.animate-in-delay-7 { animation-delay: 560ms; }
+.animate-in-delay-8 { animation-delay: 640ms; }
+
+@keyframes card-in {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-card-in {
+  animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
 
 @media print {
   body {

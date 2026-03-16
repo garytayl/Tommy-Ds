@@ -63,7 +63,7 @@ export default async function InstallerTodayPage() {
 
   return (
     <div className="space-y-6 pb-6">
-      <div>
+      <div className="animate-fade-in-section schedule-delay-0">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           My jobs
         </h1>
@@ -75,7 +75,7 @@ export default async function InstallerTodayPage() {
       </div>
 
       {nextJob && (
-        <div className="rounded-xl border-2 border-primary/30 bg-card p-5 shadow-sm">
+        <div className="animate-card-in schedule-delay-75 rounded-2xl border-2 border-primary/30 bg-card p-5 shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Next</p>
           <h2 className="mt-1 text-lg font-semibold text-foreground">{nextJob.title}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -100,7 +100,7 @@ export default async function InstallerTodayPage() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
                     href={`/m/jobs/${nextJob.id}`}
-                    className="inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-95"
+                    className="inline-flex rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:scale-105 hover:opacity-95 hover:shadow-lg active:scale-95"
                   >
                     Open job
                   </Link>
@@ -108,7 +108,7 @@ export default async function InstallerTodayPage() {
                     href={`https://maps.google.com/?q=${mapQuery}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
+                    className="inline-flex rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted hover:shadow-sm active:scale-95"
                   >
                     Navigate
                   </a>
@@ -132,11 +132,11 @@ export default async function InstallerTodayPage() {
       )}
 
       {rows.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground shadow-sm">
+        <div className="animate-fade-in-section schedule-delay-150 rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground shadow-lg transition-shadow duration-200 hover:shadow-xl">
           No jobs assigned for today or the next week.
         </div>
       ) : (
-        <div>
+        <div className="animate-fade-in-section schedule-delay-150">
           <h2 className="mb-3 text-sm font-semibold text-foreground">
             {todayJobs.length > 0 ? "All today's jobs" : "Upcoming (next 7 days)"}
           </h2>
@@ -145,10 +145,10 @@ export default async function InstallerTodayPage() {
               const invoice = Array.isArray(job.invoices) ? job.invoices[0] : job.invoices;
               const hasBalanceDue = invoice && invoice.balance_due_cents > 0;
               return (
-                <li key={job.id} className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                <li key={job.id} className="rounded-2xl border border-border bg-card shadow-lg shadow-black/5 overflow-hidden transition-all duration-200 hover:shadow-xl">
                   <Link
                     href={`/m/jobs/${job.id}`}
-                    className="block p-4 transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="block p-4 transition-all duration-200 hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <div className="mb-2 flex items-center justify-between">
                       <h3 className="font-semibold text-foreground">{job.title}</h3>

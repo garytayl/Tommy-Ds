@@ -28,7 +28,7 @@ export default async function QuotesListPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="animate-fade-in-section schedule-delay-0 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
             Admin
@@ -45,7 +45,7 @@ export default async function QuotesListPage() {
         </Link>
       </div>
 
-      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      <section className="animate-card-in schedule-delay-75 rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
         <div className="table-wrap overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
@@ -72,7 +72,7 @@ export default async function QuotesListPage() {
                 rows.map((q) => (
                   <tr
                     key={q.id}
-                    className="border-b border-border last:border-0 transition hover:bg-muted/30"
+                    className="border-b border-border last:border-0 transition-all duration-200 hover:bg-muted/30"
                   >
                     <td className="py-3 pl-5 pr-4 font-medium text-foreground">
                       {q.title}

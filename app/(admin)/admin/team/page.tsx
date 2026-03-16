@@ -85,7 +85,7 @@ export default async function TeamPage() {
 
   return (
     <div className="space-y-8">
-      <div>
+      <div className="animate-fade-in-section schedule-delay-0">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Admin</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">Team</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -93,8 +93,8 @@ export default async function TeamPage() {
         </p>
       </div>
 
-      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <span className="block h-1 w-12 rounded-full bg-primary/80" />
+      <section className="animate-card-in schedule-delay-75 rounded-2xl border border-border bg-card p-5 shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
+        <span className="block h-1 w-12 rounded-full bg-primary/80 transition-all duration-200" />
         <h2 className="mt-3 text-base font-semibold text-foreground">Add user</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Set a temporary password and share it securely. They can sign in at your app&apos;s login page and change it later if you add a password-reset flow.
@@ -126,7 +126,7 @@ export default async function TeamPage() {
         </form>
       </section>
 
-      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      <section className="animate-card-in schedule-delay-150 rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
         <div className="border-b border-border bg-muted/30 px-4 py-3 sm:px-5">
           <h2 className="text-base font-semibold text-foreground">Everyone with access</h2>
           <p className="text-sm text-muted-foreground">Users listed here have a profile and can sign in.</p>
@@ -142,7 +142,7 @@ export default async function TeamPage() {
             </thead>
             <tbody>
               {(profiles ?? []).map((p) => (
-                <tr key={p.user_id} className="border-b border-border last:border-0">
+                <tr key={p.user_id} className="border-b border-border last:border-0 transition-all duration-200 hover:bg-muted/30">
                   <td className="p-3 text-foreground">{p.full_name ?? "—"}</td>
                   <td className="p-3 capitalize text-foreground">{p.role}</td>
                   <td className="p-3 text-muted-foreground">
@@ -158,7 +158,7 @@ export default async function TeamPage() {
         )}
       </section>
 
-      <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+      <div className="animate-fade-in-section schedule-delay-225 rounded-2xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground shadow-sm transition-shadow duration-200 hover:shadow-md">
         <p className="font-medium text-foreground">Other ways to add users</p>
         <ul className="mt-2 list-inside list-disc space-y-1">
           <li>

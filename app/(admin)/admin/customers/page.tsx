@@ -33,7 +33,7 @@ export default async function CustomersPage() {
 
   return (
     <div className="space-y-8">
-      <div>
+      <div className="animate-fade-in-section schedule-delay-0">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">
           Admin
         </p>
@@ -44,8 +44,8 @@ export default async function CustomersPage() {
           Add and manage customer records. Select a customer when creating a job.
         </p>
       </div>
-      <section id="add" className="rounded-xl border border-border bg-card p-5 shadow-sm scroll-mt-4">
-        <span className="block h-1 w-12 rounded-full bg-primary/80" />
+      <section id="add" className="animate-card-in schedule-delay-75 rounded-2xl border border-border bg-card p-5 shadow-lg shadow-black/5 scroll-mt-4 transition-shadow duration-300 hover:shadow-xl">
+        <span className="block h-1 w-12 rounded-full bg-primary/80 transition-all duration-200" />
         <h2 className="mt-3 text-base font-semibold text-foreground">Add customer</h2>
         <form action={createCustomer} className="mt-4 grid gap-3 sm:grid-cols-4">
           <input type="text" name="name" required placeholder="Customer name" className="field" />
@@ -55,7 +55,7 @@ export default async function CustomersPage() {
         </form>
       </section>
 
-      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      <section className="animate-card-in schedule-delay-150 rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
         <div className="border-b border-border bg-muted/50 px-4 py-3 sm:px-5">
           <h2 className="text-base font-semibold text-foreground">All customers</h2>
         </div>
@@ -72,7 +72,7 @@ export default async function CustomersPage() {
             </thead>
             <tbody>
               {(customers ?? []).map((customer) => (
-                <tr key={customer.id} className="border-b border-border transition hover:bg-muted/30">
+                <tr key={customer.id} className="border-b border-border transition-all duration-200 hover:bg-muted/30">
                   <td className="py-3 pl-5 pr-4 font-medium text-foreground">{customer.name}</td>
                   <td className="py-3 pr-4 text-muted-foreground">{customer.phone ?? "-"}</td>
                   <td className="py-3 pr-4 text-muted-foreground">{customer.email ?? "-"}</td>

@@ -77,7 +77,7 @@ export default async function CrewsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
+      <div className="animate-fade-in-section schedule-delay-0">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">
           Admin
         </p>
@@ -89,8 +89,8 @@ export default async function CrewsPage() {
         </p>
       </div>
 
-      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <span className="block h-1 w-12 rounded-full bg-primary/80" />
+      <section className="animate-card-in schedule-delay-75 rounded-2xl border border-border bg-card p-5 shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
+        <span className="block h-1 w-12 rounded-full bg-primary/80 transition-all duration-200" />
         <h2 className="mt-3 text-base font-semibold text-foreground">Add crew</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Add a crew, then add 2–3 installers as members. The crew name will show as the members’ names (e.g. Joe & Michael).
@@ -112,7 +112,7 @@ export default async function CrewsPage() {
         </form>
       </section>
 
-      <section className="space-y-4">
+      <section className="animate-fade-in-section schedule-delay-150 space-y-4">
         <h2 className="text-base font-semibold text-foreground">All crews</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           {(crews ?? []).map((crew) => {
@@ -126,7 +126,7 @@ export default async function CrewsPage() {
             return (
               <div
                 key={crew.id}
-                className="rounded-xl border border-border bg-card overflow-hidden shadow-sm"
+                className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-all duration-300 hover:shadow-xl"
               >
                 <div className="border-b border-border bg-muted/30 px-4 py-3 sm:px-5">
                   <h3 className="font-semibold text-foreground">{displayName}</h3>

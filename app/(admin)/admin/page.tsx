@@ -115,7 +115,7 @@ export default async function TodayCommandCenterPage() {
   return (
     <div className="space-y-8">
       {hasNoData && (
-        <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
+        <div className="animate-fade-in-section rounded-xl border-2 border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
           <p className="font-medium text-amber-900 dark:text-amber-200">
             No data showing? Add the service role key so the app can read your DB.
           </p>
@@ -127,7 +127,7 @@ export default async function TodayCommandCenterPage() {
           </p>
         </div>
       )}
-      <div>
+      <div className="animate-fade-in-section schedule-delay-0">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">
           Command center
         </p>
@@ -139,31 +139,31 @@ export default async function TodayCommandCenterPage() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 animate-fade-in-section schedule-delay-75">
         <DevHint message="Creates a job in public.jobs (customer_id, address, schedule). Form at /admin/jobs/new.">
           <Link
             href="/admin/jobs/new"
-            className="inline-flex items-center rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-95"
+            className="inline-flex items-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:scale-105 hover:opacity-95 hover:shadow-lg active:scale-95"
           >
             New job
           </Link>
         </DevHint>
         <Link
           href="/admin/schedule"
-          className="inline-flex items-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
+          className="inline-flex items-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted hover:shadow-sm active:scale-95"
         >
           Schedule
         </Link>
         <Link
           href="/admin/jobs"
-          className="inline-flex items-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
+          className="inline-flex items-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted hover:shadow-sm active:scale-95"
         >
           All jobs
         </Link>
       </div>
 
       {/* Schedule strip: Today / Tomorrow / This week */}
-      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      <section className="animate-card-in schedule-delay-150 rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
         <div className="flex border-b border-border bg-muted/30">
           <div className="flex-1 border-r border-border px-4 py-2.5">
             <span className="text-xs font-medium text-muted-foreground">Today</span>
@@ -189,7 +189,7 @@ export default async function TodayCommandCenterPage() {
                 <Link
                   key={job.id}
                   href={`/jobs/${job.id}`}
-                  className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 transition hover:bg-muted/30"
+                  className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 transition-all duration-200 hover:bg-muted/30"
                 >
                   <span className="font-medium text-foreground">{job.title}</span>
                   <span className="text-sm text-muted-foreground">
@@ -210,7 +210,7 @@ export default async function TodayCommandCenterPage() {
       </section>
 
       {/* Hot list */}
-      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      <section className="animate-card-in schedule-delay-225 rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
         <div className="border-b border-border bg-muted/30 px-4 py-3 sm:px-5">
           <h2 className="text-lg font-semibold text-foreground">Need attention</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -218,8 +218,8 @@ export default async function TodayCommandCenterPage() {
           </p>
         </div>
         <div className="grid gap-4 p-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-border bg-muted/20 p-4">
-            <Link href="/admin/jobs" className="font-medium text-foreground hover:underline">
+          <div className="rounded-xl border border-border bg-muted/20 p-4 transition-all duration-200 hover:shadow-md hover:bg-muted/30">
+            <Link href="/admin/jobs" className="font-medium text-foreground transition-colors hover:underline">
               No schedule
             </Link>
             <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{noSchedule.length}</p>
@@ -233,14 +233,14 @@ export default async function TodayCommandCenterPage() {
               ))}
             </ul>
           </div>
-          <div className="rounded-lg border border-border bg-muted/20 p-4">
-            <Link href="/admin/invoices" className="font-medium text-foreground hover:underline">
+          <div className="rounded-xl border border-border bg-muted/20 p-4 transition-all duration-200 hover:shadow-md hover:bg-muted/30">
+            <Link href="/admin/invoices" className="font-medium text-foreground transition-colors hover:underline">
               Invoice draft
             </Link>
             <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{draftJobIds.size}</p>
           </div>
-          <div className="rounded-lg border border-border bg-muted/20 p-4">
-            <Link href="/admin/jobs" className="font-medium text-foreground hover:underline">
+          <div className="rounded-xl border border-border bg-muted/20 p-4 transition-all duration-200 hover:shadow-md hover:bg-muted/30">
+            <Link href="/admin/jobs" className="font-medium text-foreground transition-colors hover:underline">
               Completed, unpaid
             </Link>
             <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{completedUnpaid.length}</p>
@@ -258,12 +258,13 @@ export default async function TodayCommandCenterPage() {
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
-        {cards.map((card) => (
+        {cards.map((card, i) => (
           <div
             key={card.label}
-            className="group rounded-xl border border-border bg-card p-5 shadow-sm transition hover:shadow-md"
+            className="animate-card-in group rounded-2xl border border-border bg-card p-5 shadow-lg shadow-black/5 transition-all duration-300 hover:shadow-xl"
+            style={{ animationDelay: `${300 + i * 80}ms` }}
           >
-            <span className="block h-1 w-12 rounded-full bg-primary/80 group-hover:bg-primary" />
+            <span className="block h-1 w-12 rounded-full bg-primary/80 transition-all duration-200 group-hover:bg-primary" />
             <p className="mt-3 text-sm text-muted-foreground">{card.label}</p>
             <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
               {card.value}
@@ -272,12 +273,12 @@ export default async function TodayCommandCenterPage() {
         ))}
       </section>
 
-      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+      <section className="animate-card-in schedule-delay-500 rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/30 px-4 py-3 sm:px-5">
           <h2 className="text-lg font-semibold text-foreground">Recent jobs</h2>
           <Link
             href="/admin/jobs"
-            className="inline-flex items-center rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition hover:opacity-95"
+            className="inline-flex items-center rounded-xl bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:scale-105 hover:opacity-95 hover:shadow active:scale-95"
           >
             View all jobs
           </Link>
@@ -314,7 +315,7 @@ export default async function TodayCommandCenterPage() {
                   return (
                     <tr
                       key={job.id}
-                      className="border-b border-border transition hover:bg-muted/30"
+                      className="border-b border-border transition-all duration-200 hover:bg-muted/30"
                     >
                       <td className="py-3 pl-5 pr-4">
                         <Link href={`/jobs/${job.id}`} className="link font-medium">

@@ -57,7 +57,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-lg">
+      <div className="animate-card-in w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
         <h1 className="text-xl font-semibold text-foreground">Sign in</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Tommy D&apos;s — access by role only
