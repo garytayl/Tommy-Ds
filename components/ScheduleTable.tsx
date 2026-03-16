@@ -87,18 +87,13 @@ export function ScheduleTable({
     }
   }
 
-  // Build flat rows: for each date in tableDates, either job rows or one placeholder row.
-  // firstRowForDate tracks the first row index per dateKey so we can set id="day-{dateKey}" for scroll.
-  const rows: { dateKey: string; job: ScheduleJob | null; isFirstForDate: boolean }[] = [];
+  // Build flat rows: only scheduled jobs (no empty-day placeholders). First row per date gets id for scroll-to-day.
+  const rows: { dateKey: string; job: ScheduleJob; isFirstForDate: boolean }[] = [];
   for (const dateKey of tableDates) {
     const dayJobs = jobsByDate[dateKey] ?? [];
-    if (dayJobs.length === 0) {
-      rows.push({ dateKey, job: null, isFirstForDate: true });
-    } else {
-      dayJobs.forEach((job, i) => {
-        rows.push({ dateKey, job, isFirstForDate: i === 0 });
-      });
-    }
+    dayJobs.forEach((job, i) => {
+      rows.push({ dateKey, job, isFirstForDate: i === 0 });
+    });
   }
 
   const firstDate = tableDates[0] ? new Date(tableDates[0] + "T12:00:00") : null;
@@ -111,10 +106,14 @@ export function ScheduleTable({
       : "Schedule";
 
   return (
-    <section className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl" aria-label="Schedule table">
+    <section className="rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl" aria-label="Scheduled jobs">
       <div className="border-b border-border bg-muted/30 px-4 py-3 sm:px-6">
-        <h2 className="text-base font-semibold text-foreground">Jobs by date</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">{rangeLabel}</p>
+        <h2 className="text-base font-semibold text-foreground">Scheduled jobs</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {rows.length === 0
+            ? `${rangeLabel} · No jobs in this period`
+            : `${rangeLabel} · ${rows.length} job${rows.length !== 1 ? "s" : ""}`}
+        </p>
       </div>
       <div className="table-wrap overflow-x-auto">
         <table className="min-w-full text-sm">
@@ -131,8 +130,14 @@ export function ScheduleTable({
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ dateKey, job, isFirstForDate }) => {
-              const isPlaceholder = !job;
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                  No jobs scheduled in this period. Use the calendar above or &quot;Move to…&quot; on a job in another view to schedule.
+                </td>
+              </tr>
+            ) : (
+            rows.map(({ dateKey, job, isFirstForDate }) => {
               const isDropTarget = dragOverDateKey === dateKey;
               const date = new Date(dateKey + "T12:00:00");
               const dateLabel = date.toLocaleDateString("en-US", {
@@ -141,28 +146,6 @@ export function ScheduleTable({
                 day: "numeric",
               });
               const isToday = dateKey === todayDateKey;
-
-              if (isPlaceholder) {
-                return (
-                  <tr
-                    key={`${dateKey}-empty`}
-                    id={isFirstForDate ? `day-${dateKey}` : undefined}
-                    className={`border-b border-border transition-all duration-200 ${
-                      isDropTarget ? "bg-accent-gold/15 animate-schedule-drop-zone" : "bg-muted/10"
-                    } ${isToday ? "ring-inset ring-1 ring-accent-gold/50" : ""}`}
-                    onDragOver={(e) => handleDragOver(e, dateKey)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, dateKey)}
-                  >
-                    <td className="py-2 pl-5 pr-4 font-medium text-foreground" colSpan={8}>
-                      <span className="text-muted-foreground">{dateLabel}</span>
-                      <span className="ml-2 text-muted-foreground">
-                        — No jobs. Drop here to reschedule.
-                      </span>
-                    </td>
-                  </tr>
-                );
-              }
 
               const customer = Array.isArray(job.customers)
                 ? job.customers[0]?.name
@@ -269,7 +252,8 @@ export function ScheduleTable({
                   </td>
                 </tr>
               );
-            })}
+            })
+            )}
           </tbody>
         </table>
       </div>
