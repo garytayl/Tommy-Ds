@@ -13,7 +13,7 @@ import { getCrewDisplayName } from "@/lib/crews";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClient, createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 const JOB_STATUSES = [
@@ -74,38 +74,19 @@ export default async function JobWorkspacePage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { id } = await params;
-  const { tab = "overview" } = await searchParams;
+  const searchParamsResolved = await searchParams;
+  const { tab = "overview" } = searchParamsResolved;
+  const showDebug = searchParamsResolved.debug === "1";
 
-  // Use session client first so admins see the job via RLS. If job not found (e.g. session
-  // not available in this request), fall back to service role so list/detail stay consistent.
-  const sessionClient = await createSupabaseServerClient();
-  let jobResult = await sessionClient
+  // Use the same data client as the jobs list so list and detail always see the same rows.
+  const supabase = await createSupabaseServerClientForData();
+  const jobResult = await supabase
     .from("jobs")
     .select(
       "id,title,status,notes,project_type,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone)",
     )
     .eq("id", id)
     .maybeSingle();
-
-  let supabase = sessionClient;
-  if (!jobResult.data && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    try {
-      const service = createSupabaseServiceClient();
-      const serviceJobResult = await service
-        .from("jobs")
-        .select(
-          "id,title,status,notes,project_type,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone)",
-        )
-        .eq("id", id)
-        .maybeSingle();
-      if (serviceJobResult.data) {
-        jobResult = serviceJobResult;
-        supabase = service;
-      }
-    } catch {
-      // ignore
-    }
-  }
 
   const [
     invoiceResult,
@@ -226,7 +207,44 @@ export default async function JobWorkspacePage({
   const allMaterials = materialsResult.data ?? [];
   const allLocations = locationsResult.data ?? [];
 
-  if (!jobRecord) notFound();
+  if (!jobRecord) {
+    return (
+      <div className="mx-auto max-w-md space-y-4 rounded-xl border border-border bg-card p-6 text-center">
+        <h1 className="text-lg font-semibold text-foreground">Job not found</h1>
+        <p className="text-sm text-muted-foreground">
+          This job may have been removed or you may not have access to it. Add{" "}
+          <code className="rounded bg-muted px-1">?debug=1</code> to the URL for details.
+        </p>
+        {showDebug && (
+          <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-left text-sm">
+            <p className="font-medium text-foreground">Debug (add ?debug=1 to the URL)</p>
+            <p className="mt-1 text-muted-foreground">Job ID: {id}</p>
+            {jobResult.error && (
+              <p className="mt-1 text-amber-700 dark:text-amber-400">
+                Supabase error: {jobResult.error.message} (code: {jobResult.error.code})
+              </p>
+            )}
+            <p className="mt-1 text-muted-foreground">
+              Service role key set: {process.env.SUPABASE_SERVICE_ROLE_KEY ? "yes" : "no"}
+            </p>
+          </div>
+        )}
+        <div className="flex flex-wrap justify-center gap-3 pt-2">
+          <Link href="/admin/jobs" className="btn-primary">
+            All jobs
+          </Link>
+          <Link href="/admin/schedule" className="btn-secondary">
+            Schedule
+          </Link>
+          {showDebug && (
+            <Link href={`/jobs/${id}?debug=1`} className="text-sm text-muted-foreground underline">
+              Reload with debug
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  }
   const job = jobRecord;
   const customer = Array.isArray(job.customers) ? job.customers[0] : job.customers;
   const customerPhone = customer?.phone ?? null;
