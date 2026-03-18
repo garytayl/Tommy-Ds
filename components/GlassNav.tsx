@@ -1,166 +1,186 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Menu, X } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
-const NAV_ITEMS = [
+export type GlassNavLink = {
+  label: string;
+  href: string;
+  description?: string;
+};
+
+export type GlassNavSection = {
+  title: string;
+  links: GlassNavLink[];
+};
+
+type GlassNavProps = {
+  primaryLinks?: GlassNavLink[];
+  menuSections?: GlassNavSection[];
+};
+
+const DEFAULT_PRIMARY_LINKS: GlassNavLink[] = [
   { label: "Home", href: "/" },
   { label: "Pay invoice", href: "/pay" },
-  { label: "Admin", href: "/admin" },
-  { label: "Installer", href: "/m" },
-  { label: "Customer pay (demo)", href: "/demo/customer-payment" },
+  { label: "Office", href: "/admin" },
 ];
 
-export function GlassNav() {
+const DEFAULT_MENU_SECTIONS: GlassNavSection[] = [
+  {
+    title: "Main",
+    links: [
+      { label: "Home", href: "/" },
+      { label: "Pay invoice", href: "/pay", description: "Customer payment portal" },
+      { label: "Office dashboard", href: "/admin", description: "Admin workspace" },
+      { label: "Installer view", href: "/m", description: "Field job workflow" },
+    ],
+  },
+];
+
+function isActive(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function GlassNav({
+  primaryLinks = DEFAULT_PRIMARY_LINKS,
+  menuSections = DEFAULT_MENU_SECTIONS,
+}: GlassNavProps) {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  const [hasLoaded, setHasLoaded] = useState(false);
-  const lastScrollY = useRef(0);
 
   useEffect(() => {
-    const timer = setTimeout(() => setHasLoaded(true), 100);
-
-    const controlNavbar = () => {
-      if (typeof window === "undefined") return;
-      const currentScrollY = window.scrollY;
-
-      // Hide after a small scroll down; show when near top or scrolling up
-      if (currentScrollY > 24) {
-        if (
-          currentScrollY > lastScrollY.current &&
-          currentScrollY - lastScrollY.current > 3
-        ) {
-          setIsVisible(false);
-        } else if (lastScrollY.current - currentScrollY > 3) {
-          setIsVisible(true);
-        }
-      } else {
-        setIsVisible(true);
-      }
-
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener("scroll", controlNavbar, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", controlNavbar);
-      clearTimeout(timer);
-    };
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsOpen(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  const allSections = useMemo(() => menuSections, [menuSections]);
+  const closeMenu = () => setIsOpen(false);
+
   return (
-    <nav
-      className={`fixed left-1/2 z-50 w-[90vw] max-w-xs -translate-x-1/2 transition-all duration-500 md:max-w-4xl ${
-        isVisible ? "top-3 translate-y-0 opacity-100 md:top-4" : "-translate-y-full opacity-0"
-      } ${hasLoaded ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"} ${
-        !isVisible ? "pointer-events-none" : ""
-      }`}
-      style={{
-        transition: hasLoaded
-          ? "all 0.35s ease-out"
-          : "opacity 0.8s ease-out, transform 0.8s ease-out",
-      }}
-    >
-      <div className="mx-auto">
-        <div className="rounded-full border border-white/20 bg-white/10 px-3 py-2 backdrop-blur-md md:px-5 md:py-1.5">
-          <div className="flex items-center justify-between">
-            <Link
-              href="/"
-              className="flex items-center transition-transform duration-200 hover:scale-105"
-            >
-              <div className="relative h-8 w-8 md:h-9 md:w-9">
-                <Image
-                  src="/images/tommyds-logo.png"
-                  alt="Tommy D's"
-                  width={36}
-                  height={36}
-                  className="h-full w-full object-contain"
-                />
-              </div>
-            </Link>
+    <>
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6">
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="pointer-events-auto rounded-full border border-white/20 bg-black/25 px-3 py-2 shadow-2xl backdrop-blur-xl sm:px-5 sm:py-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <Link
+                href="/"
+                onClick={closeMenu}
+                className="truncate rounded-full px-2 py-1 text-sm font-semibold text-white/95 transition hover:bg-white/10"
+              >
+                Tommy D&apos;s
+              </Link>
 
-            <div className="hidden md:flex md:items-center md:space-x-6 lg:space-x-8">
-              {NAV_ITEMS.map((item) => (
+              <div className="hidden items-center gap-1 md:flex">
+                {primaryLinks.map((link) => {
+                  const active = isActive(pathname, link.href);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMenu}
+                      className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                        active
+                          ? "bg-white text-black"
+                          : "text-white/85 hover:bg-white/15 hover:text-white"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-1 md:hidden">
                 <Link
-                  key={item.href}
-                  href={item.href}
-                  className="font-medium text-white/80 transition-all duration-200 hover:scale-105 hover:text-white"
+                  href="/"
+                  onClick={closeMenu}
+                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                    isActive(pathname, "/")
+                      ? "bg-white text-black"
+                      : "text-white/85 hover:bg-white/15 hover:text-white"
+                  }`}
                 >
-                  {item.label}
+                  Home
                 </Link>
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  aria-controls="glass-global-menu"
+                  onClick={() => setIsOpen((open) => !open)}
+                  className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                    isOpen
+                      ? "bg-white text-black"
+                      : "text-white/85 hover:bg-white/15 hover:text-white"
+                  }`}
+                >
+                  Menu
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div
+            id="glass-global-menu"
+            className={`pointer-events-auto mt-2 origin-top rounded-2xl border border-white/20 bg-black/45 p-3 shadow-2xl backdrop-blur-xl transition-all duration-200 ${
+              isOpen
+                ? "translate-y-0 scale-100 opacity-100"
+                : "-translate-y-1 scale-[0.98] opacity-0 pointer-events-none"
+            }`}
+          >
+            <div className="space-y-3">
+              {allSections.map((section) => (
+                <div key={section.title}>
+                  <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-white/60">
+                    {section.title}
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {section.links.map((link) => {
+                      const active = isActive(pathname, link.href);
+                      return (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={closeMenu}
+                          className={`rounded-xl border px-3 py-2 transition ${
+                            active
+                              ? "border-white/70 bg-white text-black"
+                              : "border-white/20 bg-white/5 text-white hover:bg-white/15"
+                          }`}
+                        >
+                          <p className="text-sm font-semibold">{link.label}</p>
+                          {link.description ? (
+                            <p
+                              className={`mt-0.5 text-xs ${
+                                active ? "text-zinc-700" : "text-white/65"
+                              }`}
+                            >
+                              {link.description}
+                            </p>
+                          ) : null}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </div>
-
-            <button
-              type="button"
-              className="text-white transition-transform duration-200 hover:scale-110 md:hidden"
-              aria-label={isOpen ? "Close menu" : "Open menu"}
-              onClick={() => setIsOpen(!isOpen)}
-            >
-              <div className="relative h-6 w-6">
-                <Menu
-                  size={24}
-                  className={`absolute inset-0 transition-all duration-300 ${
-                    isOpen
-                      ? "scale-75 rotate-180 opacity-0"
-                      : "scale-100 rotate-0 opacity-100"
-                  }`}
-                />
-                <X
-                  size={24}
-                  className={`absolute inset-0 transition-all duration-300 ${
-                    isOpen
-                      ? "scale-100 rotate-0 opacity-100"
-                      : "scale-75 -rotate-180 opacity-0"
-                  }`}
-                />
-              </div>
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile menu */}
-      <div className="relative md:hidden">
-        <div
-          className={`fixed inset-0 -z-10 bg-black/20 backdrop-blur-sm transition-all duration-300 ${
-            isOpen ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
-          aria-hidden
-          onClick={() => setIsOpen(false)}
+      {isOpen ? (
+        <button
+          aria-label="Close navigation menu"
+          type="button"
+          onClick={closeMenu}
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px]"
         />
-
-        <div
-          className={`mx-auto mt-2 w-[90vw] max-w-xs transition-all duration-500 ease-out ${
-            isOpen
-              ? "translate-y-0 scale-100 opacity-100"
-              : "pointer-events-none -translate-y-8 scale-95 opacity-0"
-          }`}
-        >
-          <div className="rounded-2xl border border-white/20 bg-white/10 p-4 shadow-2xl backdrop-blur-md">
-            <div className="flex flex-col space-y-1">
-              {NAV_ITEMS.map((item, index) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`translate-x-1 rounded-lg px-3 py-3 text-left font-medium text-white/80 transition-all duration-300 hover:scale-[1.02] hover:bg-white/10 hover:text-white ${
-                    isOpen ? "animate-mobile-menu-item" : ""
-                  }`}
-                  style={{
-                    animationDelay: isOpen ? `${index * 80 + 100}ms` : "0ms",
-                  }}
-                  onClick={() => setIsOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </nav>
+      ) : null}
+    </>
   );
 }
