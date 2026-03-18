@@ -289,7 +289,6 @@ export default async function SchedulePage({
         isWeekView={isWeekView}
         isDayView={isDayView}
         weekStartStr={weekStartStr}
-        weekEndStr={weekEndStr}
         dayViewDateKey={dayViewDateKey}
         crews={(crews ?? []).map((c) => ({ id: c.id, name: getCrewDisplayName({ name: c.name, crew_members: c.crew_members }), specialty: c.specialty }))}
         installers={installers ?? []}
