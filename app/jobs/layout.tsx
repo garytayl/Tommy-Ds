@@ -24,7 +24,7 @@ export default async function JobWorkspaceLayout({
   }
 
   const auth = await getCurrentUserAndProfile();
-  if (!auth) redirect("/auth/login?next=/jobs");
+  if (!auth) redirect("/auth/login?next=/admin/jobs");
   if (!auth.profile) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-6 flex items-center justify-center">

@@ -121,6 +121,19 @@ export function GlassNav({
                     </Link>
                   );
                 })}
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  aria-controls="glass-global-menu"
+                  onClick={() => setIsOpen((open) => !open)}
+                  className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                    isOpen
+                      ? "bg-white text-black"
+                      : "text-white/85 hover:bg-white/15 hover:text-white"
+                  }`}
+                >
+                  Menu
+                </button>
               </div>
 
               <div className="flex items-center gap-1 md:hidden">

@@ -6,10 +6,26 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+function normalizeNextPath(rawNext: string | null): string {
+  if (!rawNext) return "/admin";
+  const next = rawNext.trim();
+  if (!next.startsWith("/") || next.startsWith("//")) return "/admin";
+
+  // Legacy route fallback.
+  if (next === "/jobs") return "/admin/jobs";
+  if (next.startsWith("/jobs?")) return `/admin/jobs${next.slice("/jobs".length)}`;
+
+  if (next.startsWith("/admin") || next.startsWith("/m") || next.startsWith("/jobs/")) {
+    return next;
+  }
+
+  return "/admin";
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/admin";
+  const next = normalizeNextPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +61,7 @@ export default function LoginPage() {
       } else {
         router.replace(next);
       }
-    } catch (e) {
+    } catch {
       setError(
         "Connection problem. Check your network and try again, or wait a moment and retry."
       );

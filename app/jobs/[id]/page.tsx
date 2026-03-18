@@ -462,6 +462,17 @@ export default async function JobWorkspacePage({
       <div className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
+            <div className="mb-2 flex flex-wrap gap-3 text-sm">
+              <Link href="/admin/jobs" className="link">
+                ← Back to jobs
+              </Link>
+              <Link href="/admin/schedule" className="link">
+                Schedule
+              </Link>
+              <Link href="/admin/invoices" className="link">
+                Invoices
+              </Link>
+            </div>
             <h1 className="text-xl font-semibold text-foreground">{job.title}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {customer?.id ? (

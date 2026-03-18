@@ -122,6 +122,9 @@ export default async function InvoiceDetailPage({
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-xl font-semibold text-foreground">Invoice #{invoice.invoice_number}</h1>
             <div className="flex flex-wrap items-center gap-3">
+              <Link href="/admin/invoices" className="link text-sm">
+                Back to invoices
+              </Link>
               <Link href={`/jobs/${invoiceJobId}`} className="link text-sm">
                 Back to job
               </Link>
