@@ -58,6 +58,35 @@ export function GlassNav({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Prevent the underlying page from scrolling on mobile while menu is open.
+    const scrollY = window.scrollY;
+    const originalBody = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+    };
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalBody.overflow;
+      document.body.style.position = originalBody.position;
+      document.body.style.top = originalBody.top;
+      document.body.style.width = originalBody.width;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isOpen]);
+
   const allSections = useMemo(() => menuSections, [menuSections]);
   const closeMenu = () => setIsOpen(false);
 
@@ -126,7 +155,7 @@ export function GlassNav({
 
           <div
             id="glass-global-menu"
-            className={`pointer-events-auto mt-2 origin-top rounded-2xl border border-white/20 bg-black/45 p-3 shadow-2xl backdrop-blur-xl transition-all duration-200 ${
+            className={`pointer-events-auto mt-2 origin-top rounded-2xl border border-white/20 bg-black/45 p-3 shadow-2xl backdrop-blur-xl transition-all duration-200 max-h-[calc(100dvh-5.5rem)] overflow-y-auto overscroll-contain ${
               isOpen
                 ? "translate-y-0 scale-100 opacity-100"
                 : "-translate-y-1 scale-[0.98] opacity-0 pointer-events-none"
