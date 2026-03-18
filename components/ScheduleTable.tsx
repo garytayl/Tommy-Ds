@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useCallback } from "react";
 
-import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import type { ScheduleJob } from "@/components/ScheduleDragDrop";
 
@@ -242,13 +241,6 @@ export function ScheduleTable({
                         );
                       })}
                     </select>
-                    {hasBalanceDue && (
-                      <CollectPaymentButton
-                        invoiceId={invoice!.id}
-                        disabled={false}
-                        compact
-                      />
-                    )}
                   </td>
                 </tr>
               );

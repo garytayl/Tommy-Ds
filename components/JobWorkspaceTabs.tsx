@@ -9,10 +9,9 @@ const TABS = [
   { key: "work", label: "Work", hint: "Field notes, job photos, mark complete. job_photos + jobs.notes." },
   { key: "supplies", label: "Supplies", hint: "Parts and materials for this job; pull from door shop or warehouses. job_materials." },
   { key: "invoice", label: "Invoice", hint: "Line items, tax. invoices + invoice_items; recompute_invoice_totals." },
-  { key: "payments", label: "Payments", hint: "Collect (Stripe Checkout), payment history. payments table." },
 ] as const;
 
-export function JobWorkspaceTabs({ jobId }: { jobId: string }) {
+export function JobWorkspaceTabs() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const current = searchParams.get("tab") || "overview";

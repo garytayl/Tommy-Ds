@@ -139,9 +139,9 @@ export function Hero() {
             ref={titleRef}
             className="text-6xl font-medium text-balance text-center text-primary-foreground mb-0 tracking-tight leading-[0.95] md:text-7xl lg:text-8xl"
           >
-            Scheduling, invoicing,
+            Scheduling and invoicing
             <br />
-            <span className="text-accent-gold">and payments</span>
+            <span className="text-accent-gold">for daily operations</span>
             <br />
             <span className="text-primary-foreground/90 text-5xl md:text-6xl lg:text-7xl">for our team</span>
           </h1>

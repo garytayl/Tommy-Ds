@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { formatCents } from "@/lib/money";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
@@ -102,13 +101,6 @@ export default async function InvoicesListPage() {
                         >
                           Open
                         </Link>
-                        {inv.balance_due_cents > 0 && (
-                          <CollectPaymentButton
-                            invoiceId={inv.id}
-                            disabled={false}
-                            compact
-                          />
-                        )}
                       </td>
                     </tr>
                   );

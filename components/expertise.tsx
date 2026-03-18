@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarCheck, FileText, CreditCard, Smartphone } from "lucide-react";
+import { CalendarCheck, FileText, ClipboardCheck, Smartphone } from "lucide-react";
 import { HighlightedText } from "./highlighted-text";
 
 const expertiseAreas = [
@@ -18,10 +18,10 @@ const expertiseAreas = [
     icon: FileText,
   },
   {
-    title: "Payment collection",
+    title: "Invoice tracking",
     description:
-      "Send a Stripe checkout link from the field. Customers pay by card; balance due updates automatically. No chasing checks.",
-    icon: CreditCard,
+      "Track invoice status and balance due directly from jobs and invoices so the office always has the latest billing view.",
+    icon: ClipboardCheck,
   },
   {
     title: "Mobile installer view",
@@ -67,9 +67,8 @@ export function Expertise() {
             for office and field
           </h2>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            Office: customers, jobs, invoices, and payment status. Field:
-            today’s jobs, payment link to send to the customer, notes, and
-            photos.
+            Office: customers, jobs, invoices, and status tracking. Field:
+            today&apos;s jobs, notes, and photos.
           </p>
         </div>
         <div className="grid md:grid-cols-2 gap-x-12 gap-y-16">

@@ -31,7 +31,7 @@ const ADMIN_CORE: GlassNavSection = {
     { href: "/admin/schedule", label: "Schedule", description: "Plan installer workload" },
     { href: "/admin/jobs", label: "Jobs", description: "Manage active installs" },
     { href: "/admin/customers", label: "Customers", description: "Customer records" },
-    { href: "/admin/invoices", label: "Money", description: "Invoices and payments" },
+    { href: "/admin/invoices", label: "Money", description: "Invoices and billing status" },
   ],
 };
 
@@ -68,7 +68,7 @@ const FIELD_SECTIONS: GlassNavSection[] = [
       { href: "/m", label: "My jobs", description: "Assigned work for today" },
       { href: "/admin/jobs", label: "All jobs", description: "Read-only office view" },
       { href: "/admin/customers", label: "Customers", description: "Customer lookups" },
-      { href: "/pay", label: "Pay invoice", description: "Customer checkout page" },
+      { href: "/admin/invoices", label: "Invoices", description: "Open billing records" },
     ],
   },
 ];

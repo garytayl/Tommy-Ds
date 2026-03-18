@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Tommy D's — Scheduling & Billing",
   description:
-    "Internal scheduling, jobs, invoicing, and payment collection for Tommy D's Windows, Doors, & More.",
+    "Internal scheduling, jobs, and invoicing for Tommy D's Windows, Doors, & More.",
 };
 
 export default function RootLayout({

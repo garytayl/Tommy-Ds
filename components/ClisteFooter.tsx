@@ -40,14 +40,6 @@ export function ClisteFooter() {
               </li>
               <li>
                 <Link
-                  href="/pay"
-                  className="inline-flex text-muted-foreground transition-colors duration-300 hover:text-foreground"
-                >
-                  Pay invoice
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/admin"
                   className="inline-flex text-muted-foreground transition-colors duration-300 hover:text-foreground"
                 >
@@ -60,14 +52,6 @@ export function ClisteFooter() {
                   className="inline-flex text-muted-foreground transition-colors duration-300 hover:text-foreground"
                 >
                   Installer
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/demo/customer-payment"
-                  className="inline-flex text-muted-foreground transition-colors duration-300 hover:text-foreground"
-                >
-                  Customer pay (demo)
                 </Link>
               </li>
               <li>

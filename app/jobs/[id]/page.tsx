@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { InvoiceSummary } from "@/components/InvoiceSummary";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { JobStickyActions } from "@/components/JobStickyActions";
@@ -150,22 +148,13 @@ export default async function JobWorkspacePage({
     ]);
 
   const invoiceId = invoiceResult.data?.id ?? null;
-  const [paymentsResult, itemsResult] = await Promise.all([
-    invoiceId
-      ? supabase
-          .from("payments")
-          .select("id,amount_cents,status,provider,created_at")
-          .eq("invoice_id", invoiceId)
-          .order("created_at", { ascending: false })
-      : Promise.resolve({ data: [] }),
-    invoiceId
-      ? supabase
-          .from("invoice_items")
-          .select("id,description,qty,unit_price_cents,line_total_cents")
-          .eq("invoice_id", invoiceId)
-          .order("created_at", { ascending: true })
-      : Promise.resolve({ data: [] }),
-  ]);
+  const itemsResult = await (invoiceId
+    ? supabase
+        .from("invoice_items")
+        .select("id,description,qty,unit_price_cents,line_total_cents")
+        .eq("invoice_id", invoiceId)
+        .order("created_at", { ascending: true })
+    : Promise.resolve({ data: [] }));
 
   type JobRow = {
     id: string;
@@ -202,7 +191,6 @@ export default async function JobWorkspacePage({
   }));
   const photos = photosResult.data ?? [];
   const jobMaterials = jobMaterialsResult.data ?? [];
-  const payments = paymentsResult.data ?? [];
   const items = itemsResult.data ?? [];
   const allMaterials = materialsResult.data ?? [];
   const allLocations = locationsResult.data ?? [];
@@ -532,7 +520,7 @@ export default async function JobWorkspacePage({
       </div>
 
       <Suspense fallback={<div className="h-10 border-b border-border" />}>
-        <JobWorkspaceTabs jobId={id} />
+        <JobWorkspaceTabs />
       </Suspense>
 
       {/* Tab content */}
@@ -935,75 +923,9 @@ export default async function JobWorkspacePage({
         </div>
       )}
 
-      {tab === "payments" && (
-        <div className="mt-6 space-y-6">
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="text-base font-semibold text-foreground">Collect payment</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Send customer to Stripe hosted checkout.
-            </p>
-            {invoice ? (
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <CollectPaymentButton
-                  invoiceId={invoice.id}
-                  disabled={(invoice.balance_due_cents ?? 0) <= 0}
-                />
-                {(invoice.deposit_paid_cents ?? 0) > 0 && (
-                  <Link
-                    href={`/receipt/${invoice.id}`}
-                    className="inline-flex items-center rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-                  >
-                    View receipt
-                  </Link>
-                )}
-              </div>
-            ) : (
-              <p className="mt-3 text-sm text-muted-foreground">Create an invoice first.</p>
-            )}
-          </div>
-          <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-            <div className="border-b border-border bg-muted/50 px-4 py-3">
-              <h2 className="text-base font-semibold text-foreground">Payment history</h2>
-            </div>
-            <div className="table-wrap overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="table-header py-3 pl-5 pr-4">Date</th>
-                    <th className="table-header py-3 pr-4">Amount</th>
-                    <th className="table-header py-3 pr-5">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(payments ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="py-6 text-center text-muted-foreground">
-                        No payments yet.
-                      </td>
-                    </tr>
-                  ) : (
-                    (payments ?? []).map((p) => (
-                      <tr key={p.id} className="border-b border-border">
-                        <td className="py-3 pl-5 pr-4 text-muted-foreground">
-                          {new Date(p.created_at).toLocaleString()}
-                        </td>
-                        <td className="py-3 pr-4 tabular-nums">{formatCents(p.amount_cents)}</td>
-                        <td className="py-3 pr-5">{p.status}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
       <JobStickyActions
         phone={customerPhone}
         mapsUrl={mapsUrl}
-        balanceDueCents={balanceDueCents}
-        invoiceId={invoice?.id ?? null}
         jobStatus={job.status}
         onMarkComplete={markComplete}
       />

@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { formatCents } from "@/lib/money";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
@@ -69,7 +68,7 @@ export default async function InstallerTodayPage() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {todayJobs.length > 0
-            ? "Today and upcoming. Tap a job to open it, add notes, photos, and collect payment."
+            ? "Today and upcoming. Tap a job to open it, add notes, and upload photos."
             : "Your assigned jobs for today and the next week. Tap a job to open it."}
         </p>
       </div>
@@ -113,15 +112,8 @@ export default async function InstallerTodayPage() {
                     Navigate
                   </a>
                   {invoice && invoice.balance_due_cents > 0 && (
-                    <span className="inline-flex items-center gap-2 flex-wrap">
-                      <span className="text-sm text-muted-foreground">
-                        {formatCents(invoice.balance_due_cents)} due
-                      </span>
-                      <CollectPaymentButton
-                        invoiceId={invoice.id}
-                        disabled={false}
-                        compact
-                      />
+                    <span className="inline-flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
+                      {formatCents(invoice.balance_due_cents)} due
                     </span>
                   )}
                 </div>
@@ -143,7 +135,6 @@ export default async function InstallerTodayPage() {
           <ul className="space-y-3">
             {rows.map((job) => {
               const invoice = Array.isArray(job.invoices) ? job.invoices[0] : job.invoices;
-              const hasBalanceDue = invoice && invoice.balance_due_cents > 0;
               return (
                 <li key={job.id} className="rounded-2xl border border-border bg-card shadow-lg shadow-black/5 overflow-hidden transition-all duration-200 hover:shadow-xl">
                   <Link
@@ -173,15 +164,6 @@ export default async function InstallerTodayPage() {
                       </p>
                     </div>
                   </Link>
-                  {hasBalanceDue && (
-                    <div className="border-t border-border px-4 py-2 bg-muted/20">
-                      <CollectPaymentButton
-                        invoiceId={invoice!.id}
-                        disabled={false}
-                        compact
-                      />
-                    </div>
-                  )}
                 </li>
               );
             })}

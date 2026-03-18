@@ -1,7 +1,6 @@
 /**
  * Single config source: env vars and feature switches.
- * Add vars here and flip switches when you set them. Build features against
- * config.features.* and turn on by setting the corresponding env.
+ * Keep feature checks centralized so layouts/routes can degrade gracefully.
  */
 
 function env(key: string): string | undefined {
@@ -9,33 +8,15 @@ function env(key: string): string | undefined {
   return process.env[key];
 }
 
-function envBool(key: string): boolean {
-  const v = env(key);
-  if (v === undefined || v === "") return false;
-  return v === "1" || v.toLowerCase() === "true" || v.toLowerCase() === "yes";
-}
-
 /** Public (client-safe) env. Prefer NEXT_PUBLIC_* for anything exposed to the browser. */
 export const publicEnv = {
-  appUrl: env("NEXT_PUBLIC_APP_URL"),
   supabaseUrl: env("NEXT_PUBLIC_SUPABASE_URL"),
   supabaseAnonKey: env("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
-  /** Set when using Stripe test keys so UI can show "Test mode". */
-  stripeTestMode: envBool("NEXT_PUBLIC_STRIPE_TEST_MODE"),
 } as const;
 
 /** Server-only env. Do not import publicEnv + serverEnv in client components. */
 export const serverEnv = {
   supabaseServiceRoleKey: env("SUPABASE_SERVICE_ROLE_KEY"),
-  stripeSecretKey: env("STRIPE_SECRET_KEY"),
-  stripeWebhookSecret: env("STRIPE_WEBHOOK_SECRET"),
-  docusignIntegrationKey: env("DOCUSIGN_INTEGRATION_KEY"),
-  docusignUserId: env("DOCUSIGN_USER_ID"),
-  docusignAccountId: env("DOCUSIGN_ACCOUNT_ID"),
-  docusignPrivateKey: env("DOCUSIGN_PRIVATE_KEY"),
-  twilioAccountSid: env("TWILIO_ACCOUNT_SID"),
-  twilioAuthToken: env("TWILIO_AUTH_TOKEN"),
-  twilioPhoneNumber: env("TWILIO_PHONE_NUMBER"),
 } as const;
 
 /**
@@ -48,49 +29,8 @@ export const features = {
     return Boolean(publicEnv.supabaseUrl && publicEnv.supabaseAnonKey);
   },
 
-  /** Service role for server-only Supabase (e.g. signed URLs, webhook writes). Optional. */
+  /** Service role for server-only Supabase operations. Optional. */
   get supabaseServiceRole() {
     return Boolean(publicEnv.supabaseUrl && serverEnv.supabaseServiceRoleKey);
   },
-
-  /** Stripe payments: secret key set. Enables "Collect payment" and checkout. */
-  get stripe() {
-    return Boolean(serverEnv.stripeSecretKey);
-  },
-
-  /** Stripe webhook: secret set. Enables payment confirmation and balance updates. */
-  get stripeWebhook() {
-    return Boolean(serverEnv.stripeWebhookSecret);
-  },
-
-  /** Payments fully on: Stripe + webhook. When false, collect payment can still create a session but we won't record completion. */
-  get payments() {
-    return features.stripe && features.stripeWebhook;
-  },
-
-  /** DocuSign eSignature: send receipts and other docs for signature when env vars set. */
-  get docusign() {
-    return Boolean(
-      serverEnv.docusignIntegrationKey &&
-        serverEnv.docusignUserId &&
-        serverEnv.docusignAccountId &&
-        serverEnv.docusignPrivateKey
-    );
-  },
-
-  /** Twilio SMS: send payment link via text when env vars set. */
-  get twilio() {
-    return Boolean(
-      serverEnv.twilioAccountSid &&
-        serverEnv.twilioAuthToken &&
-        serverEnv.twilioPhoneNumber
-    );
-  },
 } as const;
-
-/**
- * App URL for redirects (Stripe success/cancel, etc.). Prefer request origin in API routes when available.
- */
-export function getAppUrl(fallbackOrigin?: string): string {
-  return publicEnv.appUrl || fallbackOrigin || "http://localhost:3000";
-}

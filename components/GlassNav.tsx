@@ -22,8 +22,8 @@ type GlassNavProps = {
 
 const DEFAULT_PRIMARY_LINKS: GlassNavLink[] = [
   { label: "Home", href: "/" },
-  { label: "Pay invoice", href: "/pay" },
   { label: "Office", href: "/admin" },
+  { label: "Installer", href: "/m" },
 ];
 
 const DEFAULT_MENU_SECTIONS: GlassNavSection[] = [
@@ -31,7 +31,6 @@ const DEFAULT_MENU_SECTIONS: GlassNavSection[] = [
     title: "Main",
     links: [
       { label: "Home", href: "/" },
-      { label: "Pay invoice", href: "/pay", description: "Customer payment portal" },
       { label: "Office dashboard", href: "/admin", description: "Admin workspace" },
       { label: "Installer view", href: "/m", description: "Field job workflow" },
     ],

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 
-import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { SubmitButton } from "@/components/SubmitButton";
 import { formatCents } from "@/lib/money";
@@ -200,11 +199,6 @@ export default async function InstallerJobPage({
             )}
           </div>
         </div>
-        {invoice && balanceDueCents > 0 && (
-          <div className="mt-4 border-t border-border pt-4">
-            <CollectPaymentButton invoiceId={invoice.id} disabled={false} compact />
-          </div>
-        )}
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">

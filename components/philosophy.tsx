@@ -12,17 +12,17 @@ const philosophyItems = [
   {
     title: "Field view on the phone",
     description:
-      "Installers open the installer view and get today’s jobs with address, notes, and a button to send the customer a payment link.",
+      "Installers open the installer view and get today’s jobs with address, notes, and quick access to maps and customer contact details.",
   },
   {
-    title: "Invoice → pay link",
+    title: "Invoice workflow",
     description:
-      "Create an invoice from a job, add line items and tax, then use “Collect payment” to get a Stripe link. Send that link to the customer; they pay by card. We see it when it’s paid.",
+      "Create an invoice from a job, add line items and tax, and keep billing status current as office work progresses.",
   },
   {
-    title: "No customer login here",
+    title: "Internal-only app",
     description:
-      "Customers never log into this site. The only time they see us is when they click the payment link and complete checkout on Stripe.",
+      "Customers never log into this app. It stays focused on internal office and installer operations.",
   },
 ];
 
@@ -66,7 +66,7 @@ export function Philosophy() {
             <p className="text-muted-foreground text-lg leading-relaxed max-w-md mb-12">
               This app is for Tommy D&apos;s staff only. Office uses the dashboard
               for customers, jobs, and invoices; field uses the installer view for
-              the day&apos;s runs and to send payment links to customers.
+              the day&apos;s runs and on-site updates.
             </p>
             {philosophyItems.map((item, index) => (
               <div

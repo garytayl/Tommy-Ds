@@ -25,9 +25,6 @@ export function Footer() {
             <Link href="/m" className="hover:text-foreground transition-colors">
               Installer
             </Link>
-            <Link href="/demo/customer-payment" className="hover:text-foreground transition-colors">
-              Customer pay (demo)
-            </Link>
             <a
               href="https://tommyds.us"
               target="_blank"

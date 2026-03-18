@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { getCrewDisplayName } from "@/lib/crews";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
@@ -19,17 +18,8 @@ export default async function JobsPage({
     .order("created_at", { ascending: false });
   if (filterCrewId) jobsQuery = jobsQuery.eq("assigned_crew_id", filterCrewId);
 
-  const [jobsResult, installersResult, crewMembersResult, crewsResult] = await Promise.all([
+  const [jobsResult, crewsResult] = await Promise.all([
     jobsQuery,
-    supabase
-      .from("profiles")
-      .select("user_id,full_name")
-      .eq("role", "installer")
-      .order("full_name", { ascending: true }),
-    supabase
-      .from("crew_members")
-      .select("user_id,profiles(user_id,full_name)")
-      .order("user_id"),
     supabase
       .from("crews")
       .select("id,name,specialty,crew_members(user_id,profiles(user_id,full_name))")
@@ -42,20 +32,6 @@ export default async function JobsPage({
     name: getCrewDisplayName({ name: c.name, crew_members: c.crew_members }),
     specialty: c.specialty,
   }));
-
-  const installersList = (installersResult.data ?? []) as { user_id: string; full_name: string | null }[];
-  const crewMembers = (crewMembersResult.data ?? []) as { user_id: string; profiles: { user_id: string; full_name: string | null } | { user_id: string; full_name: string | null }[] | null }[];
-  const crewMemberProfiles = crewMembers.map((m) => {
-    const p = m.profiles;
-    const prof = Array.isArray(p) ? p[0] : p;
-    return { user_id: m.user_id, full_name: prof?.full_name ?? null };
-  });
-  const installerIds = new Set(installersList.map((i) => i.user_id));
-  const mergedInstallers = [
-    ...installersList,
-    ...crewMemberProfiles.filter((c) => !installerIds.has(c.user_id)),
-  ];
-  const installers = mergedInstallers.length > 0 ? mergedInstallers : installersList;
 
   type JobRow = {
     id: string;
@@ -157,7 +133,6 @@ export default async function JobsPage({
                   : job.profiles?.full_name;
 
                 const invoice = Array.isArray(job.invoices) ? job.invoices[0] : job.invoices;
-                const hasBalanceDue = invoice && invoice.balance_due_cents > 0;
                 return (
                   <tr key={job.id} className="border-b border-border transition-all duration-200 hover:bg-muted/30">
                     <td className="py-3 pl-5 pr-4 font-medium text-foreground">{job.title}</td>
@@ -185,13 +160,6 @@ export default async function JobsPage({
                       <Link href={`/jobs/${job.id}`} className="link">
                         Open
                       </Link>
-                      {hasBalanceDue && (
-                        <CollectPaymentButton
-                          invoiceId={invoice!.id}
-                          disabled={false}
-                          compact
-                        />
-                      )}
                     </td>
                   </tr>
                 );

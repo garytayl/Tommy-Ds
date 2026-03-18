@@ -5,8 +5,6 @@ import { useState } from "react";
 type JobStickyActionsProps = {
   phone: string | null;
   mapsUrl: string;
-  balanceDueCents: number;
-  invoiceId: string | null;
   jobStatus: string;
   onMarkComplete?: () => Promise<void>;
 };
@@ -14,39 +12,11 @@ type JobStickyActionsProps = {
 export function JobStickyActions({
   phone,
   mapsUrl,
-  balanceDueCents,
-  invoiceId,
   jobStatus,
   onMarkComplete,
 }: JobStickyActionsProps) {
-  const [collecting, setCollecting] = useState(false);
   const [completing, setCompleting] = useState(false);
-  const [payLink, setPayLink] = useState<string | null>(null);
   const canComplete = jobStatus === "in_progress" || jobStatus === "scheduled" || jobStatus === "approved";
-
-  async function handleCollect() {
-    if (!invoiceId || balanceDueCents <= 0) return;
-    setCollecting(true);
-    setPayLink(null);
-    try {
-      const res = await fetch("/api/checkout/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ invoiceId }),
-      });
-      const body = (await res.json()) as { url?: string };
-      if (body?.url) {
-        try {
-          await navigator.clipboard.writeText(body.url);
-        } catch {
-          // ignore clipboard errors
-        }
-        setPayLink(body.url);
-      }
-    } finally {
-      setCollecting(false);
-    }
-  }
 
   async function handleComplete() {
     if (!onMarkComplete) return;
@@ -76,25 +46,6 @@ export function JobStickyActions({
       >
         Navigate
       </a>
-      {invoiceId && balanceDueCents > 0 ? payLink ? (
-        <a
-          href={payLink}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-primary bg-primary/10 px-4 py-2.5 text-sm font-medium text-primary touch-manipulation"
-        >
-          Open pay page
-        </a>
-      ) : (
-        <button
-          type="button"
-          onClick={handleCollect}
-          disabled={collecting}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-primary bg-primary/10 px-4 py-2.5 text-sm font-medium text-primary touch-manipulation disabled:opacity-50"
-        >
-          {collecting ? "…" : "Collect"}
-        </button>
-      ) : null}
       {canComplete && onMarkComplete ? (
         <button
           type="button"

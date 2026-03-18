@@ -15,7 +15,7 @@ const features = [
     id: 2,
     title: "Installer View",
     category: "Mobile",
-    detail: "Today's jobs, pay link, photos",
+    detail: "Today's jobs, notes, photos",
     tag: "Field",
   },
   {
@@ -27,10 +27,10 @@ const features = [
   },
   {
     id: 4,
-    title: "Payment collection",
-    category: "Stripe",
-    detail: "Send link, get paid",
-    tag: "Checkout",
+    title: "Status tracking",
+    category: "Workflow",
+    detail: "Job and invoice progress",
+    tag: "Ops",
   },
 ];
 

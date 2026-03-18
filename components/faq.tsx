@@ -15,9 +15,9 @@ const faqs = [
       "From a job's detail page in the Admin Dashboard, click Create invoice. Then open the invoice to add line items (description, qty, unit price), set tax, and update status. The system recomputes subtotal, total, and balance due automatically.",
   },
   {
-    question: "How does payment collection work?",
+    question: "How do we handle billing?",
     answer:
-      "From the job (admin or installer view), use Collect Payment to create a Stripe Checkout link. Send that link to the customer; they pay by card on Stripe's hosted page. When payment succeeds, the invoice balance updates and you can see the payment in the invoice's Payments table.",
+      "Use invoices to track line items, tax, total, and balance due. Payment activity can be tracked internally in the invoice record.",
   },
   {
     question: "Can I assign jobs to installers?",
@@ -32,7 +32,7 @@ const faqs = [
   {
     question: "How do we get started?",
     answer:
-      "Use the Admin Dashboard to add customers and create jobs, then assign installers and create invoices as needed. Open the Installer View on a phone to see the field experience. Configure Supabase and Stripe in your environment so auth and payments work in production.",
+      "Use the Admin Dashboard to add customers and create jobs, then assign installers and create invoices as needed. Open the Installer View on a phone to see the field experience. Configure Supabase in your environment so auth and data work in production.",
   },
 ];
 

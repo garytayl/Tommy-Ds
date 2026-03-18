@@ -3,14 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { label: "Home", href: "/" },
-  { label: "Pay invoice", href: "/pay" },
   { label: "Admin", href: "/admin" },
   { label: "Installer", href: "/m" },
-  { label: "Customer pay (demo)", href: "/demo/customer-payment" },
 ];
 
 export function Header() {

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useCallback } from "react";
 
-import { CollectPaymentButton } from "@/components/CollectPaymentButton";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 
 export type ScheduleJob = {
@@ -192,13 +191,6 @@ export function ScheduleDragDrop({
                           <JobStatusBadge status={job.status} />
                         </span>
                       </Link>
-                      {hasBalanceDue && (
-                        <CollectPaymentButton
-                          invoiceId={invoice!.id}
-                          disabled={false}
-                          compact
-                        />
-                      )}
                       <select
                         aria-label={`Move ${job.title} to another day`}
                         value=""

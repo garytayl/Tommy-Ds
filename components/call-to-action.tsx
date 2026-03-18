@@ -22,7 +22,7 @@ export function CallToAction() {
           </h2>
           <p className="text-primary-foreground/70 text-lg md:text-xl leading-relaxed mb-12 max-w-2xl mx-auto">
             Office: manage customers, jobs, and invoices. Field: open the
-            installer view on your phone for today&apos;s jobs and payment links.
+            installer view on your phone for today&apos;s jobs, notes, and photos.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

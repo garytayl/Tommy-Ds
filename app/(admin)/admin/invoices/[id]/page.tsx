@@ -7,7 +7,6 @@ import { formatCents, dollarsToCents } from "@/lib/money";
 import { setToastCookie } from "@/lib/toast";
 import { computeTaxCents } from "@/lib/tax";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
-import { SendReceiptForSignature } from "./SendReceiptForSignature";
 
 const INVOICE_STATUSES = ["draft", "sent", "partially_paid", "paid", "void"];
 
@@ -123,16 +122,6 @@ export default async function InvoiceDetailPage({
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-xl font-semibold text-foreground">Invoice #{invoice.invoice_number}</h1>
             <div className="flex flex-wrap items-center gap-3">
-              {invoice.deposit_paid_cents > 0 && (
-                <Link href={`/receipt/${invoice.id}`} className="link text-sm">
-                  View receipt
-                </Link>
-              )}
-              <SendReceiptForSignature
-                invoiceId={invoice.id}
-                customerEmail={invoiceCustomer?.email ?? null}
-                customerName={invoiceCustomer?.name ?? null}
-              />
               <Link href={`/jobs/${invoiceJobId}`} className="link text-sm">
                 Back to job
               </Link>

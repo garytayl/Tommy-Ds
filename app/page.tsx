@@ -14,11 +14,11 @@ export default function Home() {
           Tommy D&apos;s Windows, Doors, & More
         </p>
         <h1 className="animate-fade-in-heading mt-3 max-w-2xl text-center font-medium tracking-tight text-primary-foreground md:text-4xl lg:text-5xl">
-          Scheduling, invoicing,{" "}
-          <span className="text-accent-gold">and payments</span>
+          Scheduling and invoicing{" "}
+          <span className="text-accent-gold">for the team</span>
           <br />
           <span className="text-2xl text-primary-foreground/90 md:text-3xl lg:text-4xl">
-            for our team
+            at Tommy D&apos;s
           </span>
         </h1>
         <p className="animate-fade-in-subheading mt-4 text-center text-sm text-primary-foreground/70">
@@ -38,27 +38,11 @@ export default function Home() {
 
       {/* Content: one clear block with consistent spacing and glass treatment */}
       <div id="hub" className="scroll-mt-6 container mx-auto max-w-4xl flex-1 px-4 pb-16 pt-6 md:px-6 md:pt-8">
-        {/* Pay your bill — glass card to match nav */}
-        <section
-          className={`${cardBase} mb-8`}
-        >
-          <h2 className="text-base font-semibold tracking-tight text-foreground">
-            Pay your bill
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Send a check to the address on your bill, or pay online: use your invoice number at{" "}
-            <Link href="/pay" className="font-medium text-accent-gold underline-offset-4 hover:underline">
-              Pay your invoice
-            </Link>{" "}
-            or use the link we sent you.
-          </p>
-        </section>
-
         {/* Open a view — section label + cards in one visual group */}
         <h2 className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Open a view
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Link href="/admin" className={cardBase}>
             <span className="block h-1 w-10 rounded-full bg-primary/80 transition group-hover:bg-primary" />
             <h3 className="mt-4 text-lg font-semibold tracking-tight text-foreground">
@@ -77,22 +61,10 @@ export default function Home() {
               Installer
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              Today&apos;s jobs, collect payment link, notes, photos. Field view.
+              Today&apos;s jobs, notes, photos. Field view.
             </p>
             <span className="mt-4 inline-block text-sm font-medium text-accent-gold">
               Open Installer view →
-            </span>
-          </Link>
-          <Link href="/demo/customer-payment" className={cardBase}>
-            <span className="block h-1 w-10 rounded-full bg-primary/80 transition group-hover:bg-primary" />
-            <h3 className="mt-4 text-lg font-semibold tracking-tight text-foreground">
-              Customer payment (demo)
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              What the customer sees: tap-to-pay / pay link flow.
-            </p>
-            <span className="mt-4 inline-block text-sm font-medium text-accent-gold">
-              See customer flow →
             </span>
           </Link>
         </div>
