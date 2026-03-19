@@ -42,21 +42,39 @@ export function ScheduleTableNav({
   const nextStart = new Date(tableStartStr + "T12:00:00");
   nextStart.setDate(nextStart.getDate() + TABLE_DAYS);
   const nextStr = nextStart.toISOString().slice(0, 10);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const thisWindowStart = new Date(today);
+  thisWindowStart.setDate(thisWindowStart.getDate() - thisWindowStart.getDay());
+  const thisWindowStr = thisWindowStart.toISOString().slice(0, 10);
 
   return (
-    <div className="flex flex-wrap items-center gap-2 text-sm">
-      <Link
-        href={`/admin/schedule${prefix}table_start=${prevStr}`}
-        className="rounded-xl border border-border bg-card px-2.5 py-1.5 font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted hover:shadow-sm active:scale-95 touch-manipulation"
-      >
-        Previous 2 weeks
-      </Link>
-      <Link
-        href={`/admin/schedule${prefix}table_start=${nextStr}`}
-        className="rounded-xl border border-border bg-card px-2.5 py-1.5 font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted hover:shadow-sm active:scale-95 touch-manipulation"
-      >
-        Next 2 weeks
-      </Link>
+    <div className="schedule-nav-strip animate-card-in schedule-delay-600">
+      <div className="schedule-fancy-content flex flex-wrap items-center justify-between gap-2 text-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          Table range
+        </p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Link
+            href={`/admin/schedule${prefix}table_start=${prevStr}`}
+            className="schedule-chip"
+          >
+            Previous 2 weeks
+          </Link>
+          <Link
+            href={`/admin/schedule${prefix}table_start=${thisWindowStr}`}
+            className="schedule-chip"
+          >
+            This 2 weeks
+          </Link>
+          <Link
+            href={`/admin/schedule${prefix}table_start=${nextStr}`}
+            className="schedule-chip"
+          >
+            Next 2 weeks
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

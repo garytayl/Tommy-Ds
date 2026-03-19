@@ -283,7 +283,7 @@ export default async function SchedulePage({
         </p>
       </div>
 
-      <div className="animate-fade-in-section schedule-delay-75">
+      <div className="relative">
       <ScheduleControls
         view={view}
         isWeekView={isWeekView}

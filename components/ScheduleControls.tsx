@@ -69,32 +69,36 @@ export function ScheduleControls({
   todayWeekStart.setDate(todayWeekStart.getDate() - todayWeekStart.getDay());
   const todayWeekStr = todayWeekStart.toISOString().slice(0, 10);
   const currentLayout: "month" | "week" | "day" = isDayView ? "day" : isWeekView ? "week" : "month";
-  const pillBase =
-    "rounded-xl border px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 touch-manipulation";
-  const inactivePill = "border-border bg-card text-foreground hover:bg-muted";
-  const activePill = "border-primary bg-primary text-primary-foreground shadow-sm";
+  const pillBase = "schedule-chip";
+  const activePill = "schedule-chip-active";
 
   return (
-    <div className="space-y-4 rounded-2xl border border-border bg-muted/30 p-3 sm:p-4 shadow-sm transition-shadow duration-200 hover:shadow-md">
+    <div className="schedule-fancy-panel animate-card-in schedule-delay-75">
+      <div className="pointer-events-none absolute -right-16 -top-14 h-44 w-44 rounded-full bg-primary/20 blur-3xl animate-float-slow" />
+      <div className="pointer-events-none absolute -left-20 bottom-2 h-36 w-36 rounded-full bg-accent-gold/10 blur-3xl animate-float-delayed" />
+      <div className="schedule-fancy-content space-y-4 p-3 sm:p-4">
       <div className="grid gap-3 lg:grid-cols-[auto,1fr] lg:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Layout</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent-gold animate-pulse-slow" />
+            Layout
+          </p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <Link
               href={viewHref(view, "month", weekStartStr, dayViewDateKey)}
-              className={`${pillBase} ${!isWeekView && !isDayView ? activePill : inactivePill}`}
+              className={`${pillBase} ${!isWeekView && !isDayView ? activePill : ""}`}
             >
               Month
             </Link>
             <Link
               href={viewHref(view, "week", weekStartStr, dayViewDateKey)}
-              className={`${pillBase} ${isWeekView ? activePill : inactivePill}`}
+              className={`${pillBase} ${isWeekView ? activePill : ""}`}
             >
               Week
             </Link>
             <Link
               href={viewHref(view, "day", weekStartStr, dayViewDateKey)}
-              className={`${pillBase} ${isDayView ? activePill : inactivePill}`}
+              className={`${pillBase} ${isDayView ? activePill : ""}`}
             >
               Day
             </Link>
@@ -111,19 +115,19 @@ export function ScheduleControls({
                 <>
                   <Link
                     href={viewHref(view, "week", prevWeekStr, dayViewDateKey)}
-                    className={`${pillBase} ${inactivePill}`}
+                    className={pillBase}
                   >
                     Previous week
                   </Link>
                   <Link
                     href={viewHref(view, "week", todayWeekStr, dayViewDateKey)}
-                    className={`${pillBase} ${inactivePill}`}
+                    className={pillBase}
                   >
                     This week
                   </Link>
                   <Link
                     href={viewHref(view, "week", nextWeekStr, dayViewDateKey)}
-                    className={`${pillBase} ${inactivePill}`}
+                    className={pillBase}
                   >
                     Next week
                   </Link>
@@ -132,19 +136,19 @@ export function ScheduleControls({
                 <>
                   <Link
                     href={viewHref(view, "day", weekStartStr, prevDayStr)}
-                    className={`${pillBase} ${inactivePill}`}
+                    className={pillBase}
                   >
                     Previous day
                   </Link>
                   <Link
                     href={viewHref(view, "day", weekStartStr, todayStr)}
-                    className={`${pillBase} ${inactivePill}`}
+                    className={pillBase}
                   >
                     Today
                   </Link>
                   <Link
                     href={viewHref(view, "day", weekStartStr, nextDayStr)}
-                    className={`${pillBase} ${inactivePill}`}
+                    className={pillBase}
                   >
                     Next day
                   </Link>
@@ -155,9 +159,10 @@ export function ScheduleControls({
         )}
       </div>
 
-      <div className="space-y-3 border-t border-border pt-3">
+      <div className="space-y-3 border-t border-border/80 pt-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse-slow" />
             View filter
           </p>
           <p className="text-xs text-muted-foreground">
@@ -168,14 +173,15 @@ export function ScheduleControls({
         <div className="flex flex-wrap items-center gap-1.5">
           <Link
             href={viewHref("all", currentLayout, weekStartStr, dayViewDateKey)}
-            className={`${pillBase} ${view === "all" ? activePill : inactivePill}`}
+            className={`${pillBase} ${view === "all" ? activePill : ""}`}
           >
             All schedules
           </Link>
         </div>
 
         <div className="grid gap-3 xl:grid-cols-2">
-          <div className="rounded-xl border border-border bg-card/60 p-3">
+          <div className="schedule-subcard">
+            <div className="p-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Crews</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {crews.length === 0 ? (
@@ -189,16 +195,18 @@ export function ScheduleControls({
                         ? viewHref("all", currentLayout, weekStartStr, dayViewDateKey)
                         : viewHref(`crew:${crew.id}`, currentLayout, weekStartStr, dayViewDateKey)
                     }
-                    className={`${pillBase} ${viewCrewId === crew.id ? activePill : inactivePill}`}
+                    className={`${pillBase} ${viewCrewId === crew.id ? activePill : ""}`}
                   >
                     {crew.name}
                   </Link>
                 ))
               )}
             </div>
+            </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card/60 p-3">
+          <div className="schedule-subcard">
+            <div className="p-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Installers</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {installers.length === 0 ? (
@@ -212,15 +220,17 @@ export function ScheduleControls({
                         ? viewHref("all", currentLayout, weekStartStr, dayViewDateKey)
                         : viewHref(`person:${inst.user_id}`, currentLayout, weekStartStr, dayViewDateKey)
                     }
-                    className={`${pillBase} ${viewPersonId === inst.user_id ? activePill : inactivePill}`}
+                    className={`${pillBase} ${viewPersonId === inst.user_id ? activePill : ""}`}
                   >
                     {inst.full_name ?? inst.user_id}
                   </Link>
                 ))
               )}
             </div>
+            </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
