@@ -134,6 +134,14 @@ export function GlassNav({
                 >
                   Menu
                 </button>
+                <form action="/auth/logout" method="post">
+                  <button
+                    type="submit"
+                    className="rounded-full px-3 py-1.5 text-sm font-semibold text-white/85 transition hover:bg-white/15 hover:text-white"
+                  >
+                    Sign out
+                  </button>
+                </form>
               </div>
 
               <div className="flex items-center gap-1 md:hidden">
@@ -209,6 +217,16 @@ export function GlassNav({
                   </div>
                 </div>
               ))}
+              <div className="pt-1">
+                <form action="/auth/logout" method="post">
+                  <button
+                    type="submit"
+                    className="w-full rounded-xl border border-white/25 bg-white/5 px-3 py-2 text-left text-sm font-semibold text-white transition hover:bg-white/15"
+                  >
+                    Sign out
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
         </div>
