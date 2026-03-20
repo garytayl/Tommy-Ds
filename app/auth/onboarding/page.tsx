@@ -196,6 +196,11 @@ export default async function OnboardingPage({
             </button>
           </div>
         </form>
+        <form action="/auth/logout" method="post" className="mt-3">
+          <button type="submit" className="btn-secondary w-full">
+            Sign out
+          </button>
+        </form>
       </div>
     </div>
   );
