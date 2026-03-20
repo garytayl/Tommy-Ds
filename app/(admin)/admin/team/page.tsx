@@ -190,6 +190,82 @@ export default async function TeamPage() {
     }
   }
 
+  async function removeUser(formData: FormData) {
+    "use server";
+    const auth = await getCurrentUserAndProfile();
+    if (!auth || auth.profile?.role !== "admin") {
+      await setToastCookie("You don’t have permission to remove users.");
+      revalidatePath("/admin/team");
+      return;
+    }
+
+    const userId = String(formData.get("user_id") ?? "").trim();
+    if (!userId) {
+      await setToastCookie("Missing user.");
+      revalidatePath("/admin/team");
+      return;
+    }
+
+    if (userId === auth.user.id) {
+      await setToastCookie("You can’t remove your own account from Team.");
+      revalidatePath("/admin/team");
+      return;
+    }
+
+    try {
+      const supabase = createSupabaseServiceClient();
+
+      const { data: targetProfile, error: profileLookupError } = await supabase
+        .from("profiles")
+        .select("role, full_name")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (profileLookupError) {
+        await setToastCookie(profileLookupError.message);
+        revalidatePath("/admin/team");
+        return;
+      }
+
+      if (targetProfile?.role === "admin") {
+        const { count: adminCount, error: adminCountError } = await supabase
+          .from("profiles")
+          .select("user_id", { count: "exact", head: true })
+          .eq("role", "admin");
+        if (adminCountError) {
+          await setToastCookie(adminCountError.message);
+          revalidatePath("/admin/team");
+          return;
+        }
+        if ((adminCount ?? 0) <= 1) {
+          await setToastCookie("Can’t remove the last admin account.");
+          revalidatePath("/admin/team");
+          return;
+        }
+      }
+
+      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(userId);
+      if (authDeleteError && !/not found/i.test(authDeleteError.message)) {
+        await setToastCookie(authDeleteError.message);
+        revalidatePath("/admin/team");
+        return;
+      }
+
+      const { error: profileDeleteError } = await supabase.from("profiles").delete().eq("user_id", userId);
+      if (profileDeleteError) {
+        await setToastCookie(profileDeleteError.message);
+        revalidatePath("/admin/team");
+        return;
+      }
+
+      const displayName = targetProfile?.full_name?.trim() || userId;
+      await setToastCookie(`Removed ${displayName} from Team.`);
+      revalidatePath("/admin/team");
+    } catch (e) {
+      await setToastCookie(e instanceof Error ? e.message : "Failed to remove user");
+      revalidatePath("/admin/team");
+    }
+  }
+
   const supabase = await createSupabaseServerClientForData();
   const { data: profiles } = await supabase
     .from("profiles")
@@ -291,6 +367,7 @@ export default async function TeamPage() {
                 <th className="p-3 font-medium">Role</th>
                 <th className="p-3 font-medium">Onboarding</th>
                 <th className="p-3 font-medium">Added</th>
+                <th className="p-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -303,6 +380,18 @@ export default async function TeamPage() {
                   </td>
                   <td className="p-3 text-muted-foreground">
                     {p.created_at ? new Date(p.created_at).toLocaleDateString() : "—"}
+                  </td>
+                  <td className="p-3">
+                    {p.user_id === auth.user.id ? (
+                      <span className="text-xs text-muted-foreground">You</span>
+                    ) : (
+                      <form action={removeUser}>
+                        <input type="hidden" name="user_id" value={p.user_id} />
+                        <button type="submit" className="btn-danger text-xs">
+                          Remove
+                        </button>
+                      </form>
+                    )}
                   </td>
                 </tr>
               ))}
