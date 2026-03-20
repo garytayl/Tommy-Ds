@@ -16,6 +16,67 @@ export default async function TeamPage() {
   const auth = await getCurrentUserAndProfile();
   if (!auth || auth.profile.role !== "admin") redirect("/admin");
 
+  async function sendInvite(formData: FormData) {
+    "use server";
+    const auth = await getCurrentUserAndProfile();
+    if (!auth || auth.profile.role !== "admin") {
+      await setToastCookie("You don’t have permission to invite users.");
+      revalidatePath("/admin/team");
+      return;
+    }
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
+    const fullName = String(formData.get("full_name") ?? "").trim() || null;
+    const role = String(formData.get("role") ?? "manager").trim();
+    if (!email) {
+      await setToastCookie("Email is required.");
+      revalidatePath("/admin/team");
+      return;
+    }
+    if (!ROLES.some((r) => r.value === role)) {
+      await setToastCookie("Invalid role.");
+      revalidatePath("/admin/team");
+      return;
+    }
+    try {
+      const supabase = createSupabaseServiceClient();
+      const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
+        email,
+        {
+          data: fullName ? { full_name: fullName } : undefined,
+        },
+      );
+      if (inviteError) {
+        await setToastCookie(inviteError.message);
+        revalidatePath("/admin/team");
+        return;
+      }
+      const invitedUser = inviteData.user;
+      if (!invitedUser) {
+        await setToastCookie("Invite could not be created.");
+        revalidatePath("/admin/team");
+        return;
+      }
+      const { error: profileError } = await supabase.from("profiles").upsert(
+        {
+          user_id: invitedUser.id,
+          role,
+          full_name: fullName,
+        },
+        { onConflict: "user_id" },
+      );
+      if (profileError) {
+        await setToastCookie(profileError.message);
+        revalidatePath("/admin/team");
+        return;
+      }
+      await setToastCookie(`Invite sent to ${email}.`);
+      revalidatePath("/admin/team");
+    } catch (e) {
+      await setToastCookie(e instanceof Error ? e.message : "Failed to send invite");
+      revalidatePath("/admin/team");
+    }
+  }
+
   async function createUser(formData: FormData) {
     "use server";
     const auth = await getCurrentUserAndProfile();
@@ -95,9 +156,38 @@ export default async function TeamPage() {
 
       <section className="animate-card-in schedule-delay-75 rounded-2xl border border-border bg-card p-5 shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
         <span className="block h-1 w-12 rounded-full bg-primary/80 transition-all duration-200" />
-        <h2 className="mt-3 text-base font-semibold text-foreground">Add user</h2>
+        <h2 className="mt-3 text-base font-semibold text-foreground">Send invite link</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Set a temporary password and share it securely. They can sign in at your app&apos;s login page and change it later if you add a password-reset flow.
+          Recommended: send an email invite so they can set up their own account.
+        </p>
+        <form action={sendInvite} className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <label htmlFor="invite-email" className="form-label">Email</label>
+            <input id="invite-email" type="email" name="email" required className="field" placeholder="name@example.com" />
+          </div>
+          <div>
+            <label htmlFor="invite-name" className="form-label">Full name (optional)</label>
+            <input id="invite-name" type="text" name="full_name" className="field" placeholder="Jane Smith" />
+          </div>
+          <div>
+            <label htmlFor="invite-role" className="form-label">Role</label>
+            <select id="invite-role" name="role" className="field">
+              {ROLES.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-2 lg:col-span-1">
+            <button type="submit" className="btn-primary w-full">Send invite</button>
+          </div>
+        </form>
+      </section>
+
+      <section className="animate-card-in schedule-delay-100 rounded-2xl border border-border bg-card p-5 shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
+        <span className="block h-1 w-12 rounded-full bg-primary/80 transition-all duration-200" />
+        <h2 className="mt-3 text-base font-semibold text-foreground">Add user manually</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Fallback option: create a user with a temporary password and share it securely.
         </p>
         <form action={createUser} className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
@@ -121,7 +211,7 @@ export default async function TeamPage() {
             </select>
           </div>
           <div className="sm:col-span-2 lg:col-span-4">
-            <button type="submit" className="btn-primary">Create user</button>
+            <button type="submit" className="btn-secondary">Create user manually</button>
           </div>
         </form>
       </section>
@@ -177,7 +267,10 @@ export default async function TeamPage() {
             <strong>“Database error creating new user”:</strong> Usually a trigger on <code className="rounded bg-muted px-1">auth.users</code> is failing. Apply the migration <code className="rounded bg-muted px-1">20260314100000_fix_auth_user_triggers.sql</code> (drops common broken triggers), or in Supabase SQL Editor run it manually. Check Postgres logs in the Dashboard if it persists.
           </li>
           <li>
-            <strong>Invite by email:</strong> Supabase supports{" "}
+            <strong>Invite by email:</strong> Admin Team now supports sending Supabase invite links. Make sure your Supabase project email settings/SMTP are configured so invitation emails deliver.
+          </li>
+          <li>
+            <strong>Invite API details:</strong> Supabase supports{" "}
             <a
               href="https://supabase.com/docs/reference/javascript/auth-admin-inviteuserbyemail"
               target="_blank"
@@ -186,7 +279,7 @@ export default async function TeamPage() {
             >
               inviteUserByEmail
             </a>
-            {" "}so you can send a sign-up link instead of a password; you&apos;d need to add a &quot;pending invite&quot; flow and profile creation when they first sign in to assign their role.
+            {" "}for self-setup links.
           </li>
         </ul>
       </div>
