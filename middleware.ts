@@ -41,6 +41,20 @@ export async function middleware(request: NextRequest) {
   }
 
   if (request.nextUrl.pathname === "/auth/login" && user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role,onboarding_completed_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!profile) {
+      return response;
+    }
+    if (!profile?.onboarding_completed_at) {
+      return NextResponse.redirect(new URL("/auth/onboarding", request.url));
+    }
+    if (profile.role === "installer") {
+      return NextResponse.redirect(new URL("/m", request.url));
+    }
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 

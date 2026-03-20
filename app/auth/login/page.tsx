@@ -10,6 +10,7 @@ function normalizeNextPath(rawNext: string | null): string {
   if (!rawNext) return "/admin";
   const next = rawNext.trim();
   if (!next.startsWith("/") || next.startsWith("//")) return "/admin";
+  if (next === "/auth/onboarding") return next;
 
   // Legacy route fallback.
   if (next === "/jobs") return "/admin/jobs";

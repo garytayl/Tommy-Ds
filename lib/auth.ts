@@ -7,6 +7,7 @@ export interface Profile {
   role: ProfileRole;
   full_name: string | null;
   phone: string | null;
+  onboarding_completed_at: string | null;
   created_at: string;
 }
 
@@ -33,7 +34,7 @@ export async function getCurrentUserAndProfile(): Promise<CurrentUserResult> {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("user_id, role, full_name, phone, created_at")
+    .select("user_id, role, full_name, phone, onboarding_completed_at, created_at")
     .eq("user_id", user.id)
     .single();
 

@@ -12,6 +12,14 @@ const ROLES = [
   { value: "installer", label: "Installer" },
 ] as const;
 
+function getAppUrl(): string {
+  const publicUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (publicUrl) return publicUrl.replace(/\/+$/, "");
+  const vercelUrl = process.env.VERCEL_URL?.trim();
+  if (vercelUrl) return `https://${vercelUrl.replace(/\/+$/, "")}`;
+  return "http://localhost:3000";
+}
+
 export default async function TeamPage() {
   const auth = await getCurrentUserAndProfile();
   if (!auth || auth.profile.role !== "admin") redirect("/admin");
@@ -39,9 +47,11 @@ export default async function TeamPage() {
     }
     try {
       const supabase = createSupabaseServiceClient();
+      const redirectTo = `${getAppUrl()}/auth/callback?next=/auth/onboarding`;
       const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
         email,
         {
+          redirectTo,
           data: fullName ? { full_name: fullName } : undefined,
         },
       );
@@ -61,6 +71,7 @@ export default async function TeamPage() {
           user_id: invitedUser.id,
           role,
           full_name: fullName,
+          onboarding_completed_at: null,
         },
         { onConflict: "user_id" },
       );
@@ -122,6 +133,7 @@ export default async function TeamPage() {
           user_id: userData.user.id,
           role,
           full_name: fullName,
+          onboarding_completed_at: null,
         },
         { onConflict: "user_id" }
       );
@@ -141,7 +153,7 @@ export default async function TeamPage() {
   const supabase = await createSupabaseServerClientForData();
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("user_id, role, full_name, created_at")
+    .select("user_id, role, full_name, onboarding_completed_at, created_at")
     .order("created_at", { ascending: false });
 
   return (
@@ -150,7 +162,7 @@ export default async function TeamPage() {
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Admin</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">Team</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Create accounts for office, installers, and other admins. Each person signs in at the app with the email and temporary password you set. Only users with a profile and role can access the app.
+          Invite office staff/installers to self-setup, or create users manually as a fallback. Only users with a profile and role can access the app.
         </p>
       </div>
 
@@ -227,6 +239,7 @@ export default async function TeamPage() {
               <tr className="border-b border-border text-left text-muted-foreground">
                 <th className="p-3 font-medium">Name</th>
                 <th className="p-3 font-medium">Role</th>
+                <th className="p-3 font-medium">Onboarding</th>
                 <th className="p-3 font-medium">Added</th>
               </tr>
             </thead>
@@ -235,6 +248,9 @@ export default async function TeamPage() {
                 <tr key={p.user_id} className="border-b border-border last:border-0 transition-all duration-200 hover:bg-muted/30">
                   <td className="p-3 text-foreground">{p.full_name ?? "—"}</td>
                   <td className="p-3 capitalize text-foreground">{p.role}</td>
+                  <td className="p-3 text-muted-foreground">
+                    {p.onboarding_completed_at ? "Complete" : "Pending"}
+                  </td>
                   <td className="p-3 text-muted-foreground">
                     {p.created_at ? new Date(p.created_at).toLocaleDateString() : "—"}
                   </td>

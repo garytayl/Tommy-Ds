@@ -21,12 +21,17 @@ Copy `.env.example` to `.env.local` and fill in. **You must set `SUPABASE_SERVIC
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=   # required for data to show
+# optional but recommended for invite + auth callback links
+NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
 ```
 
 ## Key File Tree
 
 ```txt
 app/
+  auth/
+    callback/route.ts
+    onboarding/page.tsx
   (admin)/
     admin/
       layout.tsx, page.tsx
@@ -47,6 +52,7 @@ supabase/
     20260310140000_crews.sql
     20260310160000_quotes.sql
     20260310170000_lots_inventory_barcodes.sql
+    20260320103000_profiles_onboarding_completed.sql
 ```
 
 ## Local Setup
@@ -76,3 +82,9 @@ supabase/
    - Home: `http://localhost:3000`
    - Admin: `http://localhost:3000/admin`
    - Installer: `http://localhost:3000/m`
+
+## Team onboarding flow
+
+- Admins can send invite links from **Admin → Team**.
+- Invited users complete setup at `/auth/onboarding` (name, password), then are redirected by role.
+- Manual user creation remains available as a fallback.

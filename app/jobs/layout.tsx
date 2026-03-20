@@ -40,6 +40,9 @@ export default async function JobWorkspaceLayout({
       </div>
     );
   }
+  if (!auth.profile.onboarding_completed_at) {
+    redirect("/auth/onboarding?next=/admin/jobs");
+  }
   if (auth.profile.role === "installer") redirect("/m");
 
   return (

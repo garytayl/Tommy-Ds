@@ -40,6 +40,9 @@ export default async function AdminLayout({
       </div>
     );
   }
+  if (!auth.profile.onboarding_completed_at) {
+    redirect("/auth/onboarding?next=/admin");
+  }
   if (auth.profile.role === "installer") redirect("/m");
 
   return (

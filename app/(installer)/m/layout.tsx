@@ -40,6 +40,9 @@ export default async function InstallerLayout({
       </div>
     );
   }
+  if (!auth.profile.onboarding_completed_at) {
+    redirect("/auth/onboarding?next=/m");
+  }
   if (auth.profile.role !== "installer") redirect("/admin");
 
   return (
