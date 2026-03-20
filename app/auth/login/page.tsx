@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { withRetry } from "@/lib/retry";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 function normalizeNextPath(rawNext: string | null): string {
@@ -24,20 +24,20 @@ function normalizeNextPath(rawNext: string | null): string {
 }
 
 export default function LoginPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const next = normalizeNextPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  /** idle | signing_in | redirecting — keep UI in a clear state until navigation */
+  const [phase, setPhase] = useState<"idle" | "signing_in" | "redirecting">("idle");
   const [retrying, setRetrying] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setRetrying(false);
-    setLoading(true);
+    setPhase("signing_in");
     const supabase = createClient();
     try {
       const { data, error: signInError } = await withRetry(
@@ -50,27 +50,29 @@ export default function LoginPage() {
       );
       if (signInError) {
         setError(signInError.message);
+        setPhase("idle");
         return;
       }
       if (!data.user) {
         setError("Sign-in failed. Please try again.");
+        setPhase("idle");
         return;
       }
-      // Redirect immediately; server will check profile and redirect back if no access
-      if (next.startsWith("/m")) {
-        router.replace("/m");
-      } else {
-        router.replace(next);
-      }
+      // Client-side router navigation can run before SSR/middleware see new session cookies.
+      // Full navigation matches a manual reload and reliably picks up the session.
+      setPhase("redirecting");
+      const destination = next.startsWith("/m") ? "/m" : next;
+      window.location.assign(destination);
     } catch {
       setError(
         "Connection problem. Check your network and try again, or wait a moment and retry."
       );
-    } finally {
-      setLoading(false);
+      setPhase("idle");
       setRetrying(false);
     }
   }
+
+  const busy = phase !== "idle";
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
@@ -92,6 +94,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="field"
               required
+              disabled={busy}
             />
           </div>
           <div>
@@ -106,6 +109,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="field"
               required
+              disabled={busy}
             />
           </div>
           {error && (
@@ -113,8 +117,19 @@ export default function LoginPage() {
               {error}
             </p>
           )}
-          <button type="submit" className="btn-primary w-full" disabled={loading}>
-            {loading ? (retrying ? "Connection issue, retrying…" : "Signing in…") : "Sign in"}
+          <button
+            type="submit"
+            className="btn-primary w-full"
+            disabled={busy}
+            aria-busy={busy}
+          >
+            {phase === "redirecting"
+              ? "Redirecting…"
+              : busy
+                ? retrying
+                  ? "Connection issue, retrying…"
+                  : "Signing in…"
+                : "Sign in"}
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-muted-foreground">

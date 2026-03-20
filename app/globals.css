@@ -174,16 +174,19 @@
   .btn-primary {
     background: var(--primary);
     color: var(--primary-foreground);
-    @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-200;
+    touch-action: manipulation;
+    @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-[transform,filter,box-shadow] duration-150 ease-out;
     box-shadow: 0 1px 2px oklch(0 0 0 / 0.2);
   }
   .btn-primary:hover:not(:disabled) {
     filter: brightness(1.08);
     box-shadow: 0 4px 12px oklch(0.32 0.14 15 / 0.35);
-    transform: scale(1.05);
+    transform: scale(1.03);
   }
   .btn-primary:active:not(:disabled) {
-    transform: scale(0.98);
+    transform: scale(0.96);
+    filter: brightness(0.92);
+    transition-duration: 0.05s;
   }
   .btn-primary:focus-visible {
     @apply outline-none ring-2 ring-offset-2 ring-offset-background;
@@ -196,15 +199,17 @@
     background: transparent;
     color: var(--foreground);
     border: 1.5px solid var(--border);
-    @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium transition-all duration-200;
+    touch-action: manipulation;
+    @apply inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium transition-[transform,background-color,border-color] duration-150 ease-out;
   }
   .btn-secondary:hover:not(:disabled) {
     background: var(--secondary);
     border-color: oklch(0.25 0.01 0);
-    transform: scale(1.05);
+    transform: scale(1.03);
   }
   .btn-secondary:active:not(:disabled) {
-    transform: scale(0.98);
+    transform: scale(0.96);
+    transition-duration: 0.05s;
   }
   .btn-secondary:focus-visible {
     @apply outline-none ring-2 ring-offset-2 ring-offset-background;

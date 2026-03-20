@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { FormSubmitButton } from "@/components/forms/FormSubmitButton";
 import { getCurrentUserAndProfile, type ProfileRole } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
@@ -44,7 +45,9 @@ export default async function OnboardingPage({
             Ask an admin to invite you again or assign your role in Team.
           </p>
           <form action="/auth/logout" method="post" className="mt-4">
-            <button type="submit" className="btn-secondary">Sign out</button>
+            <FormSubmitButton className="btn-secondary" pendingLabel="Signing out…">
+              Sign out
+            </FormSubmitButton>
           </form>
         </div>
       </div>
@@ -191,15 +194,15 @@ export default async function OnboardingPage({
             />
           </div>
           <div className="sm:col-span-2">
-            <button type="submit" className="btn-primary w-full">
+            <FormSubmitButton className="btn-primary w-full" pendingLabel="Saving…">
               Complete setup
-            </button>
+            </FormSubmitButton>
           </div>
         </form>
         <form action="/auth/logout" method="post" className="mt-3">
-          <button type="submit" className="btn-secondary w-full">
+          <FormSubmitButton className="btn-secondary w-full" pendingLabel="Signing out…">
             Sign out
-          </button>
+          </FormSubmitButton>
         </form>
       </div>
     </div>

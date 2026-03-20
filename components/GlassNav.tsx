@@ -1,5 +1,6 @@
 "use client";
 
+import { FormSubmitButton } from "@/components/forms/FormSubmitButton";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -98,7 +99,7 @@ export function GlassNav({
               <Link
                 href="/"
                 onClick={closeMenu}
-                className="truncate rounded-full px-2 py-1 text-sm font-semibold text-white/95 transition hover:bg-white/10"
+                className="touch-manipulation truncate rounded-full px-2 py-1 text-sm font-semibold text-white/95 transition duration-150 hover:bg-white/10 active:scale-95"
               >
                 Tommy D&apos;s
               </Link>
@@ -111,7 +112,7 @@ export function GlassNav({
                       key={link.href}
                       href={link.href}
                       onClick={closeMenu}
-                      className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                      className={`touch-manipulation rounded-full px-3 py-1.5 text-sm font-medium transition duration-150 active:scale-95 ${
                         active
                           ? "bg-white text-black"
                           : "text-white/85 hover:bg-white/15 hover:text-white"
@@ -126,7 +127,7 @@ export function GlassNav({
                   aria-expanded={isOpen}
                   aria-controls="glass-global-menu"
                   onClick={() => setIsOpen((open) => !open)}
-                  className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                  className={`touch-manipulation rounded-full px-3 py-1.5 text-sm font-semibold transition duration-150 active:scale-95 ${
                     isOpen
                       ? "bg-white text-black"
                       : "text-white/85 hover:bg-white/15 hover:text-white"
@@ -135,12 +136,12 @@ export function GlassNav({
                   Menu
                 </button>
                 <form action="/auth/logout" method="post">
-                  <button
-                    type="submit"
-                    className="rounded-full px-3 py-1.5 text-sm font-semibold text-white/85 transition hover:bg-white/15 hover:text-white"
+                  <FormSubmitButton
+                    pendingLabel="…"
+                    className="touch-manipulation rounded-full px-3 py-1.5 text-sm font-semibold text-white/85 transition duration-150 hover:bg-white/15 hover:text-white active:scale-95 disabled:opacity-60"
                   >
                     Sign out
-                  </button>
+                  </FormSubmitButton>
                 </form>
               </div>
 
@@ -148,7 +149,7 @@ export function GlassNav({
                 <Link
                   href="/"
                   onClick={closeMenu}
-                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                  className={`touch-manipulation rounded-full px-3 py-1.5 text-sm font-medium transition duration-150 active:scale-95 ${
                     isActive(pathname, "/")
                       ? "bg-white text-black"
                       : "text-white/85 hover:bg-white/15 hover:text-white"
@@ -161,7 +162,7 @@ export function GlassNav({
                   aria-expanded={isOpen}
                   aria-controls="glass-global-menu"
                   onClick={() => setIsOpen((open) => !open)}
-                  className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                  className={`touch-manipulation rounded-full px-3 py-1.5 text-sm font-semibold transition duration-150 active:scale-95 ${
                     isOpen
                       ? "bg-white text-black"
                       : "text-white/85 hover:bg-white/15 hover:text-white"
@@ -195,7 +196,7 @@ export function GlassNav({
                           key={link.href}
                           href={link.href}
                           onClick={closeMenu}
-                          className={`rounded-xl border px-3 py-2 transition ${
+                          className={`touch-manipulation rounded-xl border px-3 py-2 transition duration-150 active:scale-[0.98] ${
                             active
                               ? "border-white/70 bg-white text-black"
                               : "border-white/20 bg-white/5 text-white hover:bg-white/15"
@@ -219,12 +220,12 @@ export function GlassNav({
               ))}
               <div className="pt-1">
                 <form action="/auth/logout" method="post">
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl border border-white/25 bg-white/5 px-3 py-2 text-left text-sm font-semibold text-white transition hover:bg-white/15"
+                  <FormSubmitButton
+                    pendingLabel="Signing out…"
+                    className="w-full rounded-xl border border-white/25 bg-white/5 px-3 py-2 text-left text-sm font-semibold text-white transition hover:bg-white/15 disabled:opacity-60"
                   >
                     Sign out
-                  </button>
+                  </FormSubmitButton>
                 </form>
               </div>
             </div>
