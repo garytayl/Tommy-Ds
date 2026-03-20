@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { Suspense } from "react";
 
 import { InvoiceSummary } from "@/components/InvoiceSummary";
+import { JobKindBadge, type JobKind } from "@/components/JobKindBadge";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { JobStickyActions } from "@/components/JobStickyActions";
 import { JobWorkspaceTabs } from "@/components/JobWorkspaceTabs";
@@ -81,7 +82,7 @@ export default async function JobWorkspacePage({
   const jobResult = await supabase
     .from("jobs")
     .select(
-      "id,title,status,notes,project_type,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone)",
+      "id,title,status,notes,job_kind,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -161,7 +162,7 @@ export default async function JobWorkspacePage({
     title: string;
     status: string;
     notes: string | null;
-    project_type: string | null;
+    job_kind: JobKind;
     address_line1: string;
     address_line2: string | null;
     city: string;
@@ -234,6 +235,7 @@ export default async function JobWorkspacePage({
     );
   }
   const job = jobRecord;
+  const jobKind: JobKind = job.job_kind === "service" ? "service" : "installation";
   const customer = Array.isArray(job.customers) ? job.customers[0] : job.customers;
   const customerPhone = customer?.phone ?? null;
 
@@ -263,12 +265,14 @@ export default async function JobWorkspacePage({
   async function updateJob(formData: FormData) {
     "use server";
     const supabase = await createSupabaseServerClientForData();
+    const kindRaw = String(formData.get("job_kind") ?? "installation").trim();
+    const job_kind: JobKind = kindRaw === "service" ? "service" : "installation";
     await supabase
       .from("jobs")
       .update({
         status: String(formData.get("status") ?? "lead"),
         notes: String(formData.get("notes") ?? "").trim() || null,
-        project_type: String(formData.get("project_type") ?? "").trim() || null,
+        job_kind,
         scheduled_start: toIsoOrNull(formData.get("scheduled_start")),
         scheduled_end: toIsoOrNull(formData.get("scheduled_end")),
         assigned_installer_id:
@@ -506,6 +510,7 @@ export default async function JobWorkspacePage({
             </a>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <JobKindBadge kind={jobKind} />
             <JobStatusBadge status={job.status} />
             {balanceDueCents > 0 && (
               <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
@@ -547,13 +552,10 @@ export default async function JobWorkspacePage({
                   </option>
                 ))}
               </select>
-              <input
-                name="project_type"
-                type="text"
-                defaultValue={job.project_type ?? ""}
-                className="field"
-                placeholder="Project type"
-              />
+              <select name="job_kind" defaultValue={jobKind} className="field">
+                <option value="installation">Installation</option>
+                <option value="service">Service</option>
+              </select>
               <select
                 name="assigned_crew_id"
                 defaultValue={job.assigned_crew_id ?? ""}
@@ -748,7 +750,9 @@ export default async function JobWorkspacePage({
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <h2 className="text-base font-semibold text-foreground">Supplies & parts for this job</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Pull from Door Shop (center), Lower Warehouse, or Upper Warehouse.
+              {jobKind === "service"
+                ? "Service visit: note parts from truck stock or pull from Door Shop / warehouses as needed."
+                : "Installation: pull materials from Door Shop (center), Lower Warehouse, or Upper Warehouse."}
             </p>
             <form action={addJobMaterial} className="mt-4 grid gap-3 sm:grid-cols-4">
               <select name="material_id" required className="field sm:col-span-2">

@@ -24,9 +24,17 @@ const TABLE_DAYS = 14;
 export default async function SchedulePage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; week?: string; layout?: string; date?: string; table_start?: string }>;
+  searchParams: Promise<{ view?: string; week?: string; layout?: string; date?: string; table_start?: string; kind?: string }>;
 }) {
-  const { view: viewParam, week: weekParam, layout: layoutParam, date: dateParam, table_start: tableStartParam } = await searchParams;
+  const {
+    view: viewParam,
+    week: weekParam,
+    layout: layoutParam,
+    date: dateParam,
+    table_start: tableStartParam,
+    kind: kindParam,
+  } = await searchParams;
+  const kindFilter = kindParam === "service" || kindParam === "installation" ? kindParam : null;
   const view = viewParam ?? "all";
   const viewCrewId = view.startsWith("crew:") ? view.slice(5) : null;
   const viewPersonId = view.startsWith("person:") ? view.slice(7) : null;
@@ -85,14 +93,14 @@ export default async function SchedulePage({
     supabase
       .from("jobs")
       .select(
-        "id,title,status,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(name),profiles(full_name),crews(name,specialty),invoices(id,invoice_number,balance_due_cents)",
+        "id,title,status,job_kind,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(name),profiles(full_name),crews(name,specialty),invoices(id,invoice_number,balance_due_cents)",
       )
       .gte("scheduled_start", start.toISOString())
       .lt("scheduled_start", end.toISOString())
       .order("scheduled_start", { ascending: true, nullsFirst: false }),
     supabase
       .from("jobs")
-      .select("id,title,status,customers(name),assigned_installer_id,assigned_crew_id")
+      .select("id,title,status,job_kind,customers(name),assigned_installer_id,assigned_crew_id")
       .is("scheduled_start", null)
       .in("status", ["lead", "consultation_scheduled", "measured", "quote_sent", "approved", "scheduled"])
       .order("title", { ascending: true }),
@@ -118,6 +126,7 @@ export default async function SchedulePage({
     id: string;
     title: string;
     status: string;
+    job_kind: "installation" | "service";
     scheduled_start: string | null;
     scheduled_end: string | null;
     assigned_installer_id: string | null;
@@ -139,6 +148,7 @@ export default async function SchedulePage({
   }
 
   const rows = allRows.filter((job) => {
+    if (kindFilter && job.job_kind !== kindFilter) return false;
     if (viewCrewId) return job.assigned_crew_id === viewCrewId;
     if (viewPersonId) {
       if (job.assigned_installer_id === viewPersonId) return true;
@@ -148,7 +158,18 @@ export default async function SchedulePage({
     return true;
   });
 
-  const unscheduledRows = (unscheduledJobs ?? []).filter((job: { assigned_crew_id: string | null; assigned_installer_id: string | null }) => {
+  type UnscheduledJobRow = {
+    id: string;
+    title: string;
+    status: string;
+    job_kind: "installation" | "service";
+    customers: { name: string } | { name: string }[] | null;
+    assigned_installer_id: string | null;
+    assigned_crew_id: string | null;
+  };
+
+  const unscheduledRows = (unscheduledJobs ?? [] as UnscheduledJobRow[]).filter((job) => {
+    if (kindFilter && job.job_kind !== kindFilter) return false;
     if (viewCrewId) return job.assigned_crew_id === viewCrewId;
     if (viewPersonId) {
       if (job.assigned_installer_id === viewPersonId) return true;
@@ -294,6 +315,7 @@ export default async function SchedulePage({
         installers={installers ?? []}
         viewCrewId={viewCrewId}
         viewPersonId={viewPersonId}
+        kindFilter={kindFilter}
       />
       </div>
 
@@ -346,8 +368,15 @@ export default async function SchedulePage({
                 const prev = new Date(weekStart);
                 prev.setDate(prev.getDate() - 7);
                 const prevStr = prev.toISOString().slice(0, 10);
-                const base = view === "all" ? "/admin/schedule?layout=week&week=" : `/admin/schedule?view=${encodeURIComponent(view)}&layout=week&week=`;
-                return { prevUrl: base + prevStr, nextUrl: base + weekEndStr };
+                const weekNavHref = (week: string) => {
+                  const p = new URLSearchParams();
+                  if (view !== "all") p.set("view", view);
+                  p.set("layout", "week");
+                  p.set("week", week);
+                  if (kindFilter) p.set("kind", kindFilter);
+                  return `/admin/schedule?${p.toString()}`;
+                };
+                return { prevUrl: weekNavHref(prevStr), nextUrl: weekNavHref(weekEndStr) };
               })()
             : undefined
         }
@@ -363,6 +392,7 @@ export default async function SchedulePage({
           layout={layoutParam}
           weekStartStr={weekStartStr}
           dateStr={isDayView ? dayViewDateKey : undefined}
+          kind={kindFilter}
         />
         <ScheduleTable
           jobsByDate={byDate as Record<string, ScheduleJob[]>}

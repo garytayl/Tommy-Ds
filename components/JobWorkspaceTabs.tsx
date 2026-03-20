@@ -5,9 +5,9 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { DevHint } from "@/components/DevHint";
 
 const TABS = [
-  { key: "overview", label: "Overview", hint: "Schedule, installer, notes. Jobs table." },
+  { key: "overview", label: "Overview", hint: "Schedule, installer, job_kind (installation vs service), notes. jobs table." },
   { key: "work", label: "Work", hint: "Field notes, job photos, mark complete. job_photos + jobs.notes." },
-  { key: "supplies", label: "Supplies", hint: "Parts and materials for this job; pull from door shop or warehouses. job_materials." },
+  { key: "supplies", label: "Supplies", hint: "Parts per job via job_materials; copy reflects job_kind (warehouse pull vs service/truck)." },
   { key: "invoice", label: "Invoice", hint: "Line items, tax. invoices + invoice_items; recompute_invoice_totals." },
 ] as const;
 

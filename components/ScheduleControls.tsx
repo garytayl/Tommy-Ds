@@ -16,27 +16,25 @@ type ScheduleControlsProps = {
   installers: Installer[];
   viewCrewId: string | null;
   viewPersonId: string | null;
+  /** Filter jobs by installation vs service (URL param `kind`) */
+  kindFilter: "installation" | "service" | null;
 };
 
-function buildLayoutParams(layout: "month" | "week" | "day", weekStartStr: string, dayViewDateKey: string): string {
+function schedulePageHref(opts: {
+  view: string;
+  layout: "month" | "week" | "day";
+  weekStartStr: string;
+  dayViewDateKey: string;
+  kind?: "installation" | "service" | null;
+}): string {
   const params = new URLSearchParams();
-  if (layout !== "month") params.set("layout", layout);
-  if (layout === "week") params.set("week", weekStartStr);
-  if (layout === "day") params.set("date", dayViewDateKey);
+  if (opts.view !== "all") params.set("view", opts.view);
+  if (opts.layout !== "month") params.set("layout", opts.layout);
+  if (opts.layout === "week") params.set("week", opts.weekStartStr);
+  if (opts.layout === "day") params.set("date", opts.dayViewDateKey);
+  if (opts.kind) params.set("kind", opts.kind);
   const q = params.toString();
-  return q ? `?${q}` : "";
-}
-
-function viewHref(
-  viewValue: "all" | string,
-  layout: "month" | "week" | "day",
-  weekStartStr: string,
-  dayViewDateKey: string
-): string {
-  const layoutPart = buildLayoutParams(layout, weekStartStr, dayViewDateKey);
-  const viewPart = viewValue === "all" ? "" : `view=${encodeURIComponent(viewValue)}`;
-  const join = layoutPart ? (viewPart ? `${layoutPart}&${viewPart}` : layoutPart) : (viewPart ? `?${viewPart}` : "");
-  return `/admin/schedule${join}`;
+  return `/admin/schedule${q ? `?${q}` : ""}`;
 }
 
 export function ScheduleControls({
@@ -49,6 +47,7 @@ export function ScheduleControls({
   installers,
   viewCrewId,
   viewPersonId,
+  kindFilter,
 }: ScheduleControlsProps) {
   const prevWeek = new Date(weekStartStr + "T12:00:00");
   prevWeek.setDate(prevWeek.getDate() - 7);
@@ -85,19 +84,19 @@ export function ScheduleControls({
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <Link
-              href={viewHref(view, "month", weekStartStr, dayViewDateKey)}
+              href={schedulePageHref({ view, layout: "month", weekStartStr, dayViewDateKey, kind: kindFilter })}
               className={`${pillBase} ${!isWeekView && !isDayView ? activePill : ""}`}
             >
               Month
             </Link>
             <Link
-              href={viewHref(view, "week", weekStartStr, dayViewDateKey)}
+              href={schedulePageHref({ view, layout: "week", weekStartStr, dayViewDateKey, kind: kindFilter })}
               className={`${pillBase} ${isWeekView ? activePill : ""}`}
             >
               Week
             </Link>
             <Link
-              href={viewHref(view, "day", weekStartStr, dayViewDateKey)}
+              href={schedulePageHref({ view, layout: "day", weekStartStr, dayViewDateKey, kind: kindFilter })}
               className={`${pillBase} ${isDayView ? activePill : ""}`}
             >
               Day
@@ -114,19 +113,19 @@ export function ScheduleControls({
               {isWeekView ? (
                 <>
                   <Link
-                    href={viewHref(view, "week", prevWeekStr, dayViewDateKey)}
+                    href={schedulePageHref({ view, layout: "week", weekStartStr: prevWeekStr, dayViewDateKey, kind: kindFilter })}
                     className={pillBase}
                   >
                     Previous week
                   </Link>
                   <Link
-                    href={viewHref(view, "week", todayWeekStr, dayViewDateKey)}
+                    href={schedulePageHref({ view, layout: "week", weekStartStr: todayWeekStr, dayViewDateKey, kind: kindFilter })}
                     className={pillBase}
                   >
                     This week
                   </Link>
                   <Link
-                    href={viewHref(view, "week", nextWeekStr, dayViewDateKey)}
+                    href={schedulePageHref({ view, layout: "week", weekStartStr: nextWeekStr, dayViewDateKey, kind: kindFilter })}
                     className={pillBase}
                   >
                     Next week
@@ -135,19 +134,19 @@ export function ScheduleControls({
               ) : (
                 <>
                   <Link
-                    href={viewHref(view, "day", weekStartStr, prevDayStr)}
+                    href={schedulePageHref({ view, layout: "day", weekStartStr, dayViewDateKey: prevDayStr, kind: kindFilter })}
                     className={pillBase}
                   >
                     Previous day
                   </Link>
                   <Link
-                    href={viewHref(view, "day", weekStartStr, todayStr)}
+                    href={schedulePageHref({ view, layout: "day", weekStartStr, dayViewDateKey: todayStr, kind: kindFilter })}
                     className={pillBase}
                   >
                     Today
                   </Link>
                   <Link
-                    href={viewHref(view, "day", weekStartStr, nextDayStr)}
+                    href={schedulePageHref({ view, layout: "day", weekStartStr, dayViewDateKey: nextDayStr, kind: kindFilter })}
                     className={pillBase}
                   >
                     Next day
@@ -172,11 +171,37 @@ export function ScheduleControls({
 
         <div className="flex flex-wrap items-center gap-1.5">
           <Link
-            href={viewHref("all", currentLayout, weekStartStr, dayViewDateKey)}
+            href={schedulePageHref({ view: "all", layout: currentLayout, weekStartStr, dayViewDateKey, kind: kindFilter })}
             className={`${pillBase} ${view === "all" ? activePill : ""}`}
           >
             All schedules
           </Link>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/80 pt-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            Job kind
+          </p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Link
+              href={schedulePageHref({ view, layout: currentLayout, weekStartStr, dayViewDateKey, kind: null })}
+              className={`${pillBase} ${!kindFilter ? activePill : ""}`}
+            >
+              All kinds
+            </Link>
+            <Link
+              href={schedulePageHref({ view, layout: currentLayout, weekStartStr, dayViewDateKey, kind: "installation" })}
+              className={`${pillBase} ${kindFilter === "installation" ? activePill : ""}`}
+            >
+              Installation
+            </Link>
+            <Link
+              href={schedulePageHref({ view, layout: currentLayout, weekStartStr, dayViewDateKey, kind: "service" })}
+              className={`${pillBase} ${kindFilter === "service" ? activePill : ""}`}
+            >
+              Service
+            </Link>
+          </div>
         </div>
 
         <div className="grid gap-3 xl:grid-cols-2">
@@ -192,8 +217,8 @@ export function ScheduleControls({
                     key={crew.id}
                     href={
                       viewCrewId === crew.id
-                        ? viewHref("all", currentLayout, weekStartStr, dayViewDateKey)
-                        : viewHref(`crew:${crew.id}`, currentLayout, weekStartStr, dayViewDateKey)
+                        ? schedulePageHref({ view: "all", layout: currentLayout, weekStartStr, dayViewDateKey, kind: kindFilter })
+                        : schedulePageHref({ view: `crew:${crew.id}`, layout: currentLayout, weekStartStr, dayViewDateKey, kind: kindFilter })
                     }
                     className={`${pillBase} ${viewCrewId === crew.id ? activePill : ""}`}
                   >
@@ -217,8 +242,8 @@ export function ScheduleControls({
                     key={inst.user_id}
                     href={
                       viewPersonId === inst.user_id
-                        ? viewHref("all", currentLayout, weekStartStr, dayViewDateKey)
-                        : viewHref(`person:${inst.user_id}`, currentLayout, weekStartStr, dayViewDateKey)
+                        ? schedulePageHref({ view: "all", layout: currentLayout, weekStartStr, dayViewDateKey, kind: kindFilter })
+                        : schedulePageHref({ view: `person:${inst.user_id}`, layout: currentLayout, weekStartStr, dayViewDateKey, kind: kindFilter })
                     }
                     className={`${pillBase} ${viewPersonId === inst.user_id ? activePill : ""}`}
                   >

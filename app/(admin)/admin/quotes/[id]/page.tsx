@@ -137,6 +137,7 @@ export default async function QuoteDetailPage({
         city: quoteRow.city,
         state: quoteRow.state,
         zip: quoteRow.zip,
+        job_kind: "installation",
         status: "lead",
         notes: quoteRow.notes ?? null,
       })

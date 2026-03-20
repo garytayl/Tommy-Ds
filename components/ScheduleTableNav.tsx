@@ -13,16 +13,25 @@ type ScheduleTableNavProps = {
   weekStartStr: string;
   /** date param for day view (YYYY-MM-DD) */
   dateStr: string | undefined;
+  /** Matches schedule `kind` filter */
+  kind: "installation" | "service" | null;
 };
 
 const TABLE_DAYS = 14;
 
-function buildBaseQuery(view: string, layout: string | undefined, weekStartStr: string, dateStr: string | undefined): string {
+function buildBaseQuery(
+  view: string,
+  layout: string | undefined,
+  weekStartStr: string,
+  dateStr: string | undefined,
+  kind: "installation" | "service" | null,
+): string {
   const params = new URLSearchParams();
   if (view !== "all") params.set("view", view);
   if (layout) params.set("layout", layout);
   if (layout === "week" && weekStartStr) params.set("week", weekStartStr);
   if (layout === "day" && dateStr) params.set("date", dateStr);
+  if (kind) params.set("kind", kind);
   const q = params.toString();
   return q ? `?${q}` : "";
 }
@@ -33,8 +42,9 @@ export function ScheduleTableNav({
   layout,
   weekStartStr,
   dateStr,
+  kind,
 }: ScheduleTableNavProps) {
-  const base = buildBaseQuery(view, layout, weekStartStr, dateStr);
+  const base = buildBaseQuery(view, layout, weekStartStr, dateStr, kind);
   const prefix = base ? `${base}&` : "?";
   const prevStart = new Date(tableStartStr + "T12:00:00");
   prevStart.setDate(prevStart.getDate() - TABLE_DAYS);

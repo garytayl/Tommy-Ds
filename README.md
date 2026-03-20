@@ -3,6 +3,7 @@
 **Field Service Scheduler** is the project name. The business using it is **Tommy D's** (Windows, Doors, & More).
 
 MVP for a local installer business:
+- Jobs are typed as **installation** vs **service** (`jobs.job_kind`) for scheduling and supplies copy; `project_type` remains in the DB for legacy data only.
 - Office/admin dashboard: schedule, jobs, quotes, crews, customers, invoices, locations, lots, materials, scan
 - Installer mobile flow (`/m`) for today’s jobs, notes, and photos
 - Supabase schema + RLS + invoice recompute helpers
@@ -49,6 +50,7 @@ supabase/
     20260302141000_mvp_schema.sql
     20260302150000_enforce_job_update_permissions.sql
     20260310120000_locations_materials_job_supplies.sql
+    20260320150000_job_kind.sql
     20260310140000_crews.sql
     20260310160000_quotes.sql
     20260310170000_lots_inventory_barcodes.sql

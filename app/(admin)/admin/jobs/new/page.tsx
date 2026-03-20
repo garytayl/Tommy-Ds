@@ -59,6 +59,8 @@ export default async function NewJobPage({ searchParams }: PageProps) {
     const zip = String(formData.get("zip") ?? "").trim();
     if (!customerId || !title || !address1 || !city || !zip) return;
 
+    const kindRaw = String(formData.get("job_kind") ?? "installation").trim();
+    const job_kind = kindRaw === "service" ? "service" : "installation";
     const supabase = await createSupabaseServerClientForData();
     const { data: newJob } = await supabase
       .from("jobs")
@@ -70,6 +72,7 @@ export default async function NewJobPage({ searchParams }: PageProps) {
         city,
         state,
         zip,
+        job_kind,
         scheduled_start: toIsoOrNull(formData.get("scheduled_start")),
         scheduled_end: toIsoOrNull(formData.get("scheduled_end")),
         assigned_installer_id: String(formData.get("assigned_installer_id") ?? "").trim() || null,
@@ -209,6 +212,13 @@ export default async function NewJobPage({ searchParams }: PageProps) {
                   {STATUS_LABELS[s] ?? s}
                 </option>
               ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label htmlFor="job_kind" className="form-label">Job kind</label>
+            <select id="job_kind" name="job_kind" defaultValue="installation" className="field">
+              <option value="installation">Installation</option>
+              <option value="service">Service</option>
             </select>
           </div>
           <div className="form-group">
