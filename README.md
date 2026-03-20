@@ -85,6 +85,7 @@ supabase/
 
 ## Team onboarding flow
 
+- Invite email HTML lives in `supabase/email-templates/invite-user.html` (paste into **Supabase → Authentication → Email Templates → Invite user**). Set subject to e.g. `You're invited to Tommy D's`.
 - Admins can send invite links from **Admin → Team**.
 - Invited users complete setup at `/auth/onboarding` (name, password), then are redirected by role.
 - Manual user creation remains available as a fallback.

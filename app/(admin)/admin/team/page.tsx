@@ -1,6 +1,8 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
+import { FormSubmitButton } from "@/components/forms/FormSubmitButton";
+import { PendingFieldset } from "@/components/forms/PendingFieldset";
 import { getCurrentUserAndProfile } from "@/lib/auth";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { setToastCookie } from "@/lib/toast";
@@ -299,24 +301,28 @@ export default async function TeamPage() {
           </p>
         ) : null}
         <form action={sendInvite} className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label htmlFor="invite-email" className="form-label">Email</label>
-            <input id="invite-email" type="email" name="email" required className="field" placeholder="name@example.com" />
-          </div>
-          <div>
-            <label htmlFor="invite-name" className="form-label">Full name (optional)</label>
-            <input id="invite-name" type="text" name="full_name" className="field" placeholder="Jane Smith" />
-          </div>
-          <div>
-            <label htmlFor="invite-role" className="form-label">Role</label>
-            <select id="invite-role" name="role" className="field">
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="sm:col-span-2 lg:col-span-1">
-            <button type="submit" className="btn-primary w-full">Send invite</button>
+          <PendingFieldset className="sm:col-span-2 lg:col-span-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label htmlFor="invite-email" className="form-label">Email</label>
+              <input id="invite-email" type="email" name="email" required className="field" placeholder="name@example.com" />
+            </div>
+            <div>
+              <label htmlFor="invite-name" className="form-label">Full name (optional)</label>
+              <input id="invite-name" type="text" name="full_name" className="field" placeholder="Jane Smith" />
+            </div>
+            <div>
+              <label htmlFor="invite-role" className="form-label">Role</label>
+              <select id="invite-role" name="role" className="field">
+                {ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+          </PendingFieldset>
+          <div className="flex items-end sm:col-span-2 lg:col-span-1">
+            <FormSubmitButton className="btn-primary w-full" pendingLabel="Sending invite…">
+              Send invite
+            </FormSubmitButton>
           </div>
         </form>
       </section>
@@ -328,28 +334,32 @@ export default async function TeamPage() {
           Fallback option: create a user with a temporary password and share it securely.
         </p>
         <form action={createUser} className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label htmlFor="team-email" className="form-label">Email</label>
-            <input id="team-email" type="email" name="email" required className="field" placeholder="name@example.com" />
-          </div>
-          <div>
-            <label htmlFor="team-password" className="form-label">Temporary password</label>
-            <input id="team-password" type="text" name="password" required className="field" placeholder="e.g. TempPass123!" autoComplete="off" />
-          </div>
-          <div>
-            <label htmlFor="team-name" className="form-label">Full name (optional)</label>
-            <input id="team-name" type="text" name="full_name" className="field" placeholder="Jane Smith" />
-          </div>
-          <div>
-            <label htmlFor="team-role" className="form-label">Role</label>
-            <select id="team-role" name="role" className="field">
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
+          <PendingFieldset className="sm:col-span-2 lg:col-span-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label htmlFor="team-email" className="form-label">Email</label>
+              <input id="team-email" type="email" name="email" required className="field" placeholder="name@example.com" />
+            </div>
+            <div>
+              <label htmlFor="team-password" className="form-label">Temporary password</label>
+              <input id="team-password" type="text" name="password" required className="field" placeholder="e.g. TempPass123!" autoComplete="off" />
+            </div>
+            <div>
+              <label htmlFor="team-name" className="form-label">Full name (optional)</label>
+              <input id="team-name" type="text" name="full_name" className="field" placeholder="Jane Smith" />
+            </div>
+            <div>
+              <label htmlFor="team-role" className="form-label">Role</label>
+              <select id="team-role" name="role" className="field">
+                {ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+          </PendingFieldset>
           <div className="sm:col-span-2 lg:col-span-4">
-            <button type="submit" className="btn-secondary">Create user manually</button>
+            <FormSubmitButton className="btn-secondary" pendingLabel="Creating user…">
+              Create user manually
+            </FormSubmitButton>
           </div>
         </form>
       </section>
@@ -387,9 +397,9 @@ export default async function TeamPage() {
                     ) : (
                       <form action={removeUser}>
                         <input type="hidden" name="user_id" value={p.user_id} />
-                        <button type="submit" className="btn-danger text-xs">
+                        <FormSubmitButton className="btn-danger text-xs" pendingLabel="Removing…">
                           Remove
-                        </button>
+                        </FormSubmitButton>
                       </form>
                     )}
                   </td>

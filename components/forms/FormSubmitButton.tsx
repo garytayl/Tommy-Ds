@@ -3,6 +3,8 @@
 import type { ButtonHTMLAttributes } from "react";
 import { useFormStatus } from "react-dom";
 
+import { cn } from "@/lib/utils";
+
 type FormSubmitButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   pendingLabel?: string;
 };
@@ -19,7 +21,7 @@ export function FormSubmitButton({
       type="submit"
       disabled={pending}
       aria-busy={pending}
-      className={className}
+      className={cn(className, pending && "cursor-wait")}
       {...props}
     >
       {pending ? pendingLabel : children}
