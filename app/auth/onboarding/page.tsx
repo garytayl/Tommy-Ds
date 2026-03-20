@@ -34,6 +34,22 @@ export default async function OnboardingPage({
   }
 
   const { next: nextParam } = await searchParams;
+  if (!auth.profile) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-10">
+        <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 text-center shadow-lg shadow-black/5">
+          <h1 className="text-xl font-semibold text-foreground">Account not ready yet</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your sign-in worked, but your profile/role hasn&apos;t been provisioned yet.
+            Ask an admin to invite you again or assign your role in Team.
+          </p>
+          <form action="/auth/logout" method="post" className="mt-4">
+            <button type="submit" className="btn-secondary">Sign out</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
   const nextPath = normalizeNextPath(nextParam ?? null, auth.profile.role);
   if (auth.profile.onboarding_completed_at) {
     redirect(nextPath);
@@ -44,6 +60,10 @@ export default async function OnboardingPage({
     const auth = await getCurrentUserAndProfile();
     if (!auth) {
       redirect("/auth/login?next=/auth/onboarding");
+    }
+    if (!auth.profile) {
+      await setToastCookie("Your profile is not set up yet. Ask an admin for access.");
+      redirect("/auth/login");
     }
 
     const fullName = String(formData.get("full_name") ?? "").trim();

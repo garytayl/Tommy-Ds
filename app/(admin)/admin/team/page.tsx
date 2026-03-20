@@ -52,14 +52,14 @@ async function resolveInviteAppUrl(): Promise<string> {
 
 export default async function TeamPage() {
   const auth = await getCurrentUserAndProfile();
-  if (!auth || auth.profile.role !== "admin") redirect("/admin");
+  if (!auth || auth.profile?.role !== "admin") redirect("/admin");
   const inviteBaseUrl = await resolveInviteAppUrl();
   const inviteBaseIsLocalhost = isLocalHostUrl(inviteBaseUrl);
 
   async function sendInvite(formData: FormData) {
     "use server";
     const auth = await getCurrentUserAndProfile();
-    if (!auth || auth.profile.role !== "admin") {
+    if (!auth || auth.profile?.role !== "admin") {
       await setToastCookie("You don’t have permission to invite users.");
       revalidatePath("/admin/team");
       return;
@@ -131,7 +131,7 @@ export default async function TeamPage() {
   async function createUser(formData: FormData) {
     "use server";
     const auth = await getCurrentUserAndProfile();
-    if (!auth || auth.profile.role !== "admin") {
+    if (!auth || auth.profile?.role !== "admin") {
       await setToastCookie("You don’t have permission to add users.");
       revalidatePath("/admin/team");
       return;

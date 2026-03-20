@@ -17,7 +17,7 @@ export interface AuthUser {
 }
 
 export type CurrentUserResult =
-  | { user: AuthUser; profile: Profile }
+  | { user: AuthUser; profile: Profile | null }
   | null;
 
 /**
@@ -38,7 +38,15 @@ export async function getCurrentUserAndProfile(): Promise<CurrentUserResult> {
     .eq("user_id", user.id)
     .single();
 
-  if (error || !profile) return null;
+  if (error || !profile) {
+    // User is signed in but has no profile row yet.
+    // Return user + null profile so callers can show "no access" instead of
+    // redirecting back to login and causing a loop.
+    return {
+      user: { id: user.id, email: user.email ?? undefined },
+      profile: null,
+    };
+  }
 
   return {
     user: { id: user.id, email: user.email ?? undefined },
