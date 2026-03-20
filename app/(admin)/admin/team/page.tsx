@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 import { getCurrentUserAndProfile } from "@/lib/auth";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
@@ -15,14 +16,45 @@ const ROLES = [
 function getAppUrl(): string {
   const publicUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
   if (publicUrl) return publicUrl.replace(/\/+$/, "");
+  const vercelProjectUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (vercelProjectUrl) return `https://${vercelProjectUrl.replace(/\/+$/, "")}`;
   const vercelUrl = process.env.VERCEL_URL?.trim();
   if (vercelUrl) return `https://${vercelUrl.replace(/\/+$/, "")}`;
   return "http://localhost:3000";
 }
 
+function isLocalHostUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return host === "localhost" || host === "127.0.0.1" || host === "::1";
+  } catch {
+    return url.includes("localhost");
+  }
+}
+
+async function resolveInviteAppUrl(): Promise<string> {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) return configured.replace(/\/+$/, "");
+
+  const h = await headers();
+  const forwardedHost = h.get("x-forwarded-host");
+  const host = forwardedHost ?? h.get("host");
+  const forwardedProto = h.get("x-forwarded-proto");
+  if (host) {
+    const proto =
+      forwardedProto ??
+      (host.includes("localhost") || host.startsWith("127.") ? "http" : "https");
+    return `${proto}://${host}`.replace(/\/+$/, "");
+  }
+
+  return getAppUrl();
+}
+
 export default async function TeamPage() {
   const auth = await getCurrentUserAndProfile();
   if (!auth || auth.profile.role !== "admin") redirect("/admin");
+  const inviteBaseUrl = await resolveInviteAppUrl();
+  const inviteBaseIsLocalhost = isLocalHostUrl(inviteBaseUrl);
 
   async function sendInvite(formData: FormData) {
     "use server";
@@ -47,7 +79,15 @@ export default async function TeamPage() {
     }
     try {
       const supabase = createSupabaseServiceClient();
-      const redirectTo = `${getAppUrl()}/auth/callback?next=/auth/onboarding`;
+      const appUrl = await resolveInviteAppUrl();
+      if (process.env.NODE_ENV === "production" && isLocalHostUrl(appUrl)) {
+        await setToastCookie(
+          "Invite links are using localhost. Set NEXT_PUBLIC_APP_URL to your public site URL and try again.",
+        );
+        revalidatePath("/admin/team");
+        return;
+      }
+      const redirectTo = `${appUrl}/auth/callback?next=/auth/onboarding`;
       const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
         email,
         {
@@ -172,6 +212,16 @@ export default async function TeamPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Recommended: send an email invite so they can set up their own account.
         </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Invite redirect base: <code className="rounded bg-muted px-1">{inviteBaseUrl}</code>
+        </p>
+        {inviteBaseIsLocalhost ? (
+          <p className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+            This is a localhost URL. For real users, set{" "}
+            <code className="rounded bg-amber-500/20 px-1">NEXT_PUBLIC_APP_URL</code> to your live domain
+            so invite links open correctly outside your machine.
+          </p>
+        ) : null}
         <form action={sendInvite} className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label htmlFor="invite-email" className="form-label">Email</label>
