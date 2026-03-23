@@ -101,6 +101,14 @@ export default async function InvoicesListPage() {
                         >
                           Open
                         </Link>
+                        <a
+                          href={`/admin/invoices/${inv.id}/preview`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="link text-sm"
+                        >
+                          Preview
+                        </a>
                       </td>
                     </tr>
                   );
