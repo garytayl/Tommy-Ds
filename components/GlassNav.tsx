@@ -100,7 +100,10 @@ function PublicNavBar() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 print:hidden sm:px-6">
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 print:hidden sm:px-6"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.5rem)" }}
+      >
         <div className="mx-auto w-full max-w-6xl">
           <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-full border border-white/20 bg-black/25 px-3 py-2 shadow-2xl backdrop-blur-xl sm:px-5 sm:py-2.5">
             <Link
@@ -311,7 +314,10 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 print:hidden sm:px-6">
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 print:hidden sm:px-6"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.5rem)" }}
+      >
         <div className="mx-auto w-full max-w-6xl">
           <div className="pointer-events-auto rounded-3xl border border-white/20 bg-black/30 p-2.5 shadow-2xl backdrop-blur-2xl sm:p-3">
             <div className="flex items-center gap-2">
@@ -370,19 +376,6 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
                 </form>
               </div>
             </div>
-            {compactPrimary.length > 0 ? (
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {compactPrimary.map((link) => (
-                  <DockLink
-                    key={`dock-${link.href}`}
-                    href={link.href}
-                    label={link.label}
-                    active={isActive(pathname, link.href)}
-                    onNavigate={closeMenu}
-                  />
-                ))}
-              </div>
-            ) : null}
           </div>
         </div>
       </div>
@@ -395,7 +388,7 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
             onClick={closeMenu}
             className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[2px] print:hidden"
           />
-          <div className="fixed inset-0 z-50 flex items-end justify-center p-3 print:hidden sm:items-center sm:p-6">
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-3 pt-20 print:hidden sm:p-6 sm:pt-24">
             <div
               id="glass-app-pages-panel"
               className="pointer-events-auto w-full max-w-xl rounded-3xl border border-white/20 bg-black/70 p-4 shadow-2xl backdrop-blur-2xl"
@@ -421,18 +414,43 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
               </div>
 
               <div className="mt-3 space-y-4">
+                {compactPrimary.length > 0 ? (
+                  <div>
+                    <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
+                      Core
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {compactPrimary.map((link) => (
+                        <DockLink
+                          key={`core-${link.href}`}
+                          href={link.href}
+                          label={link.label}
+                          active={isActive(pathname, link.href)}
+                          onNavigate={closeMenu}
+                          compact
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
                 {secondaryLinks.length > 0 ? (
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {secondaryLinks.map((link) => (
-                      <DockLink
-                        key={`launchpad-${link.href}`}
-                        href={link.href}
-                        label={link.label}
-                        active={isActive(pathname, link.href)}
-                        onNavigate={closeMenu}
-                        compact
-                      />
-                    ))}
+                  <div>
+                    <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
+                      More
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {secondaryLinks.map((link) => (
+                        <DockLink
+                          key={`launchpad-${link.href}`}
+                          href={link.href}
+                          label={link.label}
+                          active={isActive(pathname, link.href)}
+                          onNavigate={closeMenu}
+                          compact
+                        />
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <p className="text-sm text-white/70">No extra tools for this role.</p>
