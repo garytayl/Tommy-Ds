@@ -42,7 +42,7 @@ export default async function InvoicePreviewPage({
     : "-";
 
   return (
-    <div className="bg-background p-4 sm:p-6 print:bg-white print:p-0">
+    <div className="invoice-print-page bg-background p-4 sm:p-6 print:bg-white print:p-0 print:text-[12px] print:leading-tight">
       <div className="mx-auto max-w-3xl space-y-4 print:max-w-none print:space-y-0">
         <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
           <Link href={`/admin/invoices/${id}`} className="btn-secondary">
@@ -54,16 +54,16 @@ export default async function InvoicePreviewPage({
           For a clean PDF, uncheck browser print <strong>Headers and footers</strong>.
         </p>
 
-        <article className="rounded-2xl border border-border bg-white p-6 text-black shadow-sm sm:p-8 print:rounded-none print:border-0 print:pb-4 print:pt-0 print:shadow-none">
-          <header className="flex flex-wrap items-start justify-between gap-4 border-b border-black/20 pb-5">
+        <article className="rounded-2xl border border-border bg-white p-6 text-black shadow-sm sm:p-8 print:rounded-none print:border-0 print:pb-0 print:pt-0 print:shadow-none">
+          <header className="flex flex-wrap items-start justify-between gap-4 border-b border-black/20 pb-5 print:pb-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/60">Invoice preview</p>
-              <h1 className="mt-1 text-2xl font-bold">Tommy D&apos;s Windows, Doors, &amp; More</h1>
-              <p className="mt-1 text-sm text-black/70">Internal invoice copy for customer delivery</p>
+              <h1 className="mt-1 text-2xl font-bold print:text-xl">Tommy D&apos;s Windows, Doors, &amp; More</h1>
+              <p className="mt-1 text-sm text-black/70 print:text-xs">Internal invoice copy for customer delivery</p>
             </div>
             <div className="text-left sm:text-right">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/60">Invoice #</p>
-              <p className="mt-1 text-2xl font-bold tabular-nums">#{invoice.invoice_number}</p>
+              <p className="mt-1 text-2xl font-bold tabular-nums print:text-xl">#{invoice.invoice_number}</p>
               <p className="mt-1 text-sm capitalize text-black/70">{invoice.status.replace("_", " ")}</p>
               <p className="mt-1 text-sm text-black/70">
                 Date:{" "}
@@ -76,7 +76,7 @@ export default async function InvoicePreviewPage({
             </div>
           </header>
 
-          <section className="mt-6 grid gap-6 text-sm sm:grid-cols-2">
+          <section className="mt-6 grid gap-6 text-sm print:mt-4 print:gap-4 sm:grid-cols-2">
             <div>
               <h2 className="font-semibold uppercase tracking-wide text-black/70">Bill to</h2>
               <p className="mt-1 text-base font-medium">{customer?.name ?? "-"}</p>
@@ -90,30 +90,30 @@ export default async function InvoicePreviewPage({
             </div>
           </section>
 
-          <section className="mt-8">
+          <section className="mt-8 print:mt-5">
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b-2 border-black/30">
-                  <th className="py-2 text-left font-semibold">Description</th>
-                  <th className="w-20 py-2 text-right font-semibold">Qty</th>
-                  <th className="w-28 py-2 text-right font-semibold">Unit</th>
-                  <th className="w-28 py-2 text-right font-semibold">Line total</th>
+                  <th className="py-2 text-left font-semibold print:py-1.5">Description</th>
+                  <th className="w-20 py-2 text-right font-semibold print:py-1.5">Qty</th>
+                  <th className="w-28 py-2 text-right font-semibold print:py-1.5">Unit</th>
+                  <th className="w-28 py-2 text-right font-semibold print:py-1.5">Line total</th>
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 ? (
                   <tr className="border-b border-black/10">
-                    <td colSpan={4} className="py-4 text-black/60">
+                    <td colSpan={4} className="py-4 text-black/60 print:py-2">
                       No line items added yet.
                     </td>
                   </tr>
                 ) : (
                   items.map((item) => (
                     <tr key={item.id} className="border-b border-black/10">
-                      <td className="py-2">{item.description}</td>
-                      <td className="py-2 text-right tabular-nums">{item.qty}</td>
-                      <td className="py-2 text-right tabular-nums">{formatCents(item.unit_price_cents)}</td>
-                      <td className="py-2 text-right font-medium tabular-nums">{formatCents(item.line_total_cents)}</td>
+                      <td className="py-2 print:py-1.5">{item.description}</td>
+                      <td className="py-2 text-right tabular-nums print:py-1.5">{item.qty}</td>
+                      <td className="py-2 text-right tabular-nums print:py-1.5">{formatCents(item.unit_price_cents)}</td>
+                      <td className="py-2 text-right font-medium tabular-nums print:py-1.5">{formatCents(item.line_total_cents)}</td>
                     </tr>
                   ))
                 )}
@@ -121,7 +121,7 @@ export default async function InvoicePreviewPage({
             </table>
           </section>
 
-          <section className="mt-6 flex justify-end">
+          <section className="mt-6 flex justify-end print:mt-4">
             <dl className="w-full max-w-xs space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <dt className="text-black/70">Subtotal</dt>
@@ -146,7 +146,7 @@ export default async function InvoicePreviewPage({
             </dl>
           </section>
 
-          <footer className="mt-10 border-t border-black/20 pt-4 text-xs text-black/60">
+          <footer className="mt-10 border-t border-black/20 pt-4 text-xs text-black/60 print:mt-6 print:pt-3">
             Thank you for your business. Please contact our office if you have any questions about this invoice.
           </footer>
         </article>
