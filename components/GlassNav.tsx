@@ -69,7 +69,7 @@ function PublicNavBar() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6">
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 print:hidden sm:px-6">
         <div className="mx-auto w-full max-w-6xl">
           <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-full border border-white/20 bg-black/25 px-3 py-2 shadow-2xl backdrop-blur-xl sm:px-5 sm:py-2.5">
             <Link
@@ -149,7 +149,7 @@ function PublicNavBar() {
           type="button"
           aria-label="Close menu"
           onClick={() => setSheetOpen(false)}
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] sm:hidden"
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] print:hidden sm:hidden"
         />
       ) : null}
     </>
@@ -246,7 +246,7 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6">
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 print:hidden sm:px-6">
         <div className="mx-auto w-full max-w-6xl">
           <div className="pointer-events-auto rounded-2xl border border-white/20 bg-black/30 px-3 py-2.5 shadow-2xl backdrop-blur-xl sm:rounded-full sm:px-4 sm:py-2">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
@@ -415,7 +415,7 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
           aria-label="Close navigation"
           type="button"
           onClick={closeMenu}
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px]"
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] print:hidden"
         />
       ) : null}
     </>

@@ -108,7 +108,9 @@ export function AppShell({
 
       <div className="relative z-10 flex min-h-screen flex-col">
         <GlassNav mode={mode} primaryLinks={primaryLinks} menuSections={menuSections} />
-        <main className={`mx-auto w-full ${maxWidth} px-3 pb-8 pt-20 sm:px-6 sm:pt-24`}>
+        <main
+          className={`mx-auto w-full ${maxWidth} px-3 pb-8 pt-20 print:max-w-none print:px-0 print:pb-0 print:pt-0 sm:px-6 sm:pt-24`}
+        >
           {children}
         </main>
       </div>

@@ -42,14 +42,17 @@ export default async function InvoicePreviewPage({
     : "-";
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 print:bg-white print:p-0">
-      <div className="mx-auto max-w-3xl space-y-4 print:max-w-none">
+    <div className="bg-background p-4 sm:p-6 print:bg-white print:p-0">
+      <div className="mx-auto max-w-3xl space-y-4 print:max-w-none print:space-y-0">
         <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
           <Link href={`/admin/invoices/${id}`} className="btn-secondary">
             Back to invoice
           </Link>
           <PrintButton />
         </div>
+        <p className="text-xs text-muted-foreground print:hidden">
+          For a clean PDF, uncheck browser print <strong>Headers and footers</strong>.
+        </p>
 
         <article className="rounded-2xl border border-border bg-white p-6 text-black shadow-sm sm:p-8 print:rounded-none print:border-0 print:p-0 print:shadow-none">
           <header className="flex flex-wrap items-start justify-between gap-4 border-b border-black/20 pb-5">
