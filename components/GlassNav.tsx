@@ -23,6 +23,7 @@ export type GlassNavSection = {
 type GlassNavProps = {
   /** When set with `menuSections`, shows signed-in app chrome (Office / Field + All pages). */
   mode?: "admin" | "field";
+  primaryLinks?: GlassNavLink[];
   menuSections?: GlassNavSection[];
 };
 
@@ -41,6 +42,17 @@ function isFieldContext(pathname: string): boolean {
 
 function workspaceHome(mode: "admin" | "field"): string {
   return mode === "field" ? "/m" : "/admin";
+}
+
+function dedupeLinks(links: GlassNavLink[]): GlassNavLink[] {
+  const seen = new Set<string>();
+  const unique: GlassNavLink[] = [];
+  for (const link of links) {
+    if (seen.has(link.href)) continue;
+    seen.add(link.href);
+    unique.push(link);
+  }
+  return unique;
 }
 
 function PublicNavBar() {
@@ -168,7 +180,7 @@ function WorkspacePill({ href, active, children, onNavigate }: WorkspacePillProp
   );
 }
 
-export function GlassNav({ mode, menuSections }: GlassNavProps) {
+export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -211,6 +223,17 @@ export function GlassNav({ mode, menuSections }: GlassNavProps) {
   }, [isOpen]);
 
   const allSections = useMemo(() => menuSections ?? [], [menuSections]);
+  const compactPrimary = useMemo(() => primaryLinks ?? [], [primaryLinks]);
+  const flatMenuLinks = useMemo(
+    () =>
+      dedupeLinks([
+        ...compactPrimary,
+        ...allSections.flatMap((section) =>
+          section.links.map((link) => ({ href: link.href, label: link.label })),
+        ),
+      ]),
+    [allSections, compactPrimary],
+  );
   const closeMenu = () => setIsOpen(false);
 
   if (!isApp || !mode) {
@@ -220,12 +243,6 @@ export function GlassNav({ mode, menuSections }: GlassNavProps) {
   const homeHref = workspaceHome(mode);
   const officeActive = isOfficeContext(pathname);
   const fieldActive = isFieldContext(pathname);
-
-  const contextTitle = mode === "field" ? "Field app" : "Office app";
-  const contextBlurb =
-    mode === "field"
-      ? "Jobs and photos for installers."
-      : "Schedule, customers, billing, and team.";
 
   return (
     <>
@@ -260,6 +277,24 @@ export function GlassNav({ mode, menuSections }: GlassNavProps) {
                 </div>
               )}
 
+              <div className="hidden items-center gap-1 md:flex">
+                {compactPrimary.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMenu}
+                    className={cn(
+                      "touch-manipulation rounded-full px-3 py-1.5 text-sm font-semibold transition duration-150 active:scale-95",
+                      isActive(pathname, link.href)
+                        ? "bg-white text-black"
+                        : "text-white/85 hover:bg-white/15 hover:text-white",
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+
               <div className="ml-auto flex shrink-0 items-center gap-1">
                 <button
                   type="button"
@@ -273,7 +308,7 @@ export function GlassNav({ mode, menuSections }: GlassNavProps) {
                       : "border border-white/25 bg-white/5 text-white/90 hover:bg-white/15",
                   )}
                 >
-                  All pages
+                  Menu
                 </button>
                 <form action="/auth/logout" method="post" className="hidden sm:block">
                   <FormSubmitButton
@@ -296,12 +331,32 @@ export function GlassNav({ mode, menuSections }: GlassNavProps) {
                 : "pointer-events-none -translate-y-1 scale-[0.98] opacity-0",
             )}
           >
-            <div className="border-b border-white/15 pb-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/55">{contextTitle}</p>
-              <p className="mt-1 text-xs text-white/70">{contextBlurb}</p>
-            </div>
+              <div className="space-y-4">
+                {flatMenuLinks.length > 0 ? (
+                  <div>
+                    <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
+                      Quick links
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {flatMenuLinks.map((link) => (
+                        <Link
+                          key={`quick-${link.href}`}
+                          href={link.href}
+                          onClick={closeMenu}
+                          className={cn(
+                            "touch-manipulation rounded-full border px-3 py-1.5 text-sm font-semibold transition active:scale-[0.98]",
+                            isActive(pathname, link.href)
+                              ? "border-white/70 bg-white text-black"
+                              : "border-white/20 bg-white/5 text-white hover:bg-white/15",
+                          )}
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
 
-            <div className="mt-4 space-y-4">
               {allSections.map((section) => (
                 <div key={section.title}>
                   <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
@@ -316,23 +371,13 @@ export function GlassNav({ mode, menuSections }: GlassNavProps) {
                           href={link.href}
                           onClick={closeMenu}
                           className={cn(
-                            "touch-manipulation rounded-xl border px-3 py-2 transition duration-150 active:scale-[0.98]",
+                            "touch-manipulation rounded-xl border px-3 py-2 text-sm font-medium transition duration-150 active:scale-[0.98]",
                             active
                               ? "border-white/70 bg-white text-black"
                               : "border-white/20 bg-white/5 text-white hover:bg-white/15",
                           )}
                         >
-                          <p className="text-sm font-semibold">{link.label}</p>
-                          {link.description ? (
-                            <p
-                              className={cn(
-                                "mt-0.5 text-xs",
-                                active ? "text-zinc-700" : "text-white/65",
-                              )}
-                            >
-                              {link.description}
-                            </p>
-                          ) : null}
+                          {link.label}
                         </Link>
                       );
                     })}
@@ -346,7 +391,7 @@ export function GlassNav({ mode, menuSections }: GlassNavProps) {
                   onClick={closeMenu}
                   className="block rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white/85 transition hover:bg-white/10"
                 >
-                  Public site home
+                  Public site
                 </Link>
               </div>
 
