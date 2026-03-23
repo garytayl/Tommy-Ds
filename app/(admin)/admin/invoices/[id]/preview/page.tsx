@@ -54,7 +54,7 @@ export default async function InvoicePreviewPage({
           For a clean PDF, uncheck browser print <strong>Headers and footers</strong>.
         </p>
 
-        <article className="rounded-2xl border border-border bg-white p-6 text-black shadow-sm sm:p-8 print:rounded-none print:border-0 print:p-0 print:shadow-none">
+        <article className="rounded-2xl border border-border bg-white p-6 text-black shadow-sm sm:p-8 print:rounded-none print:border-0 print:pb-4 print:pt-0 print:shadow-none">
           <header className="flex flex-wrap items-start justify-between gap-4 border-b border-black/20 pb-5">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/60">Invoice preview</p>

@@ -1126,6 +1126,17 @@
 }
 
 @media print {
+  @page {
+    size: auto;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    overflow: visible !important;
+    background: white !important;
+  }
+
   body {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
