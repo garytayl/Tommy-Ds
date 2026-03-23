@@ -184,7 +184,7 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  const isApp = Boolean(menuSections?.length);
+  const isApp = Boolean((menuSections?.length ?? 0) || (primaryLinks?.length ?? 0));
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -224,7 +224,7 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
 
   const allSections = useMemo(() => menuSections ?? [], [menuSections]);
   const compactPrimary = useMemo(() => primaryLinks ?? [], [primaryLinks]);
-  const flatMenuLinks = useMemo(
+  const allNavLinks = useMemo(
     () =>
       dedupeLinks([
         ...compactPrimary,
@@ -234,6 +234,10 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
       ]),
     [allSections, compactPrimary],
   );
+  const secondaryLinks = useMemo(() => {
+    const primarySet = new Set(compactPrimary.map((link) => link.href));
+    return allNavLinks.filter((link) => !primarySet.has(link.href));
+  }, [allNavLinks, compactPrimary]);
   const closeMenu = () => setIsOpen(false);
 
   if (!isApp || !mode) {
@@ -331,59 +335,56 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
                 : "pointer-events-none -translate-y-1 scale-[0.98] opacity-0",
             )}
           >
-              <div className="space-y-4">
-                {flatMenuLinks.length > 0 ? (
-                  <div>
-                    <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
-                      Quick links
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {flatMenuLinks.map((link) => (
-                        <Link
-                          key={`quick-${link.href}`}
-                          href={link.href}
-                          onClick={closeMenu}
-                          className={cn(
-                            "touch-manipulation rounded-full border px-3 py-1.5 text-sm font-semibold transition active:scale-[0.98]",
-                            isActive(pathname, link.href)
-                              ? "border-white/70 bg-white text-black"
-                              : "border-white/20 bg-white/5 text-white hover:bg-white/15",
-                          )}
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-              {allSections.map((section) => (
-                <div key={section.title}>
+            <div className="space-y-4">
+              {compactPrimary.length > 0 ? (
+                <div className="md:hidden">
                   <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
-                    {section.title}
+                    Core
                   </p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {section.links.map((link) => {
-                      const active = isActive(pathname, link.href);
-                      return (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={closeMenu}
-                          className={cn(
-                            "touch-manipulation rounded-xl border px-3 py-2 text-sm font-medium transition duration-150 active:scale-[0.98]",
-                            active
-                              ? "border-white/70 bg-white text-black"
-                              : "border-white/20 bg-white/5 text-white hover:bg-white/15",
-                          )}
-                        >
-                          {link.label}
-                        </Link>
-                      );
-                    })}
+                  <div className="grid grid-cols-2 gap-2">
+                    {compactPrimary.map((link) => (
+                      <Link
+                        key={`core-${link.href}`}
+                        href={link.href}
+                        onClick={closeMenu}
+                        className={cn(
+                          "touch-manipulation rounded-xl border px-3 py-2 text-sm font-semibold transition active:scale-[0.98]",
+                          isActive(pathname, link.href)
+                            ? "border-white/70 bg-white text-black"
+                            : "border-white/20 bg-white/5 text-white hover:bg-white/15",
+                        )}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
                   </div>
                 </div>
-              ))}
+              ) : null}
+
+              {secondaryLinks.length > 0 ? (
+                <div>
+                  <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
+                    More
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {secondaryLinks.map((link) => (
+                      <Link
+                        key={`more-${link.href}`}
+                        href={link.href}
+                        onClick={closeMenu}
+                        className={cn(
+                          "touch-manipulation rounded-xl border px-3 py-2 text-sm font-medium transition active:scale-[0.98]",
+                          isActive(pathname, link.href)
+                            ? "border-white/70 bg-white text-black"
+                            : "border-white/20 bg-white/5 text-white hover:bg-white/15",
+                        )}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="border-t border-white/15 pt-3">
                 <Link

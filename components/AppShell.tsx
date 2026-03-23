@@ -11,71 +11,38 @@ const Aurora = dynamic(() => import("@/components/Aurora").then((m) => m.default
 
 type Mode = "admin" | "field";
 
-const ADMIN_CORE: GlassNavSection = {
-  title: "Core",
-  links: [
-    { href: "/admin", label: "Dashboard" },
-    { href: "/admin/schedule", label: "Schedule" },
-    { href: "/admin/jobs", label: "Jobs" },
-    { href: "/admin/customers", label: "Customers" },
-    { href: "/admin/invoices", label: "Invoices" },
-    { href: "/admin/search", label: "Search" },
-  ],
-};
-
-const ADMIN_SALES: GlassNavSection = {
-  title: "Sales",
-  links: [
-    { href: "/admin/leads", label: "Leads" },
-    { href: "/admin/quotes", label: "Quotes" },
-  ],
-};
-
-const ADMIN_INVENTORY: GlassNavSection = {
-  title: "Inventory",
-  links: [
-    { href: "/admin/materials", label: "Materials" },
-    { href: "/admin/lots", label: "Lots" },
-    { href: "/admin/locations", label: "Locations" },
-  ],
-};
-
-const ADMIN_TEAM: GlassNavSection = {
-  title: "Team",
-  links: [
-    { href: "/admin/crews", label: "Crews" },
-    { href: "/admin/team", label: "Team" },
-    { href: "/admin/reports", label: "Reports" },
-    { href: "/admin/future-features", label: "Future" },
-  ],
-};
-
-const OFFICE_TEAM: GlassNavSection = {
-  title: "Team",
-  links: [{ href: "/admin/crews", label: "Crews" }],
-};
-
-/** Installers cannot access /admin/* — keep links under /m only. */
-const FIELD_SECTIONS: GlassNavSection[] = [
-  {
-    title: "Field",
-    links: [{ href: "/m", label: "My jobs" }],
-  },
-];
-
 const ADMIN_PRIMARY: GlassNavLink[] = [
-  { href: "/admin", label: "Dashboard" },
   { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/jobs", label: "Jobs" },
+  { href: "/admin/customers", label: "Customers" },
   { href: "/admin/invoices", label: "Invoices" },
 ];
 
 const FIELD_PRIMARY: GlassNavLink[] = [{ href: "/m", label: "My jobs" }];
 
+const ADMIN_MORE_ADMIN: GlassNavSection = {
+  title: "More",
+  links: [
+    { href: "/admin", label: "Dashboard" },
+    { href: "/admin/quotes", label: "Quotes" },
+    { href: "/admin/crews", label: "Crews" },
+    { href: "/admin/team", label: "Team" },
+  ],
+};
+
+const ADMIN_MORE_MANAGER: GlassNavSection = {
+  title: "More",
+  links: [
+    { href: "/admin", label: "Dashboard" },
+    { href: "/admin/quotes", label: "Quotes" },
+    { href: "/admin/crews", label: "Crews" },
+  ],
+};
+
 function sectionsFor(mode: Mode, role?: ProfileRole): GlassNavSection[] {
-  if (mode === "field") return FIELD_SECTIONS;
-  if (role === "manager") return [ADMIN_CORE, ADMIN_SALES, ADMIN_INVENTORY, OFFICE_TEAM];
-  return [ADMIN_CORE, ADMIN_SALES, ADMIN_INVENTORY, ADMIN_TEAM];
+  if (mode === "field") return [];
+  if (role === "manager") return [ADMIN_MORE_MANAGER];
+  return [ADMIN_MORE_ADMIN];
 }
 
 function primaryLinksFor(mode: Mode): GlassNavLink[] {
