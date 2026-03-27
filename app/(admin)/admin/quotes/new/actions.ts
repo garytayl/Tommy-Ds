@@ -1,0 +1,101 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+import {
+  BLANK_QUOTE_TEMPLATE_ID,
+  getQuoteTemplate,
+  normalizeTemplateId,
+} from "@/lib/quote-templates";
+import { computeTaxCents } from "@/lib/tax";
+import { setToastCookie } from "@/lib/toast";
+import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+
+export async function createQuoteFromForm(formData: FormData) {
+  const customerId = String(formData.get("customer_id") ?? "").trim();
+  const templateId = normalizeTemplateId(String(formData.get("template_id") ?? ""));
+  const template = getQuoteTemplate(templateId);
+
+  let title = String(formData.get("title") ?? "").trim();
+  let notesRaw = String(formData.get("notes") ?? "").trim();
+  const address1 = String(formData.get("address_line1") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
+  const state = String(formData.get("state") ?? "IN").trim() || "IN";
+  const zip = String(formData.get("zip") ?? "").trim();
+
+  if (!customerId || !address1 || !city || !zip || !template) {
+    await setToastCookie("Fill in customer, address, city, and zip.");
+    return;
+  }
+
+  if (!title && templateId !== BLANK_QUOTE_TEMPLATE_ID && template.defaultTitle) {
+    title = template.defaultTitle;
+  }
+  if (!title) {
+    await setToastCookie("Add a title for this estimate.");
+    return;
+  }
+
+  let notes: string | null = notesRaw || null;
+  if (!notes && templateId !== BLANK_QUOTE_TEMPLATE_ID && template.buildNotes) {
+    notes = template.buildNotes();
+  }
+
+  const supabase = await createSupabaseServerClientForData();
+  const { data: quote, error: quoteInsertError } = await supabase
+    .from("quotes")
+    .insert({
+      customer_id: customerId,
+      title,
+      address_line1: address1,
+      address_line2: String(formData.get("address_line2") ?? "").trim() || null,
+      city,
+      state,
+      zip,
+      notes,
+      status: "draft",
+      workflow_stage: "estimate",
+    })
+    .select("id")
+    .single();
+
+  if (quoteInsertError || !quote) {
+    await setToastCookie(quoteInsertError?.message ?? "Could not create estimate");
+    return;
+  }
+
+  const quoteId = quote.id as string;
+
+  if (template.lineItems.length > 0) {
+    const { error: itemsErr } = await supabase.from("quote_items").insert(
+      template.lineItems.map((row) => ({
+        quote_id: quoteId,
+        description: row.description,
+        qty: row.qty,
+        unit_price_cents: row.unit_price_cents,
+        line_total_cents: row.line_total_cents,
+      })),
+    );
+    if (itemsErr) {
+      await supabase.from("quotes").delete().eq("id", quoteId);
+      await setToastCookie(itemsErr.message);
+      return;
+    }
+
+    await supabase.rpc("recompute_quote_totals", { p_quote_id: quoteId });
+    const { data: row } = await supabase.from("quotes").select("subtotal_cents").eq("id", quoteId).maybeSingle();
+    const sub = row?.subtotal_cents ?? 0;
+    if (sub > 0) {
+      await supabase
+        .from("quotes")
+        .update({ tax_cents: computeTaxCents(sub) })
+        .eq("id", quoteId);
+      await supabase.rpc("recompute_quote_totals", { p_quote_id: quoteId });
+    }
+  }
+
+  await setToastCookie("Estimate created");
+  revalidatePath("/admin/quotes");
+  redirect(`/admin/quotes/${quoteId}`);
+}

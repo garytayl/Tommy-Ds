@@ -7,6 +7,7 @@ import { deleteQuoteAndOptionalJob } from "@/lib/job-destruct";
 import { formatCents } from "@/lib/money";
 import { workflowStageLabel } from "@/lib/quote-workflow";
 import { setToastCookie } from "@/lib/toast";
+import { VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID } from "@/lib/quote-templates";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 async function deleteQuoteFromList(formData: FormData) {
@@ -63,9 +64,17 @@ export default async function QuotesListPage() {
             Estimate → formal quote → job. New records start as estimates; promote when pricing is firm.
           </p>
         </div>
-        <Link href="/admin/quotes/new" className="btn-primary">
-          New estimate
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/admin/quotes/new" className="btn-primary">
+            New estimate
+          </Link>
+          <Link
+            href={`/admin/quotes/new?template=${VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID}`}
+            className="btn-secondary"
+          >
+            VW / Stone Worx countertop
+          </Link>
+        </div>
       </div>
 
       <section className="animate-card-in schedule-delay-75 rounded-2xl border border-border bg-card overflow-hidden shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
