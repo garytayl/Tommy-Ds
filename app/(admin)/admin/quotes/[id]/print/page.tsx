@@ -103,9 +103,9 @@ export default async function QuotePrintPage({
       />
       <div className="min-h-screen bg-[#faf8f5] text-zinc-900 antialiased print:min-h-0 print:bg-white">
         <article className="mx-auto max-w-[48rem] px-5 py-8 print:max-w-none print:px-0 print:py-0 sm:px-8 sm:py-10">
-          <div>
+          <div className="quote-print-page1 flex flex-col gap-8 print:gap-8">
           <header
-            className="flex flex-col gap-6 border-b-2 pb-8 print:gap-3.5 print:pb-3.5 sm:flex-row sm:items-start sm:justify-between sm:pb-10"
+            className="flex flex-col gap-6 border-b-2 pb-8 print:gap-4 print:pb-5 sm:flex-row sm:items-start sm:justify-between sm:pb-10"
             style={{ borderColor: BRAND }}
           >
             <div className="min-w-0 flex-1">
@@ -115,14 +115,14 @@ export default async function QuotePrintPage({
               >
                 {merged.docLabel}
               </p>
-              <h1 className="mt-3 text-2xl font-bold leading-tight tracking-tight text-zinc-900 print:text-xl sm:text-[1.75rem]">
+              <h1 className="mt-3 text-2xl font-bold leading-tight tracking-tight text-zinc-900 print:mt-3.5 print:text-xl sm:text-[1.75rem]">
                 {merged.title}
               </h1>
-              <p className="mt-4 text-sm leading-relaxed text-zinc-600 print:mt-2.5 print:text-xs">
+              <p className="mt-4 text-sm leading-relaxed text-zinc-600 print:mt-3 print:text-xs">
                 <span className="font-semibold text-zinc-800">Prepared </span>
                 {merged.preparedDateText}
               </p>
-              <p className="mt-1.5 font-mono text-[11px] text-zinc-400">Reference {docRef}</p>
+              <p className="mt-1.5 font-mono text-[11px] text-zinc-400 print:mt-2">Reference {docRef}</p>
             </div>
             <div className="flex shrink-0 items-start justify-end">
               {/* eslint-disable-next-line @next/next/no-img-element -- print/PDF engines handle <img> more reliably than next/image */}
@@ -134,36 +134,43 @@ export default async function QuotePrintPage({
             </div>
           </header>
 
-          <div className="mt-8 grid gap-5 print:mt-5.5 print:gap-4.5 sm:grid-cols-2 sm:gap-6">
+          <div className="grid gap-5 print:gap-5 sm:grid-cols-2 sm:gap-6">
             <section
-              className="rounded-xl border border-zinc-200/80 p-5 shadow-sm print:border-zinc-300 print:p-4.5 print:shadow-none"
+              className="rounded-xl border border-zinc-200/80 p-5 shadow-sm print:border-zinc-300 print:p-5 print:shadow-none"
               style={{ backgroundColor: BRAND_SOFT }}
             >
-              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500">Customer</h2>
-              <p className="mt-3 text-base font-semibold text-zinc-900">{merged.customerName}</p>
+              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-1">
+                Customer
+              </h2>
+              <p className="mt-3 text-base font-semibold text-zinc-900 print:mt-4">{merged.customerName}</p>
               {merged.customerPhone && (
-                <p className="mt-1.5 text-sm text-zinc-700">
+                <p className="mt-1.5 text-sm text-zinc-700 print:mt-2">
                   <span className="text-zinc-500">Phone </span>
                   {merged.customerPhone}
                 </p>
               )}
               {merged.customerEmail && (
-                <p className="mt-1 text-sm text-zinc-700">
+                <p className="mt-1 text-sm text-zinc-700 print:mt-2">
                   <span className="text-zinc-500">Email </span>
                   {merged.customerEmail}
                 </p>
               )}
             </section>
-            <section className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm print:border-zinc-300 print:p-4.5 print:shadow-none">
-              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500">Project address</h2>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-800">{merged.projectAddress}</p>
+            <section className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm print:border-zinc-300 print:p-5 print:shadow-none">
+              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-1">
+                Project address
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-800 print:mt-4">{merged.projectAddress}</p>
             </section>
           </div>
 
           {!merged.hideLineItems && (
-            <section className="mt-10 print:mt-7">
-              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500">Pricing</h2>
-              <div className="mt-3 overflow-hidden rounded-xl border border-zinc-200 print:mt-3.5 print:border-zinc-300">
+            <section className="flex flex-col gap-4 print:gap-4">
+              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-0.5">
+                Pricing
+              </h2>
+              <div className="flex flex-col gap-3 print:gap-3">
+              <div className="overflow-hidden rounded-xl border border-zinc-200 print:border-zinc-300">
                 <table className="w-full border-collapse text-sm print:text-xs">
                   <thead>
                     <tr className="bg-zinc-100 text-left text-zinc-700 print:bg-zinc-100">
@@ -200,7 +207,7 @@ export default async function QuotePrintPage({
                 </table>
               </div>
 
-              <div className="mt-6 flex justify-end print:mt-4.5 print:break-inside-avoid">
+              <div className="flex justify-end print:break-inside-avoid">
                 <div
                   className="w-full max-w-xs space-y-2 rounded-xl border border-zinc-200 border-t-4 bg-white px-6 py-4 text-sm print:border-zinc-300 print:px-5 print:py-3.5"
                   style={{ borderTopColor: BRAND }}
@@ -222,11 +229,12 @@ export default async function QuotePrintPage({
                   </div>
                 </div>
               </div>
+              </div>
             </section>
           )}
 
           {merged.footerNote && (
-            <p className="mt-8 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-center text-sm text-zinc-700 print:mt-5.5 print:py-3 print:break-inside-avoid">
+            <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-center text-sm text-zinc-700 print:py-3.5 print:break-inside-avoid">
               {merged.footerNote}
             </p>
           )}
