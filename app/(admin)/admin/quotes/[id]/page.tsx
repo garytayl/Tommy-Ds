@@ -323,37 +323,43 @@ export default async function QuoteDetailPage({
     }
 
     const fabricatorLabel = String(formData.get("fabricator_label") ?? "").trim() || null;
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_") || "file";
     const storagePath = `${id}/${Date.now()}-${safeName}`;
 
     const supabase = await createSupabaseServerClientForData();
     const arrayBuffer = await file.arrayBuffer();
-    let serviceClient: ReturnType<typeof createSupabaseServiceClient>;
-    try {
-      serviceClient = createSupabaseServiceClient();
-    } catch {
-      await setToastCookie("Upload unavailable (service key)");
-      revalidatePath(`/admin/quotes/${id}`);
-      return;
-    }
+    const bytes = new Uint8Array(arrayBuffer);
 
-    const { error: uploadError } = await serviceClient.storage.from("quote-documents").upload(storagePath, Buffer.from(arrayBuffer), {
+    const { error: uploadError } = await supabase.storage.from("quote-documents").upload(storagePath, bytes, {
       contentType: file.type || "application/octet-stream",
-      upsert: false,
+      upsert: true,
     });
     if (uploadError) {
-      await setToastCookie("Upload failed");
+      const detail = uploadError.message ? `: ${uploadError.message}` : "";
+      await setToastCookie(`Upload failed${detail}`.slice(0, 220));
       revalidatePath(`/admin/quotes/${id}`);
       return;
     }
 
-    await supabase.from("quote_documents").insert({
+    const { error: insertError } = await supabase.from("quote_documents").insert({
       quote_id: id,
       storage_path: storagePath,
       file_name: file.name,
       fabricator_label: fabricatorLabel,
       content_type: file.type || null,
     });
+
+    if (insertError) {
+      await supabase.storage.from("quote-documents").remove([storagePath]);
+      await setToastCookie(
+        (insertError.message
+          ? `Saved file but could not attach: ${insertError.message}`
+          : "Saved file but could not attach to this quote (database error)."
+        ).slice(0, 220),
+      );
+      revalidatePath(`/admin/quotes/${id}`);
+      return;
+    }
 
     await setToastCookie("Document attached");
     revalidatePath(`/admin/quotes/${id}`);
