@@ -863,6 +863,14 @@ export default async function JobWorkspacePage({
                 >
                   Open invoice #{invoice.invoice_number} (line items & tax)
                 </Link>
+                <a
+                  href={`/admin/invoices/${invoice.id}/preview`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary inline-flex py-2.5"
+                >
+                  Preview / print
+                </a>
               </div>
             ) : (
               <form action={createInvoice} className="mt-4">

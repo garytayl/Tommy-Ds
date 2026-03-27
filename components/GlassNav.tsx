@@ -3,6 +3,21 @@
 import type { ReactNode } from "react";
 
 import { FormSubmitButton } from "@/components/forms/FormSubmitButton";
+import {
+  BriefcaseBusiness,
+  CalendarDays,
+  Circle,
+  FileCheck2,
+  FileText,
+  LayoutDashboard,
+  Sparkles,
+  UserCog,
+  Users,
+  Users2,
+  Wrench,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -23,6 +38,7 @@ export type GlassNavSection = {
 type GlassNavProps = {
   /** When set with `menuSections`, shows signed-in app chrome (Office / Field + All pages). */
   mode?: "admin" | "field";
+  primaryLinks?: GlassNavLink[];
   menuSections?: GlassNavSection[];
 };
 
@@ -43,6 +59,33 @@ function workspaceHome(mode: "admin" | "field"): string {
   return mode === "field" ? "/m" : "/admin";
 }
 
+function dedupeLinks(links: GlassNavLink[]): GlassNavLink[] {
+  const seen = new Set<string>();
+  const unique: GlassNavLink[] = [];
+  for (const link of links) {
+    if (seen.has(link.href)) continue;
+    seen.add(link.href);
+    unique.push(link);
+  }
+  return unique;
+}
+
+const LINK_ICONS: Record<string, LucideIcon> = {
+  "/admin": LayoutDashboard,
+  "/admin/schedule": CalendarDays,
+  "/admin/jobs": BriefcaseBusiness,
+  "/admin/customers": Users,
+  "/admin/invoices": FileText,
+  "/admin/quotes": FileCheck2,
+  "/admin/crews": Users2,
+  "/admin/team": UserCog,
+  "/m": Wrench,
+};
+
+function iconForHref(href: string): LucideIcon {
+  return LINK_ICONS[href] ?? Circle;
+}
+
 function PublicNavBar() {
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -57,7 +100,10 @@ function PublicNavBar() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6">
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 print:hidden sm:px-6"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.5rem)" }}
+      >
         <div className="mx-auto w-full max-w-6xl">
           <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-full border border-white/20 bg-black/25 px-3 py-2 shadow-2xl backdrop-blur-xl sm:px-5 sm:py-2.5">
             <Link
@@ -137,7 +183,7 @@ function PublicNavBar() {
           type="button"
           aria-label="Close menu"
           onClick={() => setSheetOpen(false)}
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] sm:hidden"
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] print:hidden sm:hidden"
         />
       ) : null}
     </>
@@ -168,11 +214,41 @@ function WorkspacePill({ href, active, children, onNavigate }: WorkspacePillProp
   );
 }
 
-export function GlassNav({ mode, menuSections }: GlassNavProps) {
+type DockLinkProps = {
+  href: string;
+  label: string;
+  active: boolean;
+  onNavigate: () => void;
+  compact?: boolean;
+};
+
+function DockLink({ href, label, active, onNavigate, compact = false }: DockLinkProps) {
+  const Icon = iconForHref(href);
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className={cn(
+        "touch-manipulation rounded-2xl border transition duration-150 active:scale-[0.98]",
+        compact
+          ? "flex items-center gap-2 px-3 py-2 text-sm font-medium"
+          : "flex flex-col items-center gap-1 px-3 py-2 text-center text-xs font-semibold sm:text-sm",
+        active
+          ? "border-white/70 bg-white text-black shadow-[0_10px_24px_-16px_rgba(255,255,255,0.95)]"
+          : "border-white/20 bg-white/[0.04] text-white hover:bg-white/12",
+      )}
+    >
+      <Icon className={cn("size-4", compact ? "shrink-0" : "size-4 sm:size-5")} />
+      <span>{label}</span>
+    </Link>
+  );
+}
+
+export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  const isApp = Boolean(menuSections?.length);
+  const isApp = Boolean((menuSections?.length ?? 0) || (primaryLinks?.length ?? 0));
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -211,6 +287,21 @@ export function GlassNav({ mode, menuSections }: GlassNavProps) {
   }, [isOpen]);
 
   const allSections = useMemo(() => menuSections ?? [], [menuSections]);
+  const compactPrimary = useMemo(() => primaryLinks ?? [], [primaryLinks]);
+  const allNavLinks = useMemo(
+    () =>
+      dedupeLinks([
+        ...compactPrimary,
+        ...allSections.flatMap((section) =>
+          section.links.map((link) => ({ href: link.href, label: link.label })),
+        ),
+      ]),
+    [allSections, compactPrimary],
+  );
+  const secondaryLinks = useMemo(() => {
+    const primarySet = new Set(compactPrimary.map((link) => link.href));
+    return allNavLinks.filter((link) => !primarySet.has(link.href));
+  }, [allNavLinks, compactPrimary]);
   const closeMenu = () => setIsOpen(false);
 
   if (!isApp || !mode) {
@@ -221,18 +312,15 @@ export function GlassNav({ mode, menuSections }: GlassNavProps) {
   const officeActive = isOfficeContext(pathname);
   const fieldActive = isFieldContext(pathname);
 
-  const contextTitle = mode === "field" ? "Field app" : "Office app";
-  const contextBlurb =
-    mode === "field"
-      ? "Jobs and photos for installers."
-      : "Schedule, customers, billing, and team.";
-
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6">
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 print:hidden sm:px-6"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.5rem)" }}
+      >
         <div className="mx-auto w-full max-w-6xl">
-          <div className="pointer-events-auto rounded-2xl border border-white/20 bg-black/30 px-3 py-2.5 shadow-2xl backdrop-blur-xl sm:rounded-full sm:px-4 sm:py-2">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+          <div className="pointer-events-auto rounded-3xl border border-white/20 bg-black/30 p-2.5 shadow-2xl backdrop-blur-2xl sm:p-3">
+            <div className="flex items-center gap-2">
               <Link
                 href={homeHref}
                 onClick={closeMenu}
@@ -273,7 +361,10 @@ export function GlassNav({ mode, menuSections }: GlassNavProps) {
                       : "border border-white/25 bg-white/5 text-white/90 hover:bg-white/15",
                   )}
                 >
-                  All pages
+                  <span className="inline-flex items-center gap-1.5">
+                    <Sparkles className="size-4" />
+                    <span className="hidden sm:inline">Launchpad</span>
+                  </span>
                 </button>
                 <form action="/auth/logout" method="post" className="hidden sm:block">
                   <FormSubmitButton
@@ -286,92 +377,108 @@ export function GlassNav({ mode, menuSections }: GlassNavProps) {
               </div>
             </div>
           </div>
-
-          <div
-            id="glass-app-pages-panel"
-            className={cn(
-              "pointer-events-auto mt-2 origin-top rounded-2xl border border-white/20 bg-black/50 p-4 shadow-2xl backdrop-blur-xl transition-all duration-200 max-h-[min(70dvh,520px)] overflow-y-auto overscroll-contain",
-              isOpen
-                ? "translate-y-0 scale-100 opacity-100"
-                : "pointer-events-none -translate-y-1 scale-[0.98] opacity-0",
-            )}
-          >
-            <div className="border-b border-white/15 pb-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/55">{contextTitle}</p>
-              <p className="mt-1 text-xs text-white/70">{contextBlurb}</p>
-            </div>
-
-            <div className="mt-4 space-y-4">
-              {allSections.map((section) => (
-                <div key={section.title}>
-                  <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
-                    {section.title}
-                  </p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {section.links.map((link) => {
-                      const active = isActive(pathname, link.href);
-                      return (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={closeMenu}
-                          className={cn(
-                            "touch-manipulation rounded-xl border px-3 py-2 transition duration-150 active:scale-[0.98]",
-                            active
-                              ? "border-white/70 bg-white text-black"
-                              : "border-white/20 bg-white/5 text-white hover:bg-white/15",
-                          )}
-                        >
-                          <p className="text-sm font-semibold">{link.label}</p>
-                          {link.description ? (
-                            <p
-                              className={cn(
-                                "mt-0.5 text-xs",
-                                active ? "text-zinc-700" : "text-white/65",
-                              )}
-                            >
-                              {link.description}
-                            </p>
-                          ) : null}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-
-              <div className="border-t border-white/15 pt-3">
-                <Link
-                  href="/"
-                  onClick={closeMenu}
-                  className="block rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-white/85 transition hover:bg-white/10"
-                >
-                  Public site home
-                </Link>
-              </div>
-
-              <div className="sm:hidden">
-                <form action="/auth/logout" method="post">
-                  <FormSubmitButton
-                    pendingLabel="Signing out…"
-                    className="w-full rounded-xl border border-white/25 bg-white/5 px-3 py-2 text-left text-sm font-semibold text-white transition hover:bg-white/15 disabled:opacity-60"
-                  >
-                    Sign out
-                  </FormSubmitButton>
-                </form>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
       {isOpen ? (
-        <button
-          aria-label="Close navigation"
-          type="button"
-          onClick={closeMenu}
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px]"
-        />
+        <>
+          <button
+            aria-label="Close navigation"
+            type="button"
+            onClick={closeMenu}
+            className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[2px] print:hidden"
+          />
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-3 pt-20 print:hidden sm:p-6 sm:pt-24">
+            <div
+              id="glass-app-pages-panel"
+              className="pointer-events-auto w-full max-w-xl rounded-3xl border border-white/20 bg-black/70 p-4 shadow-2xl backdrop-blur-2xl"
+            >
+              <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-3">
+                <div className="inline-flex items-center gap-2">
+                  <span className="rounded-full bg-white/10 p-1.5">
+                    <Sparkles className="size-4 text-white" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Launchpad</p>
+                    <p className="text-xs text-white/60">Tools beyond the core workflow</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeMenu}
+                  className="rounded-full border border-white/15 bg-white/5 p-1.5 text-white/80 transition hover:bg-white/15 hover:text-white"
+                  aria-label="Close launchpad"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+
+              <div className="mt-3 space-y-4">
+                {compactPrimary.length > 0 ? (
+                  <div>
+                    <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
+                      Core
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {compactPrimary.map((link) => (
+                        <DockLink
+                          key={`core-${link.href}`}
+                          href={link.href}
+                          label={link.label}
+                          active={isActive(pathname, link.href)}
+                          onNavigate={closeMenu}
+                          compact
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {secondaryLinks.length > 0 ? (
+                  <div>
+                    <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
+                      More
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {secondaryLinks.map((link) => (
+                        <DockLink
+                          key={`launchpad-${link.href}`}
+                          href={link.href}
+                          label={link.label}
+                          active={isActive(pathname, link.href)}
+                          onNavigate={closeMenu}
+                          compact
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-white/70">No extra tools for this role.</p>
+                )}
+
+                <div className="grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-2">
+                  <Link
+                    href="/"
+                    onClick={closeMenu}
+                    className="touch-manipulation rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/12"
+                  >
+                    Public site
+                  </Link>
+                  <div className="sm:hidden">
+                    <form action="/auth/logout" method="post">
+                      <FormSubmitButton
+                        pendingLabel="Signing out…"
+                        className="w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-left text-sm font-medium text-white transition hover:bg-white/15 disabled:opacity-60"
+                      >
+                        Sign out
+                      </FormSubmitButton>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       ) : null}
     </>
   );

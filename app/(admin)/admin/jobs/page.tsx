@@ -58,6 +58,26 @@ export default async function JobsPage({
   };
 
   const jobs = (jobsResult.data ?? []) as JobRow[];
+  const rows = jobs.map((job) => {
+    const customer = Array.isArray(job.customers) ? job.customers[0]?.name : job.customers?.name;
+    const jobCrew = Array.isArray(job.crews) ? job.crews[0] : job.crews;
+    const crewDisplayName = job.assigned_crew_id
+      ? crews.find((c) => c.id === job.assigned_crew_id)?.name ?? jobCrew?.name
+      : jobCrew?.name;
+    const installer = Array.isArray(job.profiles) ? job.profiles[0]?.full_name : job.profiles?.full_name;
+    const rowKind: "installation" | "service" =
+      job.job_kind === "service" ? "service" : "installation";
+    const invoice = Array.isArray(job.invoices) ? job.invoices[0] : job.invoices;
+    return {
+      ...job,
+      customer,
+      crewDisplayName,
+      installer,
+      rowKind,
+      invoice,
+      scheduledLabel: job.scheduled_start ? new Date(job.scheduled_start).toLocaleString() : "Unscheduled",
+    };
+  });
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -82,49 +102,125 @@ export default async function JobsPage({
       <section className="animate-card-in schedule-delay-75 form-card overflow-hidden rounded-2xl p-0 shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/30 px-4 py-3 sm:px-6">
           <h2 className="text-base font-semibold text-foreground">All jobs</h2>
-          <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <div className="flex flex-wrap items-center justify-end gap-1">
-              <span className="mr-1 text-xs font-medium text-muted-foreground">Kind</span>
-              <Link
-                href={jobsListHref(filterCrewId, null)}
-                className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${!kindFilter ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-              >
-                All
-              </Link>
-              <Link
-                href={jobsListHref(filterCrewId, "installation")}
-                className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${kindFilter === "installation" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-              >
-                Installation
-              </Link>
-              <Link
-                href={jobsListHref(filterCrewId, "service")}
-                className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${kindFilter === "service" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-              >
-                Service
-              </Link>
-            </div>
-            <div className="flex flex-wrap items-center gap-1">
-              <span className="mr-1 text-xs font-medium text-muted-foreground">Crew</span>
-              <Link
-                href={jobsListHref(undefined, kindFilter)}
-                className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${!filterCrewId ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-              >
-                All crews
-              </Link>
-              {crews.map((crew) => (
-                <Link
-                  key={crew.id}
-                  href={jobsListHref(filterCrewId === crew.id ? undefined : crew.id, kindFilter)}
-                  className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${filterCrewId === crew.id ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-                >
-                  {crew.name}
+          <div className="w-full sm:w-auto">
+            <form method="get" className="grid gap-2 sm:hidden">
+              <div className="grid grid-cols-2 gap-2">
+                <select name="kind" defaultValue={kindFilter ?? ""} className="field">
+                  <option value="">All kinds</option>
+                  <option value="installation">Installation</option>
+                  <option value="service">Service</option>
+                </select>
+                <select name="crew_id" defaultValue={filterCrewId ?? ""} className="field">
+                  <option value="">All crews</option>
+                  {crews.map((crew) => (
+                    <option key={crew.id} value={crew.id}>
+                      {crew.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="submit" className="btn-secondary w-full">
+                  Apply filters
+                </button>
+                <Link href="/admin/jobs" className="btn-secondary w-full text-center">
+                  Reset
                 </Link>
-              ))}
+              </div>
+            </form>
+
+            <div className="hidden flex-col items-end gap-2 sm:flex sm:flex-row sm:items-center sm:gap-3">
+              <div className="flex flex-wrap items-center justify-end gap-1">
+                <span className="mr-1 text-xs font-medium text-muted-foreground">Kind</span>
+                <Link
+                  href={jobsListHref(filterCrewId, null)}
+                  className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${!kindFilter ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                >
+                  All
+                </Link>
+                <Link
+                  href={jobsListHref(filterCrewId, "installation")}
+                  className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${kindFilter === "installation" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                >
+                  Installation
+                </Link>
+                <Link
+                  href={jobsListHref(filterCrewId, "service")}
+                  className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${kindFilter === "service" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                >
+                  Service
+                </Link>
+              </div>
+              <div className="flex flex-wrap items-center gap-1">
+                <span className="mr-1 text-xs font-medium text-muted-foreground">Crew</span>
+                <Link
+                  href={jobsListHref(undefined, kindFilter)}
+                  className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${!filterCrewId ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                >
+                  All crews
+                </Link>
+                {crews.map((crew) => (
+                  <Link
+                    key={crew.id}
+                    href={jobsListHref(filterCrewId === crew.id ? undefined : crew.id, kindFilter)}
+                    className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${filterCrewId === crew.id ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                  >
+                    {crew.name}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-        <div className="table-wrap overflow-x-auto px-4 py-2 sm:px-6 sm:py-3">
+        <div className="space-y-3 px-4 py-3 sm:hidden">
+          {rows.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+              {filterCrewId
+                ? "No jobs for this crew. Change filters to see more jobs."
+                : "No jobs yet. Create your first job."}
+            </div>
+          ) : (
+            rows.map((job) => (
+              <article key={job.id} className="rounded-xl border border-border bg-card p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground">{job.title}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">{job.customer ?? "No customer"}</p>
+                  </div>
+                  <JobStatusBadge status={job.status} />
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <JobKindBadge kind={job.rowKind} />
+                  {job.invoice ? (
+                    <Link href={`/admin/invoices/${job.invoice.id}`} className="link text-sm">
+                      Invoice #{job.invoice.invoice_number}
+                    </Link>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">No invoice</span>
+                  )}
+                </div>
+                <div className="mt-3 space-y-1 text-sm text-muted-foreground">
+                  <p>
+                    <span className="text-foreground/80">Crew:</span> {job.crewDisplayName ?? "—"}
+                  </p>
+                  <p>
+                    <span className="text-foreground/80">Installer:</span> {job.installer ?? "Unassigned"}
+                  </p>
+                  <p>
+                    <span className="text-foreground/80">Scheduled:</span> {job.scheduledLabel}
+                  </p>
+                </div>
+                <div className="mt-4">
+                  <Link href={`/jobs/${job.id}`} className="btn-secondary w-full text-center">
+                    Open job
+                  </Link>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+
+        <div className="table-wrap hidden overflow-x-auto px-4 py-2 sm:block sm:px-6 sm:py-3">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">
@@ -157,43 +253,25 @@ export default async function JobsPage({
                   </td>
                 </tr>
               ) : (
-                jobs.map((job) => {
-                const customer = Array.isArray(job.customers)
-                  ? job.customers[0]?.name
-                  : job.customers?.name;
-                const jobCrew = Array.isArray(job.crews) ? job.crews[0] : job.crews;
-                const crewDisplayName = job.assigned_crew_id
-                  ? crews.find((c) => c.id === job.assigned_crew_id)?.name ?? jobCrew?.name
-                  : jobCrew?.name;
-                const installer = Array.isArray(job.profiles)
-                  ? job.profiles[0]?.full_name
-                  : job.profiles?.full_name;
-                const rowKind = job.job_kind === "service" ? "service" : "installation";
-
-                const invoice = Array.isArray(job.invoices) ? job.invoices[0] : job.invoices;
-                return (
+                rows.map((job) => (
                   <tr key={job.id} className="border-b border-border transition-all duration-200 hover:bg-muted/30">
                     <td className="py-3 pl-5 pr-4 font-medium text-foreground">{job.title}</td>
                     <td className="py-3 pr-4">
-                      <JobKindBadge kind={rowKind} />
+                      <JobKindBadge kind={job.rowKind} />
                     </td>
-                    <td className="py-3 pr-4 text-muted-foreground">{customer ?? "-"}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{job.customer ?? "-"}</td>
                     <td className="py-3 pr-4 tabular-nums text-muted-foreground">
-                      {invoice ? (
-                        <Link href={`/admin/invoices/${invoice.id}`} className="hover:underline">
-                          #{invoice.invoice_number}
+                      {job.invoice ? (
+                        <Link href={`/admin/invoices/${job.invoice.id}`} className="hover:underline">
+                          #{job.invoice.invoice_number}
                         </Link>
                       ) : (
                         "—"
                       )}
                     </td>
-                    <td className="py-3 pr-4 text-muted-foreground">{crewDisplayName ?? "—"}</td>
-                    <td className="py-3 pr-4 text-muted-foreground">{installer ?? "Unassigned"}</td>
-                    <td className="py-3 pr-4 text-muted-foreground">
-                      {job.scheduled_start
-                        ? new Date(job.scheduled_start).toLocaleString()
-                        : "Unscheduled"}
-                    </td>
+                    <td className="py-3 pr-4 text-muted-foreground">{job.crewDisplayName ?? "—"}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{job.installer ?? "Unassigned"}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{job.scheduledLabel}</td>
                     <td className="py-3 pr-4">
                       <JobStatusBadge status={job.status} />
                     </td>
@@ -203,8 +281,7 @@ export default async function JobsPage({
                       </Link>
                     </td>
                   </tr>
-                );
-              })
+                ))
               )}
             </tbody>
           </table>

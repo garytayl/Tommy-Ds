@@ -43,7 +43,8 @@ export default async function InstallerLayout({
   if (!auth.profile.onboarding_completed_at) {
     redirect("/auth/onboarding?next=/m");
   }
-  if (auth.profile.role !== "installer") redirect("/admin");
+  // Allow office roles to open field workspace for QA/troubleshooting.
+  if (!["installer", "admin", "manager"].includes(auth.profile.role)) redirect("/admin");
 
   return (
     <AppShell mode="field" role={auth.profile.role}>

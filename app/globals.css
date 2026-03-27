@@ -291,7 +291,7 @@
     @apply -mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0;
   }
   .table-wrap table {
-    @apply min-w-[480px];
+    @apply min-w-[760px] sm:min-w-[640px];
   }
   .link {
     color: var(--accent-gold);
@@ -1126,8 +1126,24 @@
 }
 
 @media print {
+  @page {
+    size: auto;
+    margin: 8mm;
+  }
+
+  html,
+  body {
+    overflow: visible !important;
+    background: white !important;
+  }
+
   body {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+  }
+
+  .invoice-print-page {
+    break-after: avoid-page;
+    page-break-after: avoid;
   }
 }

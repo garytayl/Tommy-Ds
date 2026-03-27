@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 
 import type { ProfileRole } from "@/lib/auth";
-import { GlassNav, type GlassNavSection } from "@/components/GlassNav";
+import { GlassNav, type GlassNavLink, type GlassNavSection } from "@/components/GlassNav";
 
 const Aurora = dynamic(() => import("@/components/Aurora").then((m) => m.default), {
   ssr: false,
@@ -11,56 +11,43 @@ const Aurora = dynamic(() => import("@/components/Aurora").then((m) => m.default
 
 type Mode = "admin" | "field";
 
-const ADMIN_CORE: GlassNavSection = {
-  title: "Core",
-  links: [
-    { href: "/admin", label: "Dashboard", description: "Summary and quick links" },
-    { href: "/admin/search", label: "Search", description: "Find customers and jobs" },
-    { href: "/admin/schedule", label: "Schedule", description: "Plan installer workload" },
-    { href: "/admin/jobs", label: "Jobs", description: "Manage active installs" },
-    { href: "/admin/customers", label: "Customers", description: "Customer records" },
-    { href: "/admin/invoices", label: "Money", description: "Invoices and billing status" },
-  ],
-};
-
-const ADMIN_SALES: GlassNavSection = {
-  title: "Sales & planning",
-  links: [
-    { href: "/admin/leads", label: "Leads" },
-    { href: "/admin/quotes", label: "Quotes" },
-    { href: "/admin/materials", label: "Materials" },
-    { href: "/admin/lots", label: "Lots" },
-    { href: "/admin/locations", label: "Locations" },
-  ],
-};
-
-const ADMIN_TEAM: GlassNavSection = {
-  title: "Team & insights",
-  links: [
-    { href: "/admin/crews", label: "Installers" },
-    { href: "/admin/team", label: "Team" },
-    { href: "/admin/reports", label: "Reports" },
-    { href: "/admin/future-features", label: "Future features" },
-  ],
-};
-
-const OFFICE_TEAM: GlassNavSection = {
-  title: "Team",
-  links: [{ href: "/admin/crews", label: "Installers" }],
-};
-
-/** Installers cannot access /admin/* — keep links under /m only. */
-const FIELD_SECTIONS: GlassNavSection[] = [
-  {
-    title: "Field",
-    links: [{ href: "/m", label: "My jobs", description: "Today’s assigned work" }],
-  },
+const ADMIN_PRIMARY: GlassNavLink[] = [
+  { href: "/admin/schedule", label: "Schedule" },
+  { href: "/admin/jobs", label: "Jobs" },
+  { href: "/admin/customers", label: "Customers" },
+  { href: "/admin/invoices", label: "Invoices" },
 ];
 
+const FIELD_PRIMARY: GlassNavLink[] = [{ href: "/m", label: "My jobs" }];
+
+const ADMIN_MORE_ADMIN: GlassNavSection = {
+  title: "More",
+  links: [
+    { href: "/admin", label: "Dashboard" },
+    { href: "/admin/quotes", label: "Quotes" },
+    { href: "/admin/crews", label: "Crews" },
+    { href: "/admin/team", label: "Team" },
+  ],
+};
+
+const ADMIN_MORE_MANAGER: GlassNavSection = {
+  title: "More",
+  links: [
+    { href: "/admin", label: "Dashboard" },
+    { href: "/admin/quotes", label: "Quotes" },
+    { href: "/admin/crews", label: "Crews" },
+  ],
+};
+
 function sectionsFor(mode: Mode, role?: ProfileRole): GlassNavSection[] {
-  if (mode === "field") return FIELD_SECTIONS;
-  if (role === "manager") return [ADMIN_CORE, ADMIN_SALES, OFFICE_TEAM];
-  return [ADMIN_CORE, ADMIN_SALES, ADMIN_TEAM];
+  if (mode === "field") return [];
+  if (role === "manager") return [ADMIN_MORE_MANAGER];
+  return [ADMIN_MORE_ADMIN];
+}
+
+function primaryLinksFor(mode: Mode): GlassNavLink[] {
+  if (mode === "field") return FIELD_PRIMARY;
+  return ADMIN_PRIMARY;
 }
 
 export function AppShell({
@@ -73,11 +60,12 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const menuSections = sectionsFor(mode, role);
+  const primaryLinks = primaryLinksFor(mode);
   const maxWidth = mode === "field" ? "max-w-3xl" : "max-w-6xl";
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
-      <div className="fixed inset-0 h-full w-full">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background print:min-h-0 print:overflow-visible print:bg-white">
+      <div className="fixed inset-0 h-full w-full print:hidden">
         <Aurora
           colorStops={["#1a0a0e", "#2d1810", "#1a0a0e"]}
           amplitude={0.6}
@@ -85,9 +73,11 @@ export function AppShell({
         />
       </div>
 
-      <div className="relative z-10 flex min-h-screen flex-col">
-        <GlassNav mode={mode} menuSections={menuSections} />
-        <main className={`mx-auto w-full ${maxWidth} px-3 pb-8 pt-20 sm:px-6 sm:pt-24`}>
+      <div className="relative z-10 flex min-h-screen flex-col print:min-h-0 print:block">
+        <GlassNav mode={mode} primaryLinks={primaryLinks} menuSections={menuSections} />
+        <main
+          className={`mx-auto w-full ${maxWidth} px-3 pb-8 pt-20 print:max-w-none print:overflow-visible print:px-0 print:pb-0 print:pt-0 sm:px-6 sm:pt-24`}
+        >
           {children}
         </main>
       </div>

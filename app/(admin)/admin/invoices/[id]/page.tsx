@@ -122,6 +122,14 @@ export default async function InvoiceDetailPage({
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-xl font-semibold text-foreground">Invoice #{invoice.invoice_number}</h1>
             <div className="flex flex-wrap items-center gap-3">
+              <a
+                href={`/admin/invoices/${id}/preview`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary py-2"
+              >
+                Preview / print
+              </a>
               <Link href="/admin/invoices" className="link text-sm">
                 Back to invoices
               </Link>
