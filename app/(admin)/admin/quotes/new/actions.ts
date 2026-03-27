@@ -12,6 +12,44 @@ import { computeTaxCents } from "@/lib/tax";
 import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
+/** Add a customer from the new-estimate page, then return with that customer selected. */
+export async function quickAddCustomer(formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim();
+  const templateId = normalizeTemplateId(String(formData.get("template_id") ?? ""));
+
+  if (!name) {
+    await setToastCookie("Enter a customer name to quick add.");
+    return;
+  }
+
+  const supabase = await createSupabaseServerClientForData();
+  const { data: row, error } = await supabase
+    .from("customers")
+    .insert({
+      name,
+      phone: phone || null,
+      email: email || null,
+    })
+    .select("id")
+    .single();
+
+  if (error || !row) {
+    await setToastCookie(error?.message ?? "Could not add customer");
+    return;
+  }
+
+  await setToastCookie("Customer added");
+  revalidatePath("/admin/quotes/new");
+  revalidatePath("/admin/customers");
+
+  const params = new URLSearchParams();
+  params.set("customer_id", String(row.id));
+  params.set("template", templateId);
+  redirect(`/admin/quotes/new?${params.toString()}`);
+}
+
 export async function createQuoteFromForm(formData: FormData) {
   const customerId = String(formData.get("customer_id") ?? "").trim();
   const templateId = normalizeTemplateId(String(formData.get("template_id") ?? ""));

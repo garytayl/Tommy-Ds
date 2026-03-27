@@ -10,7 +10,9 @@ import {
   QUOTE_TEMPLATES,
 } from "@/lib/quote-templates";
 
-import { createQuoteFromForm } from "./actions";
+import { SubmitButton } from "@/components/SubmitButton";
+
+import { createQuoteFromForm, quickAddCustomer } from "./actions";
 
 type CustomerOption = { id: string; name: string };
 
@@ -47,8 +49,42 @@ export function QuoteNewForm({
               </option>
             ))}
           </select>
-          <Link href="/admin/customers#add" className="mt-1 inline-block text-sm text-primary hover:underline">
-            Add customer
+          <div className="mt-3 rounded-lg border border-border bg-muted/25 px-3 py-3">
+            <p className="text-xs font-medium text-foreground">Quick add customer</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Name required; phone and email optional. Saves and selects them here so you can continue the estimate.
+            </p>
+            <form action={quickAddCustomer} className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+              <input type="hidden" name="template_id" value={templateId} />
+              <input
+                name="name"
+                type="text"
+                required
+                placeholder="Customer name"
+                className="field min-w-[10rem] flex-1 sm:max-w-xs"
+                autoComplete="organization"
+              />
+              <input
+                name="phone"
+                type="text"
+                placeholder="Phone"
+                className="field min-w-[8rem] sm:w-40"
+                autoComplete="tel"
+              />
+              <input
+                name="email"
+                type="email"
+                placeholder="Email"
+                className="field min-w-[10rem] flex-1 sm:max-w-xs"
+                autoComplete="email"
+              />
+              <SubmitButton variant="secondary" pendingLabel="Adding…" className="shrink-0">
+                Add customer
+              </SubmitButton>
+            </form>
+          </div>
+          <Link href="/admin/customers#add" className="mt-2 inline-block text-sm text-primary hover:underline">
+            Open full customer form
           </Link>
         </div>
 
