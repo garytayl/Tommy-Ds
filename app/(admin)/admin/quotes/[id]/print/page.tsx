@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { formatCents } from "@/lib/money";
+import { workflowStageLabel } from "@/lib/quote-workflow";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 export default async function QuotePrintPage({
@@ -14,7 +15,7 @@ export default async function QuotePrintPage({
   const [quoteResult, itemsResult] = await Promise.all([
     supabase
       .from("quotes")
-      .select("id,title,address_line1,address_line2,city,state,zip,subtotal_cents,tax_cents,total_cents,notes,created_at,customers(name,phone,email)")
+      .select("id,title,address_line1,address_line2,city,state,zip,subtotal_cents,tax_cents,total_cents,notes,created_at,workflow_stage,customers(name,phone,email)")
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -30,6 +31,8 @@ export default async function QuotePrintPage({
   if (!quote) notFound();
 
   const customer = Array.isArray(quote.customers) ? quote.customers[0] : quote.customers;
+  const stage = (quote as { workflow_stage?: string }).workflow_stage === "quote" ? "quote" : "estimate";
+  const docLabel = workflowStageLabel(stage);
   const address2 = quote.address_line2 ? `, ${quote.address_line2}` : "";
   const address = `${quote.address_line1}${address2}, ${quote.city}, ${quote.state} ${quote.zip}`;
 
@@ -37,7 +40,7 @@ export default async function QuotePrintPage({
     <div className="min-h-screen bg-white p-8 text-black print:p-6">
       <div className="mx-auto max-w-2xl">
         <header className="border-b border-gray-300 pb-4">
-          <h1 className="text-2xl font-bold">Estimate / Quote</h1>
+          <h1 className="text-2xl font-bold">{docLabel}</h1>
           <p className="mt-1 text-sm text-gray-600">
             {quote.title}
           </p>

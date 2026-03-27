@@ -7,6 +7,7 @@ import { deleteQuoteAndOptionalJob } from "@/lib/job-destruct";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
 import { setToastCookie } from "@/lib/toast";
+import { workflowStageDescription, workflowStageLabel } from "@/lib/quote-workflow";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -32,7 +33,7 @@ export default async function QuoteDetailPage({
   const [quoteResult, itemsResult, docsResult] = await Promise.all([
     supabase
       .from("quotes")
-      .select("id,customer_id,title,address_line1,address_line2,city,state,zip,status,subtotal_cents,tax_cents,total_cents,notes,job_id,created_at,customers(id,name,phone,email)")
+      .select("id,customer_id,title,address_line1,address_line2,city,state,zip,status,workflow_stage,subtotal_cents,tax_cents,total_cents,notes,job_id,created_at,customers(id,name,phone,email)")
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -54,6 +55,10 @@ export default async function QuoteDetailPage({
   if (!quote) notFound();
 
   const customer = Array.isArray(quote.customers) ? quote.customers[0] : quote.customers;
+  const workflowStage =
+    (quote as { workflow_stage?: string }).workflow_stage === "quote" ? "quote" : "estimate";
+  const canConvertToJob =
+    !quote.job_id && workflowStage === "quote" && (quote.status === "draft" || quote.status === "sent");
 
   let docsWithUrls: (QuoteDocRow & { signed_url: string | null })[] = docs.map((d) => ({
     ...d,
@@ -157,11 +162,16 @@ export default async function QuoteDetailPage({
     const supabase = await createSupabaseServerClientForData();
     const { data: quoteRow } = await supabase
       .from("quotes")
-      .select("id,customer_id,title,address_line1,address_line2,city,state,zip,notes,subtotal_cents,tax_cents,total_cents,job_id")
+      .select("id,customer_id,title,address_line1,address_line2,city,state,zip,notes,subtotal_cents,tax_cents,total_cents,job_id,workflow_stage")
       .eq("id", quoteId)
       .maybeSingle();
 
     if (!quoteRow || quoteRow.job_id) return;
+    const rowStage = (quoteRow as { workflow_stage?: string }).workflow_stage ?? "estimate";
+    if (rowStage !== "quote") {
+      await setToastCookie("Promote this record to a formal quote before converting to a job");
+      return;
+    }
 
     const { data: newJob } = await supabase
       .from("jobs")
@@ -222,13 +232,25 @@ export default async function QuoteDetailPage({
       status: "completed",
     });
 
-    await setToastCookie("Quote converted to job");
+    await setToastCookie("Converted to job");
     revalidatePath("/admin/quotes");
     revalidatePath(`/admin/quotes/${id}`);
     revalidatePath("/admin/jobs");
     revalidatePath("/admin/schedule");
     const { redirect: rd } = await import("next/navigation");
     rd(`/jobs/${newJob.id}`);
+  }
+
+  async function promoteToFormalQuote() {
+    "use server";
+    const supabase = await createSupabaseServerClientForData();
+    const { data: row } = await supabase.from("quotes").select("job_id,workflow_stage").eq("id", id).maybeSingle();
+    if (!row || row.job_id) return;
+    if ((row as { workflow_stage?: string }).workflow_stage === "quote") return;
+    await supabase.from("quotes").update({ workflow_stage: "quote" }).eq("id", id);
+    await setToastCookie("Promoted to formal quote — you can convert to a job when ready");
+    revalidatePath(`/admin/quotes/${id}`);
+    revalidatePath("/admin/quotes");
   }
 
   async function uploadQuoteDocument(formData: FormData) {
@@ -319,7 +341,7 @@ export default async function QuoteDetailPage({
     revalidatePath("/admin/quotes");
     revalidatePath("/admin/jobs");
     revalidatePath("/admin/customers");
-    await setToastCookie("Quote deleted");
+    await setToastCookie("Deleted");
     redirect("/admin/quotes");
   }
 
@@ -327,15 +349,32 @@ export default async function QuoteDetailPage({
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">
-            Quote
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">
+              {quote.job_id ? "Job" : workflowStageLabel(workflowStage)}
+            </p>
+            {!quote.job_id && (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                {workflowStage === "estimate" ? "Step 1 of 3" : "Step 2 of 3"}
+              </span>
+            )}
+            {quote.job_id && (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                Step 3 of 3
+              </span>
+            )}
+          </div>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
             {quote.title}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {customer?.name ?? "-"} · {quote.address_line1}, {quote.city}, {quote.state} {quote.zip}
           </p>
+          {!quote.job_id && (
+            <p className="mt-2 max-w-xl text-xs text-muted-foreground">
+              Pipeline: estimate → formal quote → job. {workflowStageDescription(workflowStage)}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <a
@@ -346,12 +385,17 @@ export default async function QuoteDetailPage({
           >
             Print / Save as PDF
           </a>
-          {!quote.job_id && (quote.status === "draft" || quote.status === "sent") && (
+          {!quote.job_id && workflowStage === "estimate" && (
+            <form action={promoteToFormalQuote}>
+              <SubmitButton variant="secondary" pendingLabel="Promoting…">
+                Promote to formal quote
+              </SubmitButton>
+            </form>
+          )}
+          {canConvertToJob && (
             <form action={convertQuoteToJob}>
               <input type="hidden" name="quote_id" value={quote.id} />
-              <button type="submit" className="btn-primary">
-                Convert to job
-              </button>
+              <SubmitButton pendingLabel="Converting…">Convert to job</SubmitButton>
             </form>
           )}
           {quote.job_id && (
@@ -360,13 +404,13 @@ export default async function QuoteDetailPage({
             </Link>
           )}
           <Link href="/admin/quotes" className="btn-secondary">
-            Back to quotes
+            Back to list
           </Link>
         </div>
       </div>
 
       <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-foreground">Status</h2>
+        <h2 className="text-base font-semibold text-foreground">Sales status</h2>
         <form action={updateQuoteStatus} className="mt-3 flex items-end gap-2">
           <select
             name="status"
@@ -554,15 +598,15 @@ export default async function QuoteDetailPage({
       )}
 
       <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-foreground">Delete quote</h2>
+        <h2 className="text-base font-semibold text-foreground">Delete</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {quote.job_id
-            ? "Removes this estimate and its linked job (invoice, schedule, photos). Blocked if any payment was recorded on the job."
-            : "Permanently delete this estimate and its line items and attachments."}
+            ? "Removes this estimate/quote and its linked job (invoice, schedule, photos). Blocked if any payment was recorded on the job."
+            : "Permanently delete this estimate (or formal quote) and its line items and attachments."}
         </p>
         <form action={deleteQuoteAction} className="mt-4">
           <SubmitButton variant="danger" pendingLabel="Deleting…">
-            Delete quote
+            Delete estimate
           </SubmitButton>
         </form>
       </div>

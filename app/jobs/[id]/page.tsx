@@ -481,7 +481,7 @@ export default async function JobWorkspacePage({
     revalidatePath("/admin/quotes");
     revalidatePath("/admin/jobs");
     revalidatePath("/admin/schedule");
-    await setToastCookie("Job removed; estimate restored as a quote");
+    await setToastCookie("Job removed — back to estimate / quote");
     redirect(`/admin/quotes/${q.id}`);
   }
 
@@ -646,11 +646,11 @@ export default async function JobWorkspacePage({
 
           {/* Quote section */}
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="text-base font-semibold text-foreground">Quote</h2>
+            <h2 className="text-base font-semibold text-foreground">Estimate / quote</h2>
             {quote ? (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <Link href={`/admin/quotes/${quote.id}`} className="link font-medium">
-                  {quote.title ?? "Quote"}
+                  {quote.title ?? "Open"}
                 </Link>
                 <span className="text-sm text-muted-foreground">
                   {quote.status} · {formatCents((quote as { subtotal_cents?: number }).subtotal_cents ?? 0)} + tax
@@ -661,7 +661,7 @@ export default async function JobWorkspacePage({
               </div>
             ) : (
               <p className="mt-2 text-sm text-muted-foreground">
-                No quote linked. <Link href="/admin/quotes/new" className="link">Create a quote</Link> and link it to this job when approved.
+                No estimate linked to this job. <Link href="/admin/quotes/new" className="link">Create an estimate</Link> from the customer record if needed.
               </p>
             )}
           </div>

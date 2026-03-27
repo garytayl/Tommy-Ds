@@ -24,7 +24,7 @@ const ADMIN_MORE_ADMIN: GlassNavSection = {
   title: "More",
   links: [
     { href: "/admin", label: "Dashboard" },
-    { href: "/admin/quotes", label: "Quotes" },
+    { href: "/admin/quotes", label: "Estimates" },
     { href: "/admin/crews", label: "Crews" },
     { href: "/admin/team", label: "Team" },
   ],
@@ -34,7 +34,7 @@ const ADMIN_MORE_MANAGER: GlassNavSection = {
   title: "More",
   links: [
     { href: "/admin", label: "Dashboard" },
-    { href: "/admin/quotes", label: "Quotes" },
+    { href: "/admin/quotes", label: "Estimates" },
     { href: "/admin/crews", label: "Crews" },
   ],
 };

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { SubmitButton } from "@/components/SubmitButton";
 import { deleteQuoteAndOptionalJob } from "@/lib/job-destruct";
 import { formatCents } from "@/lib/money";
+import { workflowStageLabel } from "@/lib/quote-workflow";
 import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
@@ -22,7 +23,7 @@ async function deleteQuoteFromList(formData: FormData) {
   revalidatePath("/admin/quotes");
   revalidatePath("/admin/jobs");
   revalidatePath("/admin/customers");
-  await setToastCookie("Quote deleted");
+  await setToastCookie("Deleted");
   redirect("/admin/quotes");
 }
 
@@ -30,13 +31,14 @@ export default async function QuotesListPage() {
   const supabase = await createSupabaseServerClientForData();
   const { data: quotes } = await supabase
     .from("quotes")
-    .select("id,title,status,total_cents,created_at,job_id,customers(id,name)")
+    .select("id,title,status,workflow_stage,total_cents,created_at,job_id,customers(id,name)")
     .order("created_at", { ascending: false });
 
   type QuoteRow = {
     id: string;
     title: string;
     status: string;
+    workflow_stage?: string | null;
     total_cents: number;
     created_at: string;
     job_id: string | null;
@@ -55,14 +57,14 @@ export default async function QuotesListPage() {
             Admin
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-            Quotes
+            Estimates &amp; quotes
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Create estimates, send to customers, then convert to a job when approved.
+            Estimate → formal quote → job. New records start as estimates; promote when pricing is firm.
           </p>
         </div>
         <Link href="/admin/quotes/new" className="btn-primary">
-          New quote
+          New estimate
         </Link>
       </div>
 
@@ -73,6 +75,7 @@ export default async function QuotesListPage() {
               <tr className="border-b border-border bg-muted/50">
                 <th className="table-header py-3 pl-5 pr-4">Title</th>
                 <th className="table-header py-3 pr-4">Customer</th>
+                <th className="table-header py-3 pr-4">Stage</th>
                 <th className="table-header py-3 pr-4">Status</th>
                 <th className="table-header py-3 pr-4 text-right">Total</th>
                 <th className="table-header py-3 pr-4">Created</th>
@@ -83,10 +86,10 @@ export default async function QuotesListPage() {
               {rows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="py-10 text-center text-sm text-muted-foreground"
                   >
-                    No quotes yet. Create one to send estimates to customers before scheduling a job.
+                    No estimates yet. Create one to send pricing to customers before scheduling a job.
                   </td>
                 </tr>
               ) : (
@@ -100,6 +103,11 @@ export default async function QuotesListPage() {
                     </td>
                     <td className="py-3 pr-4 text-muted-foreground">
                       {getCustomerName(q) ?? "-"}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span className="inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                        {q.job_id ? "Job" : workflowStageLabel(q.workflow_stage)}
+                      </span>
                     </td>
                     <td className="py-3 pr-4">
                       <span className="inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground capitalize">

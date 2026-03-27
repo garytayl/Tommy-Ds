@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { SubmitButton } from "@/components/SubmitButton";
 import { formatCents } from "@/lib/money";
+import { workflowStageLabel } from "@/lib/quote-workflow";
 import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
@@ -29,7 +30,7 @@ export default async function CustomerDetailPage({
       .order("scheduled_start", { ascending: true, nullsFirst: false }),
     supabase
       .from("quotes")
-      .select("id,title,status,total_cents,job_id,created_at")
+      .select("id,title,status,workflow_stage,total_cents,job_id,created_at")
       .eq("customer_id", id)
       .order("created_at", { ascending: false }),
   ]);
@@ -111,13 +112,13 @@ export default async function CustomerDetailPage({
       <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/50 px-4 py-3 sm:px-5">
           <div>
-            <h2 className="text-base font-semibold text-foreground">Quotes &amp; estimates</h2>
+            <h2 className="text-base font-semibold text-foreground">Estimates &amp; quotes</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Estimates live here until you convert one to a job.
+              Estimate → formal quote → job. Open a row to promote or convert.
             </p>
           </div>
           <Link href={`/admin/quotes/new?customer_id=${id}`} className="btn-secondary text-sm">
-            New quote
+            New estimate
           </Link>
         </div>
         <div className="table-wrap overflow-x-auto">
@@ -125,6 +126,7 @@ export default async function CustomerDetailPage({
             <thead>
               <tr className="border-b border-border bg-muted/50">
                 <th className="table-header py-3 pl-5 pr-4">Title</th>
+                <th className="table-header py-3 pr-4">Stage</th>
                 <th className="table-header py-3 pr-4">Total</th>
                 <th className="table-header py-3 pr-4">Status</th>
                 <th className="table-header py-3 pr-5">Job</th>
@@ -133,8 +135,8 @@ export default async function CustomerDetailPage({
             <tbody>
               {(quotes ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-5 py-6 text-muted-foreground">
-                    No quotes yet. Create an estimate before scheduling work.
+                  <td colSpan={5} className="px-5 py-6 text-muted-foreground">
+                    No estimates yet. Add one before scheduling work.
                   </td>
                 </tr>
               )}
@@ -144,6 +146,9 @@ export default async function CustomerDetailPage({
                     <Link href={`/admin/quotes/${q.id}`} className="link font-medium">
                       {q.title}
                     </Link>
+                  </td>
+                  <td className="py-3 pr-4 text-xs text-muted-foreground">
+                    {q.job_id ? "Job" : workflowStageLabel((q as { workflow_stage?: string }).workflow_stage)}
                   </td>
                   <td className="py-3 pr-4 tabular-nums">{formatCents(q.total_cents)}</td>
                   <td className="py-3 pr-4 capitalize text-muted-foreground">{q.status}</td>
@@ -167,7 +172,7 @@ export default async function CustomerDetailPage({
         <div className="border-b border-border bg-muted/50 px-4 py-3 sm:px-5">
           <h2 className="text-base font-semibold text-foreground">Jobs</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Jobs appear after you schedule work or convert an accepted quote.
+            Jobs appear after you convert a formal quote or create a job manually.
           </p>
         </div>
         <div className="table-wrap overflow-x-auto">

@@ -44,12 +44,13 @@ export default async function NewQuotePage({
         zip,
         notes: String(formData.get("notes") ?? "").trim() || null,
         status: "draft",
+        workflow_stage: "estimate",
       })
       .select("id")
       .single();
 
     if (quote) {
-      await setToastCookie("Quote created");
+      await setToastCookie("Estimate created");
       revalidatePath("/admin/quotes");
       redirect(`/admin/quotes/${quote.id}`);
     }
@@ -62,10 +63,10 @@ export default async function NewQuotePage({
           Admin
         </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-          New quote
+          New estimate
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Create a draft quote. After saving, add line items and then convert to a job when the customer approves.
+          Starts as an estimate. Promote to a formal quote when pricing is firm, then convert to a job.
         </p>
       </div>
 
@@ -130,10 +131,10 @@ export default async function NewQuotePage({
           </div>
           <div className="flex flex-wrap gap-2 sm:col-span-2">
             <button type="submit" className="btn-primary">
-              Create quote
+              Create estimate
             </button>
             <Link href="/admin/quotes" className="btn-secondary">
-              Cancel
+              Back to estimates
             </Link>
           </div>
         </form>
