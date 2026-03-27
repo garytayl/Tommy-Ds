@@ -71,6 +71,18 @@ export default async function QuotePrintPage({
   const docRef = String(quote.id).replace(/-/g, "").slice(0, 12).toUpperCase();
   const notesForPrint = stripRedundantSectionsForPrint(merged.notes);
 
+  const footerBody = (
+    <>
+      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
+        Tommy D&apos;s · Windows, Doors &amp; More
+      </p>
+      <p className="mx-auto mt-3 max-w-md text-xs leading-relaxed text-zinc-500">
+        Thank you for your business. Figures are subject to final field verification. Scheduling and final
+        invoicing are handled separately unless otherwise agreed.
+      </p>
+    </>
+  );
+
   return (
     <>
       <style
@@ -214,18 +226,17 @@ export default async function QuotePrintPage({
               <div className="mt-3 print:mt-2">
                 <QuoteNotesDisplay notes={notesForPrint} variant="print" />
               </div>
+              <footer className="mt-8 border-t border-zinc-200 pt-5 text-center print:mt-5 print:pt-4 print:break-inside-avoid print:[break-before:avoid]">
+                {footerBody}
+              </footer>
             </section>
           )}
 
-          <footer className="mt-14 border-t border-zinc-200 pt-8 text-center print:mt-8 print:pt-5">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
-              Tommy D&apos;s · Windows, Doors &amp; More
-            </p>
-            <p className="mx-auto mt-3 max-w-md text-xs leading-relaxed text-zinc-500">
-              Thank you for your business. Figures are subject to final field verification. Scheduling and final
-              invoicing are handled separately unless otherwise agreed.
-            </p>
-          </footer>
+          {!notesForPrint && (
+            <footer className="mt-14 border-t border-zinc-200 pt-8 text-center print:mt-12 print:pt-5 print:break-inside-avoid">
+              {footerBody}
+            </footer>
+          )}
         </article>
       </div>
     </>
