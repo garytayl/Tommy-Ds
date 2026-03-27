@@ -2,6 +2,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
+import { QuoteNotesDisplay, quoteNotesSectionTitle } from "@/components/QuoteNotesDisplay";
 import { SubmitButton } from "@/components/SubmitButton";
 import { deleteQuoteAndOptionalJob } from "@/lib/job-destruct";
 import { formatCents, dollarsToCents } from "@/lib/money";
@@ -689,8 +690,13 @@ export default async function QuoteDetailPage({
 
       {quote.notes && (
         <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Notes</h2>
-          <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{quote.notes}</p>
+          <h2 className="text-base font-semibold text-foreground">{quoteNotesSectionTitle(quote.notes)}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Scope, terms, and narrative for this estimate. Line items above drive dollar totals.
+          </p>
+          <div className="mt-4">
+            <QuoteNotesDisplay notes={quote.notes} />
+          </div>
         </section>
       )}
 

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { QuoteNotesDisplay, quoteNotesSectionTitle } from "@/components/QuoteNotesDisplay";
 import { formatCents } from "@/lib/money";
 import { workflowStageLabel } from "@/lib/quote-workflow";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
@@ -162,12 +163,11 @@ export default async function QuotePrintPage({
 
           {quote.notes && (
             <section className="mt-10 print:break-inside-avoid">
-              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500">Details &amp; notes</h2>
-              <div
-                className="mt-3 rounded-r-xl border-l-4 bg-zinc-50/90 py-4 pl-5 pr-4 text-sm leading-relaxed text-zinc-800 print:bg-zinc-50"
-                style={{ borderLeftColor: BRAND }}
-              >
-                <div className="whitespace-pre-wrap">{quote.notes}</div>
+              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500">
+                {quoteNotesSectionTitle(quote.notes)}
+              </h2>
+              <div className="mt-3">
+                <QuoteNotesDisplay notes={quote.notes} variant="print" />
               </div>
             </section>
           )}
