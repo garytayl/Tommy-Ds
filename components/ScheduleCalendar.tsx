@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
 
 export type CalendarItem = {
   id: string;
   title: string;
-  type: "job" | "activity";
+  type: "job" | "activity" | "event";
   href: string;
   /** Optional time for display (e.g. "9a", "2:30p") */
   timeLabel?: string;
@@ -14,6 +14,8 @@ export type CalendarItem = {
   customer?: string;
   /** Optional crew name for tooltip */
   crewName?: string;
+  /** Sort key for ordering chips (ISO or ms string) */
+  sortKey?: string;
 };
 
 type ScheduleCalendarProps = {
@@ -31,6 +33,12 @@ type ScheduleCalendarProps = {
   visibleEnd?: string;
   /** When in week view: URLs for prev/next week navigation */
   weekNavigation?: { prevUrl: string; nextUrl: string };
+  /** When set, day number opens the panel instead of scrolling to the table */
+  onDayClick?: (dateKey: string) => void;
+  /** Optional header control (e.g. Add event) */
+  headerExtra?: ReactNode;
+  /** Standalone schedule events use client handling instead of navigation */
+  onEventChipClick?: (item: CalendarItem) => void;
 };
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -63,6 +71,30 @@ function getInitialYearMonth(visibleStart?: string): { year: number; month: numb
 const MAX_ITEMS_MONTH = 2;
 const MAX_ITEMS_WEEK = 8;
 
+function chipClassName(item: CalendarItem): string {
+  const base =
+    "block truncate rounded px-1 py-0.5 text-[11px] leading-tight transition-all duration-200 sm:text-xs";
+  if (item.type === "activity") {
+    return `${base} text-muted-foreground hover:bg-white/15 hover:translate-x-0.5`;
+  }
+  if (item.type === "event") {
+    return `${base} border border-dashed border-primary/35 bg-primary/5 text-foreground hover:bg-primary/10 hover:translate-x-0.5`;
+  }
+  return `${base} text-foreground font-medium hover:bg-white/15 hover:translate-x-0.5`;
+}
+
+function monthChipClassName(item: CalendarItem): string {
+  const base =
+    "block truncate px-0.5 text-[10px] leading-tight rounded transition-all duration-200 hover:translate-x-0.5";
+  if (item.type === "activity") {
+    return `${base} text-muted-foreground hover:bg-white/10`;
+  }
+  if (item.type === "event") {
+    return `${base} border border-dashed border-primary/30 bg-primary/5 text-foreground hover:bg-primary/10`;
+  }
+  return `${base} text-foreground hover:bg-white/10`;
+}
+
 export function ScheduleCalendar({
   jobsByDate,
   itemsByDate = {},
@@ -71,6 +103,9 @@ export function ScheduleCalendar({
   visibleStart,
   visibleEnd,
   weekNavigation,
+  onDayClick,
+  headerExtra,
+  onEventChipClick,
 }: ScheduleCalendarProps) {
   const today = new Date();
   const initial = useMemo(() => getInitialYearMonth(visibleStart), [visibleStart]);
@@ -108,6 +143,18 @@ export function ScheduleCalendar({
     const el = document.getElementById(`day-${key}`);
     el?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
+
+  const handleDayActivate = useCallback(
+    (key: string, inRange: boolean) => {
+      if (!inRange) return;
+      if (onDayClick) {
+        onDayClick(key);
+        return;
+      }
+      scrollToDay(key);
+    },
+    [onDayClick, scrollToDay],
+  );
 
   const days = getDaysInMonth(viewYear, viewMonth);
   const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString(
@@ -153,9 +200,12 @@ export function ScheduleCalendar({
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </Link>
-          <h2 className="text-sm font-semibold text-foreground sm:text-base">
-            {weekLabel}
-          </h2>
+          <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 px-1">
+            <h2 className="text-center text-sm font-semibold text-foreground sm:text-base">
+              {weekLabel}
+            </h2>
+            {headerExtra}
+          </div>
           <Link
             href={weekNavigation!.nextUrl}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-foreground transition-all duration-200 hover:scale-105 hover:bg-white/15 active:scale-95 touch-manipulation"
@@ -203,7 +253,7 @@ export function ScheduleCalendar({
                 >
                   <button
                     type="button"
-                    onClick={() => inRange && scrollToDay(key)}
+                    onClick={() => handleDayActivate(key, inRange)}
                     disabled={!inRange}
                     className={`
                       mb-1 shrink-0 self-center rounded-lg px-1.5 py-0.5 text-sm font-semibold transition-all duration-200 touch-manipulation
@@ -222,15 +272,28 @@ export function ScheduleCalendar({
                       if (item.timeLabel) tooltipParts.unshift(item.timeLabel);
                       if (item.customer) tooltipParts.push(`Customer: ${item.customer}`);
                       if (item.crewName) tooltipParts.push(`Crew: ${item.crewName}`);
+                      if (item.type === "event" && onEventChipClick) {
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className={chipClassName(item)}
+                            title={tooltipParts.join(" · ")}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEventChipClick(item);
+                            }}
+                          >
+                            {cellLine}
+                          </button>
+                        );
+                      }
                       return (
                         <Link
                           key={item.id}
                           href={item.href}
                           prefetch={false}
-                          className={`
-                            block truncate rounded px-1 py-0.5 text-[11px] leading-tight transition-all duration-200 hover:bg-white/15 hover:translate-x-0.5 sm:text-xs
-                            ${item.type === "activity" ? "text-muted-foreground" : "text-foreground font-medium"}
-                          `}
+                          className={chipClassName(item)}
                           title={tooltipParts.join(" · ")}
                         >
                           {cellLine}
@@ -238,9 +301,16 @@ export function ScheduleCalendar({
                       );
                     })}
                     {more > 0 && (
-                      <span className="px-1 text-[10px] text-muted-foreground sm:text-xs">
+                      <button
+                        type="button"
+                        className="px-1 text-left text-[10px] text-muted-foreground underline-offset-2 hover:underline sm:text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (inRange) handleDayActivate(key, true);
+                        }}
+                      >
                         +{more} more
-                      </span>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -269,9 +339,12 @@ export function ScheduleCalendar({
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
-        <h2 className="text-sm font-semibold text-foreground sm:text-base">
-          {monthLabel}
-        </h2>
+        <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5 px-1">
+          <h2 className="text-sm font-semibold text-foreground sm:text-base">
+            {monthLabel}
+          </h2>
+          {headerExtra}
+        </div>
         <button
           type="button"
           onClick={goNext}
@@ -322,7 +395,7 @@ export function ScheduleCalendar({
               >
                 <button
                   type="button"
-                  onClick={() => inRange && scrollToDay(key)}
+                  onClick={() => handleDayActivate(key, inRange)}
                   disabled={!inRange}
                   className={`
                     shrink-0 py-0.5 text-center text-sm font-medium transition-all duration-200 touch-manipulation
@@ -341,12 +414,28 @@ export function ScheduleCalendar({
                     if (item.timeLabel) tooltipParts.unshift(item.timeLabel);
                     if (item.customer) tooltipParts.push(`Customer: ${item.customer}`);
                     if (item.crewName) tooltipParts.push(`Crew: ${item.crewName}`);
+                    if (item.type === "event" && onEventChipClick) {
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={`${monthChipClassName(item)} text-left`}
+                          title={tooltipParts.join(" · ")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEventChipClick(item);
+                          }}
+                        >
+                          {cellLine}
+                        </button>
+                      );
+                    }
                     return (
                       <Link
                         key={item.id}
                         href={item.href}
                         prefetch={false}
-                        className="block truncate px-0.5 text-[10px] leading-tight text-foreground hover:bg-white/10 rounded transition-all duration-200 hover:translate-x-0.5"
+                        className={monthChipClassName(item)}
                         title={tooltipParts.join(" · ")}
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -355,9 +444,16 @@ export function ScheduleCalendar({
                     );
                   })}
                   {more > 0 && (
-                    <span className="truncate px-0.5 text-[9px] text-muted-foreground" aria-hidden>
-                      +{more}
-                    </span>
+                    <button
+                      type="button"
+                      className="truncate px-0.5 text-left text-[9px] text-muted-foreground underline-offset-2 hover:underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (inRange) handleDayActivate(key, true);
+                      }}
+                    >
+                      +{more} more
+                    </button>
                   )}
                 </div>
               </div>
