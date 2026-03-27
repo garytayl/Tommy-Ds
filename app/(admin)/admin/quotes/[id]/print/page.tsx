@@ -103,9 +103,9 @@ export default async function QuotePrintPage({
       />
       <div className="min-h-screen bg-[#faf8f5] text-zinc-900 antialiased print:min-h-0 print:bg-white">
         <article className="mx-auto max-w-[48rem] px-5 py-8 print:max-w-none print:px-0 print:py-0 sm:px-8 sm:py-10">
-          <div className="quote-print-page1 flex flex-col gap-8 print:gap-8">
+          <div className="quote-print-page1 flex flex-col gap-8 print:gap-14 print:pb-14">
           <header
-            className="flex flex-col gap-6 border-b-2 pb-8 print:gap-4 print:pb-5 sm:flex-row sm:items-start sm:justify-between sm:pb-10"
+            className="flex flex-col gap-6 border-b-2 pb-8 print:gap-4 print:pb-7 sm:flex-row sm:items-start sm:justify-between sm:pb-10"
             style={{ borderColor: BRAND }}
           >
             <div className="min-w-0 flex-1">
@@ -134,9 +134,9 @@ export default async function QuotePrintPage({
             </div>
           </header>
 
-          <div className="grid gap-5 print:gap-5 sm:grid-cols-2 sm:gap-6">
+          <div className="grid gap-5 print:gap-6 sm:grid-cols-2 sm:gap-6">
             <section
-              className="rounded-xl border border-zinc-200/80 p-5 shadow-sm print:border-zinc-300 print:p-5 print:shadow-none"
+              className="rounded-xl border border-zinc-200/80 p-5 shadow-sm print:border-zinc-300 print:px-6 print:py-6 print:shadow-none"
               style={{ backgroundColor: BRAND_SOFT }}
             >
               <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-1">
@@ -156,7 +156,7 @@ export default async function QuotePrintPage({
                 </p>
               )}
             </section>
-            <section className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm print:border-zinc-300 print:p-5 print:shadow-none">
+            <section className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm print:border-zinc-300 print:px-6 print:py-6 print:shadow-none">
               <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-1">
                 Project address
               </h2>
@@ -165,11 +165,11 @@ export default async function QuotePrintPage({
           </div>
 
           {!merged.hideLineItems && (
-            <section className="flex flex-col gap-4 print:gap-4">
+            <section className="flex flex-col gap-4 print:gap-5">
               <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-0.5">
                 Pricing
               </h2>
-              <div className="flex flex-col gap-3 print:gap-3">
+              <div className="flex flex-col gap-3 print:gap-4">
               <div className="overflow-hidden rounded-xl border border-zinc-200 print:border-zinc-300">
                 <table className="w-full border-collapse text-sm print:text-xs">
                   <thead>
