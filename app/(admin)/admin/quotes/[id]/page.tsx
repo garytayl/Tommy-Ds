@@ -640,11 +640,12 @@ export default async function QuoteDetailPage({
           </form>
         </section>
 
-        {!quote.job_id && (
+        {!quote.job_id && !canConvertToJob && (
           <section className="border-b border-border px-4 py-3 sm:px-5 sm:py-3.5">
             <h2 className="text-sm font-semibold text-foreground">Deposit</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              e.g. 50% to begin fabrication. Confirmed again when converting to a job.
+              Optional: mark if a deposit was collected (e.g. while still an estimate). After you promote to a formal
+              quote, deposit is confirmed only under Convert to job — not here.
             </p>
             <form action={updateDepositReceived} className="mt-2 flex flex-wrap items-center gap-3">
               <label className="flex cursor-pointer items-center gap-2 text-sm">
@@ -671,11 +672,9 @@ export default async function QuoteDetailPage({
           >
             <h2 className="text-sm font-semibold text-foreground">Convert to job</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Creates the job and invoice. Confirm deposit below.
+              Creates the job and invoice. Deposit status is set here when you convert (no separate deposit section for
+              this quote).
             </p>
-            {depositReceivedFlag && (
-              <p className="mt-1 text-xs text-muted-foreground">Deposit is marked received on this record.</p>
-            )}
             <form action={convertQuoteToJob} className="mt-3 space-y-3">
               <input type="hidden" name="quote_id" value={quote.id} />
               <fieldset className="space-y-2">
@@ -707,7 +706,7 @@ export default async function QuoteDetailPage({
                   <span>
                     <span className="font-medium text-foreground">No deposit yet</span>
                     <span className="block text-xs text-muted-foreground">
-                      Exception — deposit stays unrecorded unless checked above.
+                      Leave the quote without a deposit received flag unless you switch to Deposit received.
                     </span>
                   </span>
                 </label>
