@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
 import { QuoteNotesDisplay, quoteNotesSectionTitle, quoteNotesShowSubtitle } from "@/components/QuoteNotesDisplay";
+import { QuoteDetailTabs, normalizeQuoteDetailTab } from "@/components/QuoteDetailTabs";
 import { SubmitButton } from "@/components/SubmitButton";
 import { deleteQuoteAndOptionalJob } from "@/lib/job-destruct";
 import { centsToDollars, formatCents, dollarsToCents } from "@/lib/money";
@@ -37,10 +38,15 @@ type QuoteDocRow = {
 
 export default async function QuoteDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
+  const sp = (await searchParams) ?? {};
+  const rawTab = typeof sp.tab === "string" ? sp.tab : Array.isArray(sp.tab) ? sp.tab[0] : undefined;
+  const tab = normalizeQuoteDetailTab(rawTab);
   const supabase = await createSupabaseServerClientForData();
 
   const [quoteResult, itemsResult, docsResult, revResult] = await Promise.all([
@@ -450,8 +456,9 @@ export default async function QuoteDetailPage({
                 Step 3 of 3
               </span>
             )}
-            <a
-              href="#quote-revisions"
+            <Link
+              href={`/admin/quotes/${id}?tab=revisions#quote-revisions`}
+              scroll={false}
               className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-xs font-medium text-foreground underline-offset-2 transition-colors hover:border-primary/40 hover:bg-muted/80 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               {latestRevision ? (
@@ -466,7 +473,7 @@ export default async function QuoteDetailPage({
                 →
               </span>
               <span className="sr-only">Open revision history</span>
-            </a>
+            </Link>
           </div>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
             {quote.title}
@@ -516,9 +523,9 @@ export default async function QuoteDetailPage({
             </form>
           )}
           {canConvertToJob && (
-            <a href="#convert-to-job" className="btn-primary">
+            <Link href={`/admin/quotes/${id}?tab=overview#convert-to-job`} scroll={false} className="btn-primary">
               Convert to job
-            </a>
+            </Link>
           )}
           {quote.job_id && (
             <Link href={`/jobs/${quote.job_id}`} className="btn-primary">
@@ -549,7 +556,19 @@ export default async function QuoteDetailPage({
         </div>
       )}
 
+      <QuoteDetailTabs
+        quoteId={id}
+        activeTab={tab}
+        counts={{
+          lines: items.length,
+          documents: docsWithUrls.length,
+          revisions: revisions.length,
+        }}
+      />
+
       <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        {tab === "overview" && (
+          <>
         {!quote.job_id && (
           <section className="border-b border-border px-4 py-3 sm:px-5 sm:py-3.5">
             <h2 className="text-sm font-semibold text-foreground">Quote details</h2>
@@ -722,6 +741,37 @@ export default async function QuoteDetailPage({
           </section>
         )}
 
+        {quote.job_id && quote.notes && (
+          <section className="border-t border-border px-4 py-3 sm:px-5 sm:py-3.5">
+            <h2 className="text-sm font-semibold text-foreground">{quoteNotesSectionTitle(quote.notes)}</h2>
+            {showQuoteNotesSubtitle && (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Scope and terms; line items drive dollar totals.
+              </p>
+            )}
+            <div className="mt-2">
+              <QuoteNotesDisplay notes={quote.notes} compact />
+            </div>
+          </section>
+        )}
+
+        <section className="border-t border-destructive/30 bg-destructive/5 px-4 py-3 sm:px-5 sm:py-3.5">
+          <h2 className="text-sm font-semibold text-foreground">Delete</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {quote.job_id
+              ? "Removes this estimate/quote and its linked job (invoice, schedule, photos). Blocked if any payment was recorded on the job."
+              : "Permanently delete this estimate (or formal quote) and its line items and attachments."}
+          </p>
+          <form action={deleteQuoteAction} className="mt-2">
+            <SubmitButton variant="danger" pendingLabel="Deleting…">
+              Delete estimate
+            </SubmitButton>
+          </form>
+        </section>
+          </>
+        )}
+
+        {tab === "lines" && (
         <section className="px-4 py-3 sm:px-5 sm:py-4">
         <span className="block h-0.5 w-10 rounded-full bg-primary/80" />
         <h2 className="mt-2 text-sm font-semibold text-foreground">Line items</h2>
@@ -904,8 +954,10 @@ export default async function QuoteDetailPage({
           </div>
         </div>
         </section>
+        )}
 
-        <section className="border-t border-border px-4 py-3 sm:px-5 sm:py-3.5">
+        {tab === "documents" && (
+        <section className="px-4 py-3 sm:px-5 sm:py-3.5">
         <h2 className="text-sm font-semibold text-foreground">Fabricator documents</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
           PDFs or scans (e.g. per fabricator). Optional vendor label.
@@ -971,10 +1023,12 @@ export default async function QuoteDetailPage({
           <p className="mt-2 text-xs text-muted-foreground">No documents yet.</p>
         )}
         </section>
+        )}
 
+        {tab === "revisions" && (
         <section
           id="quote-revisions"
-          className="scroll-mt-24 border-t border-border px-4 py-3 sm:px-5 sm:py-3.5"
+          className="scroll-mt-24 px-4 py-3 sm:px-5 sm:py-3.5"
         >
           <h2 className="text-sm font-semibold text-foreground">Revision history</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -1057,35 +1111,8 @@ export default async function QuoteDetailPage({
             </ol>
           )}
         </section>
-
-        {quote.job_id && quote.notes && (
-          <section className="border-t border-border px-4 py-3 sm:px-5 sm:py-3.5">
-            <h2 className="text-sm font-semibold text-foreground">{quoteNotesSectionTitle(quote.notes)}</h2>
-            {showQuoteNotesSubtitle && (
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Scope and terms; line items drive dollar totals.
-              </p>
-            )}
-            <div className="mt-2">
-              <QuoteNotesDisplay notes={quote.notes} compact />
-            </div>
-          </section>
         )}
       </article>
-
-      <div className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 shadow-sm sm:px-5">
-        <h2 className="text-sm font-semibold text-foreground">Delete</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {quote.job_id
-            ? "Removes this estimate/quote and its linked job (invoice, schedule, photos). Blocked if any payment was recorded on the job."
-            : "Permanently delete this estimate (or formal quote) and its line items and attachments."}
-        </p>
-        <form action={deleteQuoteAction} className="mt-2">
-          <SubmitButton variant="danger" pendingLabel="Deleting…">
-            Delete estimate
-          </SubmitButton>
-        </form>
-      </div>
     </div>
   );
 }
