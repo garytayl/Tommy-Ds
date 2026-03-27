@@ -2,12 +2,23 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 
+import { SubmitButton } from "@/components/SubmitButton";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
 import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 const QUOTE_STATUSES = ["draft", "sent", "accepted", "declined"];
+const QUOTE_DOC_MAX_BYTES = 30 * 1024 * 1024;
+
+type QuoteDocRow = {
+  id: string;
+  storage_path: string;
+  file_name: string;
+  fabricator_label: string | null;
+  created_at: string;
+};
 
 export default async function QuoteDetailPage({
   params,
@@ -17,7 +28,7 @@ export default async function QuoteDetailPage({
   const { id } = await params;
   const supabase = await createSupabaseServerClientForData();
 
-  const [quoteResult, itemsResult] = await Promise.all([
+  const [quoteResult, itemsResult, docsResult] = await Promise.all([
     supabase
       .from("quotes")
       .select("id,customer_id,title,address_line1,address_line2,city,state,zip,status,subtotal_cents,tax_cents,total_cents,notes,job_id,created_at,customers(id,name,phone,email)")
@@ -28,14 +39,38 @@ export default async function QuoteDetailPage({
       .select("id,description,qty,unit_price_cents,line_total_cents,created_at")
       .eq("quote_id", id)
       .order("created_at", { ascending: true }),
+    supabase
+      .from("quote_documents")
+      .select("id,storage_path,file_name,fabricator_label,created_at")
+      .eq("quote_id", id)
+      .order("created_at", { ascending: false }),
   ]);
 
   const quote = quoteResult.data;
   const items = itemsResult.data ?? [];
+  const docs = (docsResult.data ?? []) as QuoteDocRow[];
 
   if (!quote) notFound();
 
   const customer = Array.isArray(quote.customers) ? quote.customers[0] : quote.customers;
+
+  let docsWithUrls: (QuoteDocRow & { signed_url: string | null })[] = docs.map((d) => ({
+    ...d,
+    signed_url: null,
+  }));
+  try {
+    const serviceClient = createSupabaseServiceClient();
+    docsWithUrls = await Promise.all(
+      docs.map(async (doc) => {
+        const { data } = await serviceClient.storage
+          .from("quote-documents")
+          .createSignedUrl(doc.storage_path, 60 * 30);
+        return { ...doc, signed_url: data?.signedUrl ?? null };
+      }),
+    );
+  } catch {
+    // no service role
+  }
 
   async function addQuoteItem(formData: FormData) {
     "use server";
@@ -195,6 +230,82 @@ export default async function QuoteDetailPage({
     rd(`/jobs/${newJob.id}`);
   }
 
+  async function uploadQuoteDocument(formData: FormData) {
+    "use server";
+
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) return;
+    if (file.size > QUOTE_DOC_MAX_BYTES) {
+      await setToastCookie("File too large (max 30 MB)");
+      revalidatePath(`/admin/quotes/${id}`);
+      return;
+    }
+
+    const fabricatorLabel = String(formData.get("fabricator_label") ?? "").trim() || null;
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const storagePath = `${id}/${Date.now()}-${safeName}`;
+
+    const supabase = await createSupabaseServerClientForData();
+    const arrayBuffer = await file.arrayBuffer();
+    let serviceClient: ReturnType<typeof createSupabaseServiceClient>;
+    try {
+      serviceClient = createSupabaseServiceClient();
+    } catch {
+      await setToastCookie("Upload unavailable (service key)");
+      revalidatePath(`/admin/quotes/${id}`);
+      return;
+    }
+
+    const { error: uploadError } = await serviceClient.storage.from("quote-documents").upload(storagePath, Buffer.from(arrayBuffer), {
+      contentType: file.type || "application/octet-stream",
+      upsert: false,
+    });
+    if (uploadError) {
+      await setToastCookie("Upload failed");
+      revalidatePath(`/admin/quotes/${id}`);
+      return;
+    }
+
+    await supabase.from("quote_documents").insert({
+      quote_id: id,
+      storage_path: storagePath,
+      file_name: file.name,
+      fabricator_label: fabricatorLabel,
+      content_type: file.type || null,
+    });
+
+    await setToastCookie("Document attached");
+    revalidatePath(`/admin/quotes/${id}`);
+  }
+
+  async function deleteQuoteDocument(formData: FormData) {
+    "use server";
+
+    const docId = String(formData.get("doc_id") ?? "");
+    if (!docId) return;
+
+    const supabase = await createSupabaseServerClientForData();
+    const { data: row } = await supabase
+      .from("quote_documents")
+      .select("id,storage_path,quote_id")
+      .eq("id", docId)
+      .eq("quote_id", id)
+      .maybeSingle();
+
+    if (!row) return;
+
+    try {
+      const serviceClient = createSupabaseServiceClient();
+      await serviceClient.storage.from("quote-documents").remove([row.storage_path]);
+    } catch {
+      // still remove DB row
+    }
+
+    await supabase.from("quote_documents").delete().eq("id", docId);
+    await setToastCookie("Document removed");
+    revalidatePath(`/admin/quotes/${id}`);
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -349,6 +460,73 @@ export default async function QuoteDetailPage({
             </p>
           </div>
         </div>
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <h2 className="text-base font-semibold text-foreground">Fabricator documents</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Attach PDFs or scans for this estimate (e.g. one quote per fabricator). Optional label identifies which vendor supplied the file.
+        </p>
+        <form action={uploadQuoteDocument} className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+          <input
+            type="file"
+            name="file"
+            required
+            disabled={!!quote.job_id}
+            className="field min-w-[200px] flex-1 sm:max-w-md"
+          />
+          <input
+            type="text"
+            name="fabricator_label"
+            placeholder="Fabricator name (optional)"
+            disabled={!!quote.job_id}
+            className="field sm:w-56"
+          />
+          <SubmitButton variant="secondary" disabled={!!quote.job_id}>
+            Upload
+          </SubmitButton>
+        </form>
+
+        <ul className="mt-4 space-y-2">
+          {docsWithUrls.map((doc) => (
+            <li
+              key={doc.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm"
+            >
+              <div>
+                <span className="font-medium text-foreground">{doc.file_name}</span>
+                {doc.fabricator_label && (
+                  <span className="ml-2 text-muted-foreground">· {doc.fabricator_label}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {doc.signed_url ? (
+                  <a
+                    href={doc.signed_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="link text-sm"
+                  >
+                    Open
+                  </a>
+                ) : (
+                  <span className="text-xs text-muted-foreground">Link unavailable</span>
+                )}
+                {!quote.job_id && (
+                  <form action={deleteQuoteDocument}>
+                    <input type="hidden" name="doc_id" value={doc.id} />
+                    <SubmitButton variant="secondary" className="text-xs">
+                      Remove
+                    </SubmitButton>
+                  </form>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+        {docsWithUrls.length === 0 && (
+          <p className="mt-3 text-sm text-muted-foreground">No documents yet.</p>
+        )}
       </section>
 
       {quote.notes && (

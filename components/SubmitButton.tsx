@@ -10,6 +10,7 @@ type SubmitButtonProps = {
   pendingLabel?: string;
   /** If true, use danger style when className doesn’t imply primary. */
   variant?: "primary" | "secondary" | "danger";
+  disabled?: boolean;
 };
 
 const variantClass = {
@@ -23,12 +24,13 @@ export function SubmitButton({
   className = "",
   pendingLabel = "Saving…",
   variant = "primary",
+  disabled = false,
 }: SubmitButtonProps) {
   const { pending } = useFormStatus();
   const combined = [variantClass[variant], "gap-2", className].filter(Boolean).join(" ");
 
   return (
-    <button type="submit" className={combined} disabled={pending} aria-busy={pending}>
+    <button type="submit" className={combined} disabled={pending || disabled} aria-busy={pending}>
       {pending ? (
         <>
           <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />

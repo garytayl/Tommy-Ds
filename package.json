@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:seed": "node --env-file=.env.local scripts/seed-db.mjs"
+    "db:seed": "node --env-file=.env.local scripts/seed-db.mjs",
+    "storage:clear": "node --env-file=.env.local scripts/clear-storage-buckets.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
