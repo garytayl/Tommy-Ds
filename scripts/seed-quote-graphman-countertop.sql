@@ -80,11 +80,6 @@ values (
   $q1$COUNTERTOP ESTIMATE (Quote #1)
 Date: March 26, 2026
 
-CUSTOMER INFORMATION
-Name: Matt & Wendy Graphman
-Address: 1088 W Burma Road, Bloomington, IN 47404
-Phone: (317) 607-1064
-
 PROJECT DETAILS
 Project: Kitchen – Granite Countertop
 Color: Black Pearl (Suede Finish)
@@ -94,11 +89,6 @@ Reveal: Negative reveal (3 cm)
 Thickness: 3 cm
 Sink: Not provided by customer — customer to supply
 Installation: Undermount sink installation included
-
-PRICING (reference — line items control totals in the system)
-• Subtotal: $1,532.45
-• Tax (7%): $107.27
-• Total: $1,639.72
 
 SCOPE NOTES
 • Fabricator does not offer bevel edge for this material/finish
@@ -168,11 +158,6 @@ values (
 COUNTERTOP ESTIMATE (Quote #2)
 Date: March 12, 2026
 
-CUSTOMER INFORMATION
-Name: Matt & Wendy Graphman
-Address: 1088 W Burma Road, Bloomington, IN 47404
-Phone: (317) 607-1064
-
 PROJECT DETAILS
 Project: Kitchen – Granite Countertop
 Color: Black Pearl (Suede Finish)
@@ -186,11 +171,6 @@ Intrepid #16509 Stainless Steel Undermount
 (Excludes strainer & disposal flange)
 Installation: Sink installation included
 
-PRICING (reference — line items control totals in the system)
-• Subtotal: $2,632.00
-• Tax (7%): $184.24
-• Total: $2,816.24
-
 KEY TERMS / CONDITIONS
 • Estimate valid for 30 days
 • Based on rough sketch
@@ -203,10 +183,7 @@ KEY TERMS / CONDITIONS
 • Faucet must be on-site during template
 • Seam placement determined by fabricator
 • Sealant applied between countertop & backsplash only
-• 50% deposit required to proceed
-
-TOMMY D'S · WINDOWS, DOORS & MORE
-Thank you for your business. Figures are subject to final field verification. Scheduling and final invoicing are handled separately unless otherwise agreed.$q2$,
+• 50% deposit required to proceed$q2$,
   '2026-03-12T15:00:00-04:00'::timestamptz
 );
 

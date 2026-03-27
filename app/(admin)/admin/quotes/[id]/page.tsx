@@ -2,7 +2,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
-import { QuoteNotesDisplay, quoteNotesSectionTitle } from "@/components/QuoteNotesDisplay";
+import { QuoteNotesDisplay, quoteNotesSectionTitle, quoteNotesShowSubtitle } from "@/components/QuoteNotesDisplay";
 import { SubmitButton } from "@/components/SubmitButton";
 import { deleteQuoteAndOptionalJob } from "@/lib/job-destruct";
 import { formatCents, dollarsToCents } from "@/lib/money";
@@ -11,6 +11,8 @@ import { setToastCookie } from "@/lib/toast";
 import { workflowStageDescription, workflowStageLabel } from "@/lib/quote-workflow";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
+
+import { recordQuoteRevision } from "./print/edit/actions";
 
 const QUOTE_STATUSES = ["draft", "sent", "accepted", "declined"];
 const QUOTE_DOC_MAX_BYTES = 30 * 1024 * 1024;
@@ -31,10 +33,12 @@ export default async function QuoteDetailPage({
   const { id } = await params;
   const supabase = await createSupabaseServerClientForData();
 
-  const [quoteResult, itemsResult, docsResult] = await Promise.all([
+  const [quoteResult, itemsResult, docsResult, revResult] = await Promise.all([
     supabase
       .from("quotes")
-      .select("id,customer_id,title,address_line1,address_line2,city,state,zip,status,workflow_stage,deposit_received,subtotal_cents,tax_cents,total_cents,notes,job_id,created_at,customers(id,name,phone,email)")
+      .select(
+        "id,customer_id,title,address_line1,address_line2,city,state,zip,status,workflow_stage,deposit_received,subtotal_cents,tax_cents,total_cents,notes,job_id,created_at,print_overrides,customers(id,name,phone,email)",
+      )
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -47,13 +51,31 @@ export default async function QuoteDetailPage({
       .select("id,storage_path,file_name,fabricator_label,created_at")
       .eq("quote_id", id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("quote_revisions")
+      .select("id,revision_number,label,created_at,created_by")
+      .eq("quote_id", id)
+      .order("revision_number", { ascending: false }),
   ]);
 
   const quote = quoteResult.data;
   const items = itemsResult.data ?? [];
   const docs = (docsResult.data ?? []) as QuoteDocRow[];
+  const revisions = revResult.data ?? [];
+  const latestRevision = revisions.length > 0 ? revisions[0] : null;
+
+  const authorIds = [...new Set(revisions.map((r) => r.created_by).filter(Boolean))] as string[];
+  let authorNames = new Map<string, string | null>();
+  if (authorIds.length > 0) {
+    const { data: profs } = await supabase.from("profiles").select("user_id,full_name").in("user_id", authorIds);
+    authorNames = new Map((profs ?? []).map((p) => [p.user_id, p.full_name]));
+  }
 
   if (!quote) notFound();
+
+  const po = (quote as { print_overrides?: unknown }).print_overrides;
+  const hasPrintOverrides =
+    po != null && typeof po === "object" && Object.keys(po as Record<string, unknown>).length > 0;
 
   const customer = Array.isArray(quote.customers) ? quote.customers[0] : quote.customers;
   const workflowStage =
@@ -61,6 +83,7 @@ export default async function QuoteDetailPage({
   const canConvertToJob =
     !quote.job_id && workflowStage === "quote" && (quote.status === "draft" || quote.status === "sent");
   const depositReceivedFlag = Boolean((quote as { deposit_received?: boolean }).deposit_received);
+  const showQuoteNotesSubtitle = quote.notes ? quoteNotesShowSubtitle(quote.notes) : false;
 
   let docsWithUrls: (QuoteDocRow & { signed_url: string | null })[] = docs.map((d) => ({
     ...d,
@@ -368,8 +391,24 @@ export default async function QuoteDetailPage({
     redirect("/admin/quotes");
   }
 
+  async function recordQuoteRevisionAction(formData: FormData) {
+    "use server";
+    const qid = String(formData.get("quote_id") ?? "");
+    const message =
+      String(formData.get("message") ?? "").trim() || String(formData.get("label") ?? "").trim();
+    if (qid !== id) return;
+    const result = await recordQuoteRevision(qid, message || null);
+    if (!result.ok) {
+      await setToastCookie(result.message);
+      revalidatePath(`/admin/quotes/${id}`);
+      return;
+    }
+    await setToastCookie("Snapshot saved to revision history");
+    revalidatePath(`/admin/quotes/${id}`);
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-5xl space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -386,6 +425,23 @@ export default async function QuoteDetailPage({
                 Step 3 of 3
               </span>
             )}
+            <a
+              href="#quote-revisions"
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-xs font-medium text-foreground underline-offset-2 transition-colors hover:border-primary/40 hover:bg-muted/80 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              {latestRevision ? (
+                <>
+                  Latest snapshot
+                  <span className="tabular-nums text-foreground">· Rev {latestRevision.revision_number}</span>
+                </>
+              ) : (
+                <>No snapshots yet</>
+              )}
+              <span className="text-muted-foreground" aria-hidden>
+                →
+              </span>
+              <span className="sr-only">Open revision history</span>
+            </a>
           </div>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
             {quote.title}
@@ -394,20 +450,28 @@ export default async function QuoteDetailPage({
             {customer?.name ?? "-"} · {quote.address_line1}, {quote.city}, {quote.state} {quote.zip}
           </p>
           {!quote.job_id && (
-            <p className="mt-2 max-w-xl text-xs text-muted-foreground">
-              Pipeline: estimate → formal quote → job. {workflowStageDescription(workflowStage)}
+            <p className="mt-1 max-w-xl text-xs text-muted-foreground">
+              Estimate → formal quote → job. {workflowStageDescription(workflowStage)}
             </p>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Link href={`/admin/quotes/${id}/print/edit`} className="btn-primary">
+            Prepare PDF
+          </Link>
           <a
             href={`/admin/quotes/${id}/print`}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-secondary"
           >
-            Print / Save as PDF
+            Quick preview
           </a>
+          {hasPrintOverrides && (
+            <span className="text-xs text-muted-foreground" title="Saved print-only edits are applied on the PDF">
+              Print overrides on
+            </span>
+          )}
           {!quote.job_id && workflowStage === "estimate" && (
             <form action={promoteToFormalQuote}>
               <SubmitButton variant="secondary" pendingLabel="Promoting…">
@@ -431,112 +495,112 @@ export default async function QuoteDetailPage({
         </div>
       </div>
 
-      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-foreground">Sales status</h2>
-        <form action={updateQuoteStatus} className="mt-3 flex items-end gap-2">
-          <select
-            name="status"
-            defaultValue={quote.status}
-            className="field"
-            disabled={!!quote.job_id}
-          >
-            {QUOTE_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          {!quote.job_id && (
-            <button type="submit" className="btn-primary">
-              Update
-            </button>
-          )}
-        </form>
-      </section>
-
-      {!quote.job_id && (
-        <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Deposit</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Record when the customer pays a deposit (e.g. 50% to begin fabrication). You will confirm again when converting to a job.
-          </p>
-          <form action={updateDepositReceived} className="mt-3 flex flex-wrap items-center gap-3">
-            <label className="flex cursor-pointer items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                name="deposit_received"
-                value="true"
-                defaultChecked={depositReceivedFlag}
-                className="h-4 w-4 rounded border-border"
-              />
-              <span>Customer deposit received</span>
-            </label>
-            <SubmitButton variant="secondary" pendingLabel="Saving…">
-              Save deposit status
-            </SubmitButton>
+      <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <section className="border-b border-border px-4 py-3 sm:px-5 sm:py-3.5">
+          <h2 className="text-sm font-semibold text-foreground">Sales status</h2>
+          <form action={updateQuoteStatus} className="mt-2 flex flex-wrap items-end gap-2">
+            <select
+              name="status"
+              defaultValue={quote.status}
+              className="field min-w-[10rem]"
+              disabled={!!quote.job_id}
+            >
+              {QUOTE_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            {!quote.job_id && (
+              <button type="submit" className="btn-primary">
+                Update
+              </button>
+            )}
           </form>
         </section>
-      )}
 
-      {canConvertToJob && (
-        <section id="convert-to-job" className="scroll-mt-24 rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Convert to job</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Confirm whether a deposit has been collected. This creates the job and invoice.
-          </p>
-          {depositReceivedFlag && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              Deposit is already marked as received on this record.
+        {!quote.job_id && (
+          <section className="border-b border-border px-4 py-3 sm:px-5 sm:py-3.5">
+            <h2 className="text-sm font-semibold text-foreground">Deposit</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              e.g. 50% to begin fabrication. Confirmed again when converting to a job.
             </p>
-          )}
-          <form action={convertQuoteToJob} className="mt-4 space-y-4">
-            <input type="hidden" name="quote_id" value={quote.id} />
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-foreground">Deposit confirmation</legend>
-              <label className="flex cursor-pointer items-start gap-2 text-sm">
+            <form action={updateDepositReceived} className="mt-2 flex flex-wrap items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
                 <input
-                  type="radio"
-                  name="deposit_confirmation"
-                  value="received"
-                  required
-                  className="mt-1"
+                  type="checkbox"
+                  name="deposit_received"
+                  value="true"
                   defaultChecked={depositReceivedFlag}
+                  className="h-4 w-4 rounded border-border"
                 />
-                <span>
-                  <span className="font-medium text-foreground">Deposit received</span>
-                  <span className="block text-muted-foreground">
-                    Customer has paid the required deposit. We will record this on the quote when you convert.
-                  </span>
-                </span>
+                <span>Customer deposit received</span>
               </label>
-              <label className="flex cursor-pointer items-start gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="deposit_confirmation"
-                  value="not_yet"
-                  className="mt-1"
-                  defaultChecked={!depositReceivedFlag}
-                />
-                <span>
-                  <span className="font-medium text-foreground">No deposit yet</span>
-                  <span className="block text-muted-foreground">
-                    Continue anyway (exception). Deposit stays unrecorded unless you checked it above.
-                  </span>
-                </span>
-              </label>
-            </fieldset>
-            <SubmitButton pendingLabel="Converting…">Create job</SubmitButton>
-          </form>
-        </section>
-      )}
+              <SubmitButton variant="secondary" pendingLabel="Saving…">
+                Save
+              </SubmitButton>
+            </form>
+          </section>
+        )}
 
-      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <span className="block h-1 w-12 rounded-full bg-primary/80" />
-        <h2 className="mt-3 text-base font-semibold text-foreground">Line items</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Add description, quantity, and unit price. Totals update automatically.
-        </p>
-        <form action={addQuoteItem} className="mt-3 grid gap-2 sm:grid-cols-4">
+        {canConvertToJob && (
+          <section
+            id="convert-to-job"
+            className="scroll-mt-24 border-b border-border px-4 py-3 sm:px-5 sm:py-3.5"
+          >
+            <h2 className="text-sm font-semibold text-foreground">Convert to job</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Creates the job and invoice. Confirm deposit below.
+            </p>
+            {depositReceivedFlag && (
+              <p className="mt-1 text-xs text-muted-foreground">Deposit is marked received on this record.</p>
+            )}
+            <form action={convertQuoteToJob} className="mt-3 space-y-3">
+              <input type="hidden" name="quote_id" value={quote.id} />
+              <fieldset className="space-y-2">
+                <legend className="sr-only">Deposit confirmation</legend>
+                <label className="flex cursor-pointer items-start gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="deposit_confirmation"
+                    value="received"
+                    required
+                    className="mt-1"
+                    defaultChecked={depositReceivedFlag}
+                  />
+                  <span>
+                    <span className="font-medium text-foreground">Deposit received</span>
+                    <span className="block text-xs text-muted-foreground">
+                      Customer paid the required deposit.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex cursor-pointer items-start gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="deposit_confirmation"
+                    value="not_yet"
+                    className="mt-1"
+                    defaultChecked={!depositReceivedFlag}
+                  />
+                  <span>
+                    <span className="font-medium text-foreground">No deposit yet</span>
+                    <span className="block text-xs text-muted-foreground">
+                      Exception — deposit stays unrecorded unless checked above.
+                    </span>
+                  </span>
+                </label>
+              </fieldset>
+              <SubmitButton pendingLabel="Converting…">Create job</SubmitButton>
+            </form>
+          </section>
+        )}
+
+        <section className="px-4 py-3 sm:px-5 sm:py-4">
+        <span className="block h-0.5 w-10 rounded-full bg-primary/80" />
+        <h2 className="mt-2 text-sm font-semibold text-foreground">Line items</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">Description, quantity, unit price — totals update automatically.</p>
+        <form action={addQuoteItem} className="mt-2 grid gap-2 sm:grid-cols-4">
           <input
             name="description"
             type="text"
@@ -565,23 +629,23 @@ export default async function QuoteDetailPage({
           </button>
         </form>
 
-        <div className="table-wrap mt-4 overflow-x-auto">
+        <div className="table-wrap -mx-4 mt-3 overflow-x-auto sm:mx-0">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="table-header py-3 pl-5 pr-4">Description</th>
-                <th className="table-header py-3 pr-4">Qty</th>
-                <th className="table-header py-3 pr-4">Unit Price</th>
-                <th className="table-header py-3 pr-5">Line Total</th>
+                <th className="table-header py-2 pl-4 pr-3 sm:pl-5">Description</th>
+                <th className="table-header py-2 pr-3">Qty</th>
+                <th className="table-header py-2 pr-3">Unit Price</th>
+                <th className="table-header py-2 pr-4 sm:pr-5">Line Total</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-border transition hover:bg-muted/30">
-                  <td className="py-3 pl-5 pr-4">{item.description}</td>
-                  <td className="py-3 pr-4 tabular-nums">{item.qty}</td>
-                  <td className="py-3 pr-4 tabular-nums">{formatCents(item.unit_price_cents)}</td>
-                  <td className="py-3 pr-5 font-medium tabular-nums">
+                  <td className="py-2 pl-4 pr-3 sm:pl-5">{item.description}</td>
+                  <td className="py-2 pr-3 tabular-nums">{item.qty}</td>
+                  <td className="py-2 pr-3 tabular-nums">{formatCents(item.unit_price_cents)}</td>
+                  <td className="py-2 pr-4 font-medium tabular-nums sm:pr-5">
                     {formatCents(item.line_total_cents)}
                   </td>
                 </tr>
@@ -590,11 +654,11 @@ export default async function QuoteDetailPage({
           </table>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-4 border-t border-border pt-4">
-          <form action={updateQuoteTax} className="flex items-end gap-2">
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-3 border-t border-border pt-3">
+          <form action={updateQuoteTax} className="flex flex-wrap items-end gap-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Tax ($)</label>
-              <p className="mb-1 text-xs text-muted-foreground">Auto 7% (Indiana) when you add line items; override if needed.</p>
+              <label className="mb-0.5 block text-xs font-medium text-muted-foreground">Tax ($)</label>
+              <p className="mb-1 text-[0.65rem] text-muted-foreground">Auto 7% IN; override if needed.</p>
               <input
                 type="number"
                 name="tax"
@@ -612,21 +676,21 @@ export default async function QuoteDetailPage({
             )}
           </form>
           <div className="text-right">
-            <p className="text-sm text-muted-foreground">Subtotal: {formatCents(quote.subtotal_cents)}</p>
-            <p className="text-sm text-muted-foreground">Tax: {formatCents(quote.tax_cents)}</p>
-            <p className="mt-1 text-lg font-semibold text-foreground">
+            <p className="text-xs text-muted-foreground">Subtotal: {formatCents(quote.subtotal_cents)}</p>
+            <p className="text-xs text-muted-foreground">Tax: {formatCents(quote.tax_cents)}</p>
+            <p className="mt-0.5 text-base font-semibold text-foreground">
               Total: {formatCents(quote.total_cents)}
             </p>
           </div>
         </div>
-      </section>
+        </section>
 
-      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-foreground">Fabricator documents</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Attach PDFs or scans for this estimate (e.g. one quote per fabricator). Optional label identifies which vendor supplied the file.
+        <section className="border-t border-border px-4 py-3 sm:px-5 sm:py-3.5">
+        <h2 className="text-sm font-semibold text-foreground">Fabricator documents</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          PDFs or scans (e.g. per fabricator). Optional vendor label.
         </p>
-        <form action={uploadQuoteDocument} className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+        <form action={uploadQuoteDocument} className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
           <input
             type="file"
             name="file"
@@ -646,11 +710,11 @@ export default async function QuoteDetailPage({
           </SubmitButton>
         </form>
 
-        <ul className="mt-4 space-y-2">
+        <ul className="mt-2 space-y-1.5">
           {docsWithUrls.map((doc) => (
             <li
               key={doc.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/20 px-3 py-1.5 text-sm"
             >
               <div>
                 <span className="font-medium text-foreground">{doc.file_name}</span>
@@ -684,30 +748,78 @@ export default async function QuoteDetailPage({
           ))}
         </ul>
         {docsWithUrls.length === 0 && (
-          <p className="mt-3 text-sm text-muted-foreground">No documents yet.</p>
+          <p className="mt-2 text-xs text-muted-foreground">No documents yet.</p>
         )}
-      </section>
-
-      {quote.notes && (
-        <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">{quoteNotesSectionTitle(quote.notes)}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Scope, terms, and narrative for this estimate. Line items above drive dollar totals.
-          </p>
-          <div className="mt-4">
-            <QuoteNotesDisplay notes={quote.notes} />
-          </div>
         </section>
-      )}
 
-      <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-foreground">Delete</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <section
+          id="quote-revisions"
+          className="scroll-mt-24 border-t border-border px-4 py-3 sm:px-5 sm:py-3.5"
+        >
+          <h2 className="text-sm font-semibold text-foreground">Revision history</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Point-in-time snapshots of this quote (title, address, notes, line items, totals, and print overrides).
+            Use after meaningful changes with the customer.
+          </p>
+          <form action={recordQuoteRevisionAction} className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+            <input type="hidden" name="quote_id" value={id} />
+            <label className="flex min-w-0 flex-1 flex-col gap-1 sm:max-w-lg">
+              <span className="text-xs font-medium text-muted-foreground">Revision message (optional)</span>
+              <textarea
+                name="message"
+                rows={3}
+                placeholder="e.g. After site visit — adjusted sink model and edge per customer request"
+                className="field min-h-[4.5rem] w-full resize-y text-sm"
+              />
+            </label>
+            <SubmitButton variant="secondary" pendingLabel="Saving…" className="shrink-0 sm:self-end">
+              Save snapshot
+            </SubmitButton>
+          </form>
+          {revisions.length === 0 ? (
+            <p className="mt-3 text-xs text-muted-foreground">No snapshots yet.</p>
+          ) : (
+            <ol className="mt-4 space-y-3 border-l border-border pl-4">
+              {revisions.map((r) => (
+                <li key={r.id} className="relative text-sm">
+                  <span className="absolute -left-[1.15rem] top-1.5 h-2 w-2 rounded-full bg-primary" aria-hidden />
+                  <p className="font-medium text-foreground">Revision {r.revision_number}</p>
+                  {r.label && (
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{r.label}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(r.created_at).toLocaleString()}
+                    {r.created_by ? <> · {authorNames.get(r.created_by) ?? "Staff"}</> : null}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+
+        {quote.notes && (
+          <section className="border-t border-border px-4 py-3 sm:px-5 sm:py-3.5">
+            <h2 className="text-sm font-semibold text-foreground">{quoteNotesSectionTitle(quote.notes)}</h2>
+            {showQuoteNotesSubtitle && (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Scope and terms; line items drive dollar totals.
+              </p>
+            )}
+            <div className="mt-2">
+              <QuoteNotesDisplay notes={quote.notes} compact />
+            </div>
+          </section>
+        )}
+      </article>
+
+      <div className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 shadow-sm sm:px-5">
+        <h2 className="text-sm font-semibold text-foreground">Delete</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
           {quote.job_id
             ? "Removes this estimate/quote and its linked job (invoice, schedule, photos). Blocked if any payment was recorded on the job."
             : "Permanently delete this estimate (or formal quote) and its line items and attachments."}
         </p>
-        <form action={deleteQuoteAction} className="mt-4">
+        <form action={deleteQuoteAction} className="mt-2">
           <SubmitButton variant="danger" pendingLabel="Deleting…">
             Delete estimate
           </SubmitButton>

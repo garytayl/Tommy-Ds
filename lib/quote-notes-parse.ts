@@ -113,9 +113,3 @@ export function parseStructuredQuoteNotes(notes: string): QuoteNoteBlock[] | nul
   if (!hasStructure) return null;
   return out;
 }
-
-/** True if notes look like a full quote document (QUOTE header block). */
-export function notesLookLikeQuoteDocument(notes: string): boolean {
-  const first = notes.split(/\n/)[0]?.trim() ?? "";
-  return /^QUOTE$/i.test(first);
-}

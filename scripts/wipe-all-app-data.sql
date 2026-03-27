@@ -18,6 +18,7 @@ begin;
 truncate table public.audit_log restart identity cascade;
 truncate table public.communication_log restart identity cascade;
 truncate table public.quote_documents restart identity cascade;
+truncate table public.quote_revisions restart identity cascade;
 truncate table public.quote_items restart identity cascade;
 truncate table public.quotes restart identity cascade;
 truncate table public.payments restart identity cascade;

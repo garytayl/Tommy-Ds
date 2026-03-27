@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { notesLookLikeQuoteDocument, parseStructuredQuoteNotes } from "@/lib/quote-notes-parse";
+import { parseStructuredQuoteNotes } from "@/lib/quote-notes-parse";
 import { cn } from "@/lib/utils";
 
 type NotesVariant = "default" | "print";
@@ -15,16 +15,21 @@ function SectionBody({
   lines,
   variant,
   sectionTitle,
+  compact,
 }: {
   lines: string[];
   variant: NotesVariant;
   sectionTitle: string;
+  compact?: boolean;
 }) {
   const isPrint = variant === "print";
+  const tight = Boolean(compact);
   const segments: ReactNode[] = [];
   let i = 0;
   const sectionIsKeyTermsOnly = /key terms/i.test(sectionTitle);
   let afterKeyTermsHeader = sectionIsKeyTermsOnly;
+  let footerBrandRendered = false;
+  let footerThanksRendered = false;
 
   while (i < lines.length) {
     const line = lines[i];
@@ -39,7 +44,8 @@ function SectionBody({
           <h6
             key={`kt-h-${i}`}
             className={cn(
-              "mt-5 border-b border-zinc-200 pb-2 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#7A1D2B]",
+              "border-b border-zinc-200 pb-2 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-[#7A1D2B]",
+              tight ? "mt-3" : "mt-5",
               isPrint && "text-[#8b2942]",
             )}
           >
@@ -56,7 +62,10 @@ function SectionBody({
       segments.push(
         <h6
           key={`ci-${i}`}
-          className="mt-5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500"
+          className={cn(
+            "text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500",
+            tight ? "mt-3" : "mt-5",
+          )}
         >
           Customer information
         </h6>,
@@ -69,7 +78,10 @@ function SectionBody({
       segments.push(
         <h6
           key={`pd-${i}`}
-          className="mt-5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500"
+          className={cn(
+            "text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500",
+            tight ? "mt-3" : "mt-5",
+          )}
         >
           Project details
         </h6>,
@@ -82,7 +94,10 @@ function SectionBody({
       segments.push(
         <h6
           key={`pr-${i}`}
-          className="mt-5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500"
+          className={cn(
+            "text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500",
+            tight ? "mt-3" : "mt-5",
+          )}
         >
           {line.trim()}
         </h6>,
@@ -96,7 +111,8 @@ function SectionBody({
         <h5
           key={`subhero-${i}`}
           className={cn(
-            "text-lg font-bold tracking-tight",
+            "font-bold tracking-tight",
+            tight ? "text-base" : "text-lg",
             paperText(isPrint, true),
             !isPrint && "text-[#7A1D2B]",
           )}
@@ -193,13 +209,22 @@ function SectionBody({
     }
 
     if (/^TOMMY D/i.test(line.trim())) {
+      const brand = line.trim();
+      if (footerBrandRendered) {
+        i++;
+        continue;
+      }
+      footerBrandRendered = true;
       afterKeyTermsHeader = false;
       segments.push(
         <p
           key={`footer-brand-${i}`}
-          className="mt-6 text-center text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-zinc-700"
+          className={cn(
+            "text-center text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-zinc-700",
+            tight ? "mt-4" : "mt-6",
+          )}
         >
-          {line.trim()}
+          {brand}
         </p>,
       );
       i++;
@@ -207,12 +232,18 @@ function SectionBody({
     }
 
     if (/^Thank you for your business/i.test(line.trim())) {
+      const thanks = line.trim();
+      if (footerThanksRendered) {
+        i++;
+        continue;
+      }
+      footerThanksRendered = true;
       segments.push(
         <p
           key={`footer-thanks-${i}`}
           className="mx-auto mt-2 max-w-md text-center text-xs leading-relaxed text-zinc-500"
         >
-          {line.trim()}
+          {thanks}
         </p>,
       );
       i++;
@@ -246,7 +277,7 @@ function SectionBody({
     i++;
   }
 
-  return <div className="space-y-3">{segments}</div>;
+  return <div className={tight ? "space-y-2" : "space-y-3"}>{segments}</div>;
 }
 
 function classifySectionTitleSafe(line: string): boolean {
@@ -267,21 +298,29 @@ function classifySectionTitleSafe(line: string): boolean {
   return false;
 }
 
-function displayHeroTitle(title: string): string {
-  if (/^QUOTE$/i.test(title.trim())) return "Quote";
-  return title;
-}
-
-export function QuoteNotesDisplay({ notes, variant = "default" }: { notes: string; variant?: NotesVariant }) {
+export function QuoteNotesDisplay({
+  notes,
+  variant = "default",
+  compact = false,
+}: {
+  notes: string;
+  variant?: NotesVariant;
+  /** Tighter spacing when embedded in the quote detail “one page” layout. */
+  compact?: boolean;
+}) {
   const parsed = parseStructuredQuoteNotes(notes);
   const isPrint = variant === "print";
   const paper = !isPrint; // admin: white paper
+  const tightLayout = Boolean(compact) && !isPrint;
+  const sectionCompact = tightLayout || isPrint;
+  const padTight = tightLayout || isPrint;
 
   if (!parsed) {
     return (
       <div
         className={cn(
-          "rounded-xl border p-5 shadow-inner",
+          "rounded-xl border shadow-inner",
+          padTight ? "p-3" : "p-5",
           isPrint ? "border-zinc-200 bg-zinc-50" : "border-zinc-200 bg-white",
         )}
       >
@@ -293,7 +332,8 @@ export function QuoteNotesDisplay({ notes, variant = "default" }: { notes: strin
   return (
     <div
       className={cn(
-        "space-y-4 rounded-xl border p-5 shadow-sm",
+        "rounded-xl border shadow-sm",
+        padTight ? "space-y-2 p-3" : "space-y-4 p-5",
         paper && "border-zinc-200 bg-white",
         isPrint && "rounded-none border-0 p-0 shadow-none",
       )}
@@ -304,7 +344,8 @@ export function QuoteNotesDisplay({ notes, variant = "default" }: { notes: strin
             <div
               key={`plain-${idx}`}
               className={cn(
-                "rounded-xl border p-4 text-sm leading-relaxed whitespace-pre-wrap text-zinc-800",
+                "rounded-xl border text-sm leading-relaxed whitespace-pre-wrap text-zinc-800",
+                padTight ? "p-3" : "p-4",
                 isPrint ? "border-zinc-200 bg-zinc-50/90" : "border-zinc-200 bg-zinc-50/80",
               )}
             >
@@ -314,11 +355,35 @@ export function QuoteNotesDisplay({ notes, variant = "default" }: { notes: strin
         }
 
         if (block.kind === "hero") {
+          const isQuoteCover = /^QUOTE$/i.test(block.title.trim());
+          if (isQuoteCover) {
+            return (
+              <div
+                key={`hero-quote-${idx}`}
+                className={cn(
+                  "rounded-xl border border-zinc-200 bg-zinc-50/80 shadow-sm",
+                  padTight ? "p-3" : "p-5",
+                  isPrint && "bg-zinc-50/90",
+                )}
+              >
+                <span className="sr-only">Quote summary (cover)</span>
+                {block.bodyLines.length > 0 && (
+                  <SectionBody
+                    lines={block.bodyLines}
+                    variant={variant}
+                    sectionTitle="QUOTE"
+                    compact={sectionCompact}
+                  />
+                )}
+              </div>
+            );
+          }
           return (
             <div
               key={`hero-${idx}`}
               className={cn(
-                "relative overflow-hidden rounded-2xl border p-6 shadow-sm",
+                "relative overflow-hidden rounded-2xl border shadow-sm",
+                padTight ? "p-4" : "p-6",
                 isPrint
                   ? "border-zinc-200 bg-gradient-to-br from-[#f4ecef] via-white to-white"
                   : "border-zinc-200 bg-gradient-to-br from-[#f4ecef]/90 via-white to-white",
@@ -331,12 +396,27 @@ export function QuoteNotesDisplay({ notes, variant = "default" }: { notes: strin
                 )}
                 aria-hidden
               />
-              <h3 className={cn("relative text-xl font-bold tracking-tight text-zinc-900")}>
-                {displayHeroTitle(block.title)}
+              <h3
+                className={cn(
+                  "relative font-bold tracking-tight text-zinc-900",
+                  padTight ? "text-lg" : "text-xl",
+                )}
+              >
+                {block.title}
               </h3>
               {block.bodyLines.length > 0 && (
-                <div className={cn("relative mt-4 border-t border-zinc-200 pt-4")}>
-                  <SectionBody lines={block.bodyLines} variant={variant} sectionTitle={block.title} />
+                <div
+                  className={cn(
+                    "relative border-t border-zinc-200",
+                    padTight ? "mt-3 pt-3" : "mt-4 pt-4",
+                  )}
+                >
+                  <SectionBody
+                    lines={block.bodyLines}
+                    variant={variant}
+                    sectionTitle={block.title}
+                    compact={sectionCompact}
+                  />
                 </div>
               )}
             </div>
@@ -347,7 +427,8 @@ export function QuoteNotesDisplay({ notes, variant = "default" }: { notes: strin
           <div
             key={`sec-${idx}`}
             className={cn(
-              "rounded-xl border p-5 shadow-sm",
+              "rounded-xl border shadow-sm",
+              padTight ? "p-3" : "p-5",
               isPrint ? "border-zinc-200 bg-zinc-50/90" : "border-zinc-200 bg-zinc-50/70",
             )}
           >
@@ -359,8 +440,13 @@ export function QuoteNotesDisplay({ notes, variant = "default" }: { notes: strin
             >
               {block.title}
             </h4>
-            <div className="mt-4">
-              <SectionBody lines={block.bodyLines} variant={variant} sectionTitle={block.title} />
+            <div className={padTight ? "mt-2" : "mt-4"}>
+              <SectionBody
+                lines={block.bodyLines}
+                variant={variant}
+                sectionTitle={block.title}
+                compact={sectionCompact}
+              />
             </div>
           </div>
         );
@@ -370,8 +456,12 @@ export function QuoteNotesDisplay({ notes, variant = "default" }: { notes: strin
 }
 
 export function quoteNotesSectionTitle(notes: string): string {
-  if (notesLookLikeQuoteDocument(notes)) return "Quote document";
   const parsed = parseStructuredQuoteNotes(notes);
   if (parsed) return "Estimate details";
   return "Notes";
+}
+
+/** Hide the generic subtitle under the notes heading when notes parse as structured (less repetition vs. the page title). */
+export function quoteNotesShowSubtitle(notes: string): boolean {
+  return parseStructuredQuoteNotes(notes) == null;
 }
