@@ -120,4 +120,17 @@ where id = 'f2f00001-0000-4000-8000-000000000101';
 
 select public.recompute_quote_totals('f2f00001-0000-4000-8000-000000000101');
 
+-- Firm pricing → formal quote stage (when workflow_stage migration is applied)
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'quotes' and column_name = 'workflow_stage'
+  ) then
+    update public.quotes
+    set workflow_stage = 'quote'
+    where id = 'f2f00001-0000-4000-8000-000000000101';
+  end if;
+end $$;
+
 commit;
