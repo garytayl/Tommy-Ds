@@ -37,6 +37,14 @@ export function QuotePrintEditorForm({ quoteId, merged, hasSavedOverrides }: Pro
   const [projectAddress, setProjectAddress] = useState(merged.projectAddress);
   const [notes, setNotes] = useState(merged.notes ?? "");
   const [hideLineItems, setHideLineItems] = useState(merged.hideLineItems);
+  const [hideCustomerPhone, setHideCustomerPhone] = useState(merged.hideCustomerPhone);
+  const [hideCustomerEmail, setHideCustomerEmail] = useState(merged.hideCustomerEmail);
+  const [hideProjectAddress, setHideProjectAddress] = useState(merged.hideProjectAddress);
+  const [hideNotes, setHideNotes] = useState(merged.hideNotes);
+  const [hideQty, setHideQty] = useState(merged.hideQty);
+  const [hideUnitPrices, setHideUnitPrices] = useState(merged.hideUnitPrices);
+  const [hideSubtotalTax, setHideSubtotalTax] = useState(merged.hideSubtotalTax);
+  const [hideReference, setHideReference] = useState(merged.hideReference);
   const [footerNote, setFooterNote] = useState(merged.footerNote ?? "");
   const [lines, setLines] = useState<ItemLike[]>(() => merged.items.map((r) => ({ ...r })));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -53,6 +61,14 @@ export function QuotePrintEditorForm({ quoteId, merged, hasSavedOverrides }: Pro
       project_address: projectAddress.trim() || null,
       notes,
       hide_line_items: hideLineItems,
+      hide_customer_phone: hideCustomerPhone,
+      hide_customer_email: hideCustomerEmail,
+      hide_project_address: hideProjectAddress,
+      hide_notes: hideNotes,
+      hide_qty: hideQty,
+      hide_unit_prices: hideUnitPrices,
+      hide_subtotal_tax: hideSubtotalTax,
+      hide_reference: hideReference,
       footer_note: footerNote.trim() || null,
     };
     if (lines.length > 0) {
@@ -69,6 +85,14 @@ export function QuotePrintEditorForm({ quoteId, merged, hasSavedOverrides }: Pro
     projectAddress,
     notes,
     hideLineItems,
+    hideCustomerPhone,
+    hideCustomerEmail,
+    hideProjectAddress,
+    hideNotes,
+    hideQty,
+    hideUnitPrices,
+    hideSubtotalTax,
+    hideReference,
     footerNote,
     lines,
   ]);
@@ -186,10 +210,125 @@ export function QuotePrintEditorForm({ quoteId, merged, hasSavedOverrides }: Pro
         <textarea className="field mt-1 min-h-[4rem] w-full" value={projectAddress} onChange={(e) => setProjectAddress(e.target.value)} />
       </label>
 
-      <label className="flex cursor-pointer items-center gap-2 text-sm">
-        <input type="checkbox" checked={hideLineItems} onChange={(e) => setHideLineItems(e.target.checked)} className="h-4 w-4 rounded border-border" />
-        Hide line items table on PDF
-      </label>
+      <div className="rounded-xl border border-border bg-muted/20 p-4">
+        <h3 className="text-sm font-semibold text-foreground">What the customer sees on the PDF</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          These only affect the printed / previewed estimate — not the live quote in admin.
+        </p>
+        <ul className="mt-3 space-y-2 text-sm">
+          <li className="flex items-start gap-2">
+            <input
+              id="pv-hide-line-items"
+              type="checkbox"
+              checked={hideLineItems}
+              onChange={(e) => setHideLineItems(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border"
+            />
+            <label htmlFor="pv-hide-line-items" className="cursor-pointer leading-snug">
+              Hide entire pricing table and totals
+            </label>
+          </li>
+          <li className="flex items-start gap-2">
+            <input
+              id="pv-hide-phone"
+              type="checkbox"
+              checked={hideCustomerPhone}
+              onChange={(e) => setHideCustomerPhone(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border"
+            />
+            <label htmlFor="pv-hide-phone" className="cursor-pointer leading-snug">
+              Hide customer phone on the Customer card
+            </label>
+          </li>
+          <li className="flex items-start gap-2">
+            <input
+              id="pv-hide-email"
+              type="checkbox"
+              checked={hideCustomerEmail}
+              onChange={(e) => setHideCustomerEmail(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border"
+            />
+            <label htmlFor="pv-hide-email" className="cursor-pointer leading-snug">
+              Hide customer email on the Customer card
+            </label>
+          </li>
+          <li className="flex items-start gap-2">
+            <input
+              id="pv-hide-project"
+              type="checkbox"
+              checked={hideProjectAddress}
+              onChange={(e) => setHideProjectAddress(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border"
+            />
+            <label htmlFor="pv-hide-project" className="cursor-pointer leading-snug">
+              Hide project address section
+            </label>
+          </li>
+          <li className="flex items-start gap-2">
+            <input
+              id="pv-hide-notes"
+              type="checkbox"
+              checked={hideNotes}
+              onChange={(e) => setHideNotes(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border"
+            />
+            <label htmlFor="pv-hide-notes" className="cursor-pointer leading-snug">
+              Hide scope / notes page (page 2)
+            </label>
+          </li>
+          <li className="flex items-start gap-2">
+            <input
+              id="pv-hide-ref"
+              type="checkbox"
+              checked={hideReference}
+              onChange={(e) => setHideReference(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border"
+            />
+            <label htmlFor="pv-hide-ref" className="cursor-pointer leading-snug">
+              Hide reference number under the date
+            </label>
+          </li>
+          <li className="flex items-start gap-2">
+            <input
+              id="pv-hide-qty"
+              type="checkbox"
+              checked={hideQty}
+              disabled={hideLineItems}
+              onChange={(e) => setHideQty(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border disabled:opacity-40"
+            />
+            <label htmlFor="pv-hide-qty" className={`cursor-pointer leading-snug ${hideLineItems ? "text-muted-foreground" : ""}`}>
+              Hide Qty column in pricing table
+            </label>
+          </li>
+          <li className="flex items-start gap-2">
+            <input
+              id="pv-hide-unit"
+              type="checkbox"
+              checked={hideUnitPrices}
+              disabled={hideLineItems}
+              onChange={(e) => setHideUnitPrices(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border disabled:opacity-40"
+            />
+            <label htmlFor="pv-hide-unit" className={`cursor-pointer leading-snug ${hideLineItems ? "text-muted-foreground" : ""}`}>
+              Hide Unit price column in pricing table
+            </label>
+          </li>
+          <li className="flex items-start gap-2">
+            <input
+              id="pv-hide-subtax"
+              type="checkbox"
+              checked={hideSubtotalTax}
+              disabled={hideLineItems}
+              onChange={(e) => setHideSubtotalTax(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border disabled:opacity-40"
+            />
+            <label htmlFor="pv-hide-subtax" className={`cursor-pointer leading-snug ${hideLineItems ? "text-muted-foreground" : ""}`}>
+              Hide subtotal and tax rows (show grand total only)
+            </label>
+          </li>
+        </ul>
+      </div>
 
       {!hideLineItems && (
         <div>

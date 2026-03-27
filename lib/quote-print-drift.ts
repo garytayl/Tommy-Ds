@@ -26,6 +26,14 @@ export function getPrintVsLiveDriftMessages(
   if ((printed.customerEmail ?? "") !== (live.customerEmail ?? "")) msgs.push("Email on the PDF differs from the customer record.");
   if (printed.projectAddress !== live.projectAddress) msgs.push("Project address on the PDF differs from the live address fields.");
   if (printed.hideLineItems) msgs.push("Line items are hidden on the PDF.");
+  if (printed.hideCustomerPhone) msgs.push("Customer phone is hidden on the customer PDF.");
+  if (printed.hideCustomerEmail) msgs.push("Customer email is hidden on the customer PDF.");
+  if (printed.hideProjectAddress) msgs.push("Project address section is hidden on the customer PDF.");
+  if (printed.hideNotes) msgs.push("Scope/notes page is hidden on the customer PDF.");
+  if (printed.hideQty) msgs.push("Qty column is hidden in the pricing table on the PDF.");
+  if (printed.hideUnitPrices) msgs.push("Unit price column is hidden in the pricing table on the PDF.");
+  if (printed.hideSubtotalTax) msgs.push("Subtotal and tax rows are hidden (total only) on the PDF.");
+  if (printed.hideReference) msgs.push("Document reference number is hidden on the PDF.");
   if (printed.subtotal_cents !== live.subtotal_cents || printed.total_cents !== live.total_cents) {
     msgs.push(
       `PDF totals (${formatCents(printed.total_cents)} total, ${formatCents(printed.subtotal_cents)} subtotal) differ from live (${formatCents(live.total_cents)} total, ${formatCents(live.subtotal_cents)} subtotal).`,

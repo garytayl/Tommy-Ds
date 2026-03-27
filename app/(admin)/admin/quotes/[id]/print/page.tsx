@@ -146,7 +146,9 @@ export default async function QuotePrintPage({
                 <span className="font-semibold text-zinc-800">Prepared </span>
                 {merged.preparedDateText}
               </p>
-              <p className="mt-1.5 font-mono text-[11px] text-zinc-400 print:mt-2">Reference {docRef}</p>
+              {!merged.hideReference && (
+                <p className="mt-1.5 font-mono text-[11px] text-zinc-400 print:mt-2">Reference {docRef}</p>
+              )}
             </div>
             <div className="flex shrink-0 items-start justify-end">
               {/* eslint-disable-next-line @next/next/no-img-element -- print/PDF engines handle <img> more reliably than next/image */}
@@ -158,7 +160,9 @@ export default async function QuotePrintPage({
             </div>
           </header>
 
-          <div className="grid gap-5 print:gap-6 sm:grid-cols-2 sm:gap-6">
+          <div
+            className={`grid gap-5 print:gap-6 sm:gap-6 ${merged.hideProjectAddress ? "sm:grid-cols-1" : "sm:grid-cols-2"}`}
+          >
             <section
               className="rounded-xl border border-zinc-200/80 p-5 shadow-sm print:border-zinc-300 print:px-6 print:py-6 print:shadow-none"
               style={{ backgroundColor: BRAND_SOFT }}
@@ -167,25 +171,27 @@ export default async function QuotePrintPage({
                 Customer
               </h2>
               <p className="mt-3 text-base font-semibold text-zinc-900 print:mt-4">{merged.customerName}</p>
-              {merged.customerPhone && (
+              {merged.customerPhone && !merged.hideCustomerPhone && (
                 <p className="mt-1.5 text-sm text-zinc-700 print:mt-2">
                   <span className="text-zinc-500">Phone </span>
                   {merged.customerPhone}
                 </p>
               )}
-              {merged.customerEmail && (
+              {merged.customerEmail && !merged.hideCustomerEmail && (
                 <p className="mt-1 text-sm text-zinc-700 print:mt-2">
                   <span className="text-zinc-500">Email </span>
                   {merged.customerEmail}
                 </p>
               )}
             </section>
-            <section className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm print:border-zinc-300 print:px-6 print:py-6 print:shadow-none">
-              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-1">
-                Project address
-              </h2>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-800 print:mt-4">{merged.projectAddress}</p>
-            </section>
+            {!merged.hideProjectAddress && (
+              <section className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm print:border-zinc-300 print:px-6 print:py-6 print:shadow-none">
+                <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-1">
+                  Project address
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-zinc-800 print:mt-4">{merged.projectAddress}</p>
+              </section>
+            )}
           </div>
 
           {!merged.hideLineItems && (
@@ -201,12 +207,16 @@ export default async function QuotePrintPage({
                       <th className="px-4 py-3 text-[0.65rem] font-bold uppercase tracking-wider print:px-3 print:py-2.5">
                         Description
                       </th>
-                      <th className="w-16 px-2 py-3 text-right text-[0.65rem] font-bold uppercase tracking-wider print:py-2.5">
-                        Qty
-                      </th>
-                      <th className="w-28 px-2 py-3 text-right text-[0.65rem] font-bold uppercase tracking-wider print:py-2.5">
-                        Unit
-                      </th>
+                      {!merged.hideQty && (
+                        <th className="w-16 px-2 py-3 text-right text-[0.65rem] font-bold uppercase tracking-wider print:py-2.5">
+                          Qty
+                        </th>
+                      )}
+                      {!merged.hideUnitPrices && (
+                        <th className="w-28 px-2 py-3 text-right text-[0.65rem] font-bold uppercase tracking-wider print:py-2.5">
+                          Unit
+                        </th>
+                      )}
                       <th className="w-28 px-4 py-3 text-right text-[0.65rem] font-bold uppercase tracking-wider print:px-3 print:py-2.5">
                         Total
                       </th>
@@ -218,10 +228,14 @@ export default async function QuotePrintPage({
                         <td className="px-4 py-3.5 align-top leading-snug text-zinc-800 print:px-3 print:py-[9px]">
                           {item.description}
                         </td>
-                        <td className="px-2 py-3.5 text-right tabular-nums text-zinc-700 print:py-[9px]">{item.qty}</td>
-                        <td className="px-2 py-3.5 text-right tabular-nums text-zinc-700 print:py-[9px]">
-                          {formatCents(item.unit_price_cents)}
-                        </td>
+                        {!merged.hideQty && (
+                          <td className="px-2 py-3.5 text-right tabular-nums text-zinc-700 print:py-[9px]">{item.qty}</td>
+                        )}
+                        {!merged.hideUnitPrices && (
+                          <td className="px-2 py-3.5 text-right tabular-nums text-zinc-700 print:py-[9px]">
+                            {formatCents(item.unit_price_cents)}
+                          </td>
+                        )}
                         <td className="px-4 py-3.5 text-right tabular-nums font-semibold text-zinc-900 print:px-3 print:py-[9px]">
                           {formatCents(item.line_total_cents)}
                         </td>
@@ -236,17 +250,23 @@ export default async function QuotePrintPage({
                   className="w-full max-w-xs space-y-2 rounded-xl border border-zinc-200 border-t-4 bg-white px-6 py-4 text-sm print:border-zinc-300 print:px-5 print:py-3.5"
                   style={{ borderTopColor: BRAND }}
                 >
-                  <div className="flex justify-between text-zinc-600">
-                    <span>Subtotal</span>
-                    <span className="tabular-nums text-zinc-900">{formatCents(merged.subtotal_cents)}</span>
-                  </div>
-                  <div className="flex justify-between text-zinc-600">
-                    <span>Sales tax</span>
-                    <span className="tabular-nums text-zinc-900">{formatCents(merged.tax_cents)}</span>
-                  </div>
+                  {!merged.hideSubtotalTax && (
+                    <>
+                      <div className="flex justify-between text-zinc-600">
+                        <span>Subtotal</span>
+                        <span className="tabular-nums text-zinc-900">{formatCents(merged.subtotal_cents)}</span>
+                      </div>
+                      <div className="flex justify-between text-zinc-600">
+                        <span>Sales tax</span>
+                        <span className="tabular-nums text-zinc-900">{formatCents(merged.tax_cents)}</span>
+                      </div>
+                    </>
+                  )}
                   <div
-                    className="flex justify-between border-t border-zinc-200 pt-3 text-lg font-bold text-zinc-900 print:pt-3"
-                    style={{ borderColor: `${BRAND}33` }}
+                    className={`flex justify-between text-lg font-bold text-zinc-900 print:pt-3 ${
+                      merged.hideSubtotalTax ? "" : "border-t border-zinc-200 pt-3"
+                    }`}
+                    style={merged.hideSubtotalTax ? undefined : { borderColor: `${BRAND}33` }}
                   >
                     <span>Total</span>
                     <span className="tabular-nums">{formatCents(merged.total_cents)}</span>
@@ -264,7 +284,7 @@ export default async function QuotePrintPage({
           )}
           </div>
 
-          {notesForPrint && (
+          {notesForPrint && !merged.hideNotes && (
             <section className="quote-print-notes-block mt-10 print:mt-0 print:break-before-page print:pt-2 print:break-inside-auto">
               <h2 className="shrink-0 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-0.5">
                 {quoteNotesSectionTitle(notesForPrint)}
@@ -278,7 +298,7 @@ export default async function QuotePrintPage({
             </section>
           )}
 
-          {!notesForPrint && (
+          {(!notesForPrint || merged.hideNotes) && (
             <footer className="mt-14 border-t border-zinc-200 pt-8 text-center print:mt-12 print:pt-5 print:break-inside-avoid">
               {footerBody}
             </footer>

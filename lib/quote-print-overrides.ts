@@ -20,6 +20,22 @@ export type QuotePrintOverrides = {
   /** Replaces quote.notes on the PDF when set (including empty string to hide) */
   notes?: string | null;
   hide_line_items?: boolean;
+  /** Customer-facing PDF: omit phone on the Customer card */
+  hide_customer_phone?: boolean;
+  /** Omit email on the Customer card */
+  hide_customer_email?: boolean;
+  /** Omit the whole Project address section */
+  hide_project_address?: boolean;
+  /** Omit page 2 notes / scope block (even if notes text exists) */
+  hide_notes?: boolean;
+  /** In the pricing table: omit Qty column */
+  hide_qty?: boolean;
+  /** In the pricing table: omit Unit price column */
+  hide_unit_prices?: boolean;
+  /** In the totals box: show only Grand total (hide subtotal + tax rows) */
+  hide_subtotal_tax?: boolean;
+  /** Omit the Reference # line under Prepared date */
+  hide_reference?: boolean;
   /** Extra line under totals / above footer */
   footer_note?: string | null;
   /** When present with length > 0, table uses these rows and subtotal/total follow sums + quote.tax_cents */
@@ -95,6 +111,14 @@ export type MergedQuotePrint = {
   projectAddress: string;
   notes: string | null;
   hideLineItems: boolean;
+  hideCustomerPhone: boolean;
+  hideCustomerEmail: boolean;
+  hideProjectAddress: boolean;
+  hideNotes: boolean;
+  hideQty: boolean;
+  hideUnitPrices: boolean;
+  hideSubtotalTax: boolean;
+  hideReference: boolean;
   footerNote: string | null;
   items: ItemLike[];
   subtotal_cents: number;
@@ -160,6 +184,14 @@ export function mergeQuoteForPrint(params: {
     projectAddress: o.project_address?.trim() || baseAddress,
     notes: notes?.trim() ? notes : null,
     hideLineItems: Boolean(o.hide_line_items),
+    hideCustomerPhone: o.hide_customer_phone === true,
+    hideCustomerEmail: o.hide_customer_email === true,
+    hideProjectAddress: o.hide_project_address === true,
+    hideNotes: o.hide_notes === true,
+    hideQty: o.hide_qty === true,
+    hideUnitPrices: o.hide_unit_prices === true,
+    hideSubtotalTax: o.hide_subtotal_tax === true,
+    hideReference: o.hide_reference === true,
     footerNote: o.footer_note?.trim() || null,
     items: tableItems,
     subtotal_cents,
