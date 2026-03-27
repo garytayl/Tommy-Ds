@@ -90,9 +90,21 @@ export default async function QuotePrintPage({
           __html: `
             @page { size: letter; margin: 0.425in; }
             @media print {
-              .quote-print-notes-block { break-inside: auto; }
-              .quote-print-site-footer {
-                margin-top: 0.55rem;
+              /* Pin site footer to the bottom of page 2 when notes are short (letter minus @page margins). */
+              .quote-print-notes-block {
+                break-inside: auto;
+                display: flex;
+                flex-direction: column;
+                min-height: calc(11in - 0.85in);
+              }
+              .quote-print-notes-body {
+                flex: 1 1 auto;
+                min-height: 0;
+                break-inside: auto;
+              }
+              .quote-print-notes-block .quote-print-site-footer {
+                flex-shrink: 0;
+                margin-top: auto;
                 padding-top: 0.55rem;
                 break-inside: avoid;
                 page-break-inside: avoid;
@@ -242,13 +254,13 @@ export default async function QuotePrintPage({
 
           {notesForPrint && (
             <section className="quote-print-notes-block mt-10 print:mt-0 print:break-before-page print:pt-2 print:break-inside-auto">
-              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-0.5">
+              <h2 className="shrink-0 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-0.5">
                 {quoteNotesSectionTitle(notesForPrint)}
               </h2>
-              <div className="mt-3 print:mt-2.5">
+              <div className="quote-print-notes-body mt-3 print:mt-2.5">
                 <QuoteNotesDisplay notes={notesForPrint} variant="print" />
               </div>
-              <footer className="quote-print-site-footer mt-6 border-t border-zinc-200 pt-4 text-center print:mt-3.5">
+              <footer className="quote-print-site-footer mt-6 border-t border-zinc-200 pt-4 text-center print:mt-0">
                 {footerBody}
               </footer>
             </section>
