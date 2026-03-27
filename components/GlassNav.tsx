@@ -44,6 +44,10 @@ type GlassNavProps = {
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
+  // `/admin` is a prefix of every office route; only the dashboard root should match exactly.
+  if (href === "/admin") {
+    return pathname === "/admin" || pathname === "/admin/";
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
