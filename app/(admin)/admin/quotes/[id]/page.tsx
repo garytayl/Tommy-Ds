@@ -5,13 +5,23 @@ import { notFound, redirect } from "next/navigation";
 import { QuoteNotesDisplay, quoteNotesSectionTitle, quoteNotesShowSubtitle } from "@/components/QuoteNotesDisplay";
 import { SubmitButton } from "@/components/SubmitButton";
 import { deleteQuoteAndOptionalJob } from "@/lib/job-destruct";
-import { formatCents, dollarsToCents } from "@/lib/money";
-import { computeTaxCents } from "@/lib/tax";
+import { centsToDollars, formatCents, dollarsToCents } from "@/lib/money";
+import { getPrintVsLiveDriftMessages } from "@/lib/quote-print-drift";
+import type { ItemLike } from "@/lib/quote-print-overrides";
+import type { QuoteRevisionSnapshot } from "@/lib/quote-revisions";
 import { setToastCookie } from "@/lib/toast";
 import { workflowStageDescription, workflowStageLabel } from "@/lib/quote-workflow";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
+import {
+  addQuoteLineItem,
+  deleteQuoteLineItem,
+  moveQuoteLineItem,
+  restoreQuoteFromRevision,
+  updateQuoteDetails,
+  updateQuoteLineItem,
+} from "./quote-detail-actions";
 import { recordQuoteRevision } from "./print/edit/actions";
 
 const QUOTE_STATUSES = ["draft", "sent", "accepted", "declined"];
@@ -43,8 +53,9 @@ export default async function QuoteDetailPage({
       .maybeSingle(),
     supabase
       .from("quote_items")
-      .select("id,description,qty,unit_price_cents,line_total_cents,created_at")
+      .select("id,description,qty,unit_price_cents,line_total_cents,created_at,sort_order")
       .eq("quote_id", id)
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true }),
     supabase
       .from("quote_documents")
@@ -53,7 +64,7 @@ export default async function QuoteDetailPage({
       .order("created_at", { ascending: false }),
     supabase
       .from("quote_revisions")
-      .select("id,revision_number,label,created_at,created_by")
+      .select("id,revision_number,label,created_at,created_by,snapshot")
       .eq("quote_id", id)
       .order("revision_number", { ascending: false }),
   ]);
@@ -85,6 +96,32 @@ export default async function QuoteDetailPage({
   const depositReceivedFlag = Boolean((quote as { deposit_received?: boolean }).deposit_received);
   const showQuoteNotesSubtitle = quote.notes ? quoteNotesShowSubtitle(quote.notes) : false;
 
+  const itemsForDrift: ItemLike[] = items.map((i) => ({
+    description: i.description,
+    qty: Number(i.qty),
+    unit_price_cents: i.unit_price_cents,
+    line_total_cents: i.line_total_cents,
+  }));
+  const driftMessages = getPrintVsLiveDriftMessages(
+    {
+      title: quote.title,
+      address_line1: quote.address_line1,
+      address_line2: quote.address_line2,
+      city: quote.city,
+      state: quote.state,
+      zip: quote.zip,
+      subtotal_cents: quote.subtotal_cents,
+      tax_cents: quote.tax_cents,
+      total_cents: quote.total_cents,
+      notes: quote.notes,
+      created_at: quote.created_at,
+    },
+    customer ? { name: customer.name, phone: customer.phone, email: customer.email } : null,
+    itemsForDrift,
+    workflowStageLabel(workflowStage),
+    po,
+  );
+
   let docsWithUrls: (QuoteDocRow & { signed_url: string | null })[] = docs.map((d) => ({
     ...d,
     signed_url: null,
@@ -101,36 +138,6 @@ export default async function QuoteDetailPage({
     );
   } catch {
     // no service role
-  }
-
-  async function addQuoteItem(formData: FormData) {
-    "use server";
-
-    const description = String(formData.get("description") ?? "").trim();
-    const qty = Number.parseFloat(String(formData.get("qty") ?? "1"));
-    const unitPriceCents = dollarsToCents(String(formData.get("unit_price") ?? "0"));
-
-    if (!description || !Number.isFinite(qty) || qty <= 0 || unitPriceCents <= 0) return;
-
-    const lineTotalCents = Math.round(qty * unitPriceCents);
-    const supabase = await createSupabaseServerClientForData();
-    await supabase.from("quote_items").insert({
-      quote_id: id,
-      description,
-      qty,
-      unit_price_cents: unitPriceCents,
-      line_total_cents: lineTotalCents,
-    });
-    // Auto-apply Indiana default tax after line items change (staff can override in tax field)
-    const { data: q } = await supabase.from("quotes").select("subtotal_cents").eq("id", id).single();
-    if (q?.subtotal_cents != null) {
-      const taxCents = computeTaxCents(q.subtotal_cents);
-      await supabase.from("quotes").update({ tax_cents: taxCents }).eq("id", id);
-      await supabase.rpc("recompute_quote_totals", { p_quote_id: id });
-    }
-
-    await setToastCookie("Line item added");
-    revalidatePath(`/admin/quotes/${id}`);
   }
 
   async function updateQuoteTax(formData: FormData) {
@@ -236,7 +243,12 @@ export default async function QuoteDetailPage({
       .select("id")
       .single();
 
-    const itemsRes = await supabase.from("quote_items").select("description,qty,unit_price_cents,line_total_cents").eq("quote_id", quoteId).order("created_at", { ascending: true });
+    const itemsRes = await supabase
+      .from("quote_items")
+      .select("description,qty,unit_price_cents,line_total_cents")
+      .eq("quote_id", quoteId)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
     const quoteItems = itemsRes.data ?? [];
     if (newInvoice && quoteItems.length > 0) {
       await supabase.from("invoice_items").insert(
@@ -407,6 +419,13 @@ export default async function QuoteDetailPage({
     revalidatePath(`/admin/quotes/${id}`);
   }
 
+  async function restoreQuoteRevisionAction(formData: FormData) {
+    "use server";
+    const qid = String(formData.get("quote_id") ?? "");
+    if (qid !== id) return;
+    await restoreQuoteFromRevision(id, formData);
+  }
+
   return (
     <div className="mx-auto max-w-5xl space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -465,12 +484,23 @@ export default async function QuoteDetailPage({
             rel="noopener noreferrer"
             className="btn-secondary"
           >
-            Quick preview
+            Preview PDF
           </a>
           {hasPrintOverrides && (
-            <span className="text-xs text-muted-foreground" title="Saved print-only edits are applied on the PDF">
-              Print overrides on
-            </span>
+            <>
+              <a
+                href={`/admin/quotes/${id}/print?live=1`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary"
+                title="Ignore saved print overrides; use live quote data only"
+              >
+                Preview live data
+              </a>
+              <span className="text-xs text-muted-foreground" title="Saved print-only edits are applied on the PDF">
+                Print overrides on
+              </span>
+            </>
           )}
           {!quote.job_id && workflowStage === "estimate" && (
             <form action={promoteToFormalQuote}>
@@ -495,7 +525,98 @@ export default async function QuoteDetailPage({
         </div>
       </div>
 
+      {driftMessages.length > 0 && (
+        <div
+          className="rounded-xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100"
+          role="status"
+        >
+          <p className="font-medium">PDF differs from live data</p>
+          <p className="mt-1 text-xs opacity-90">
+            The saved print version does not match this page. Prepare PDF or use &quot;Preview live data&quot; to see the
+            quote without overrides.
+          </p>
+          <ul className="mt-2 list-inside list-disc space-y-0.5 text-xs">
+            {driftMessages.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        {!quote.job_id && (
+          <section className="border-b border-border px-4 py-3 sm:px-5 sm:py-3.5">
+            <h2 className="text-sm font-semibold text-foreground">Quote details</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Title, project address, and notes (scope and terms). Line items below drive dollar totals.
+            </p>
+            <form action={updateQuoteDetails.bind(null, id)} className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Title</label>
+                <input
+                  name="title"
+                  type="text"
+                  required
+                  defaultValue={quote.title}
+                  className="field w-full"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Address line 1</label>
+                <input
+                  name="address_line1"
+                  type="text"
+                  required
+                  defaultValue={quote.address_line1}
+                  className="field w-full"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Address line 2</label>
+                <input
+                  name="address_line2"
+                  type="text"
+                  defaultValue={quote.address_line2 ?? ""}
+                  className="field w-full"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">City</label>
+                <input name="city" type="text" required defaultValue={quote.city} className="field w-full" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">State</label>
+                <input name="state" type="text" defaultValue={quote.state} className="field w-full" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">ZIP</label>
+                <input name="zip" type="text" required defaultValue={quote.zip} className="field w-full" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes (scope, terms, details)</label>
+                <textarea
+                  name="notes"
+                  rows={8}
+                  defaultValue={quote.notes ?? ""}
+                  className="field min-h-[8rem] w-full resize-y font-mono text-sm leading-relaxed"
+                  placeholder="Optional — templates often include terms here"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <SubmitButton pendingLabel="Saving…">Save quote details</SubmitButton>
+              </div>
+            </form>
+            {quote.notes && (
+              <div className="mt-4 border-t border-border pt-4">
+                <p className="text-xs font-medium text-muted-foreground">Formatted preview</p>
+                <div className="mt-2 rounded-lg border border-border bg-muted/20 p-3">
+                  <QuoteNotesDisplay notes={quote.notes} compact />
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
         <section className="border-b border-border px-4 py-3 sm:px-5 sm:py-3.5">
           <h2 className="text-sm font-semibold text-foreground">Sales status</h2>
           <form action={updateQuoteStatus} className="mt-2 flex flex-wrap items-end gap-2">
@@ -599,8 +720,10 @@ export default async function QuoteDetailPage({
         <section className="px-4 py-3 sm:px-5 sm:py-4">
         <span className="block h-0.5 w-10 rounded-full bg-primary/80" />
         <h2 className="mt-2 text-sm font-semibold text-foreground">Line items</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">Description, quantity, unit price — totals update automatically.</p>
-        <form action={addQuoteItem} className="mt-2 grid gap-2 sm:grid-cols-4">
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Description, quantity, unit price — totals update automatically. Use 0.00 for TBD pricing.
+        </p>
+        <form action={addQuoteLineItem.bind(null, id)} className="mt-2 grid gap-2 sm:grid-cols-4">
           <input
             name="description"
             type="text"
@@ -619,7 +742,7 @@ export default async function QuoteDetailPage({
           <input
             name="unit_price"
             type="number"
-            min="0.01"
+            min="0"
             step="0.01"
             placeholder="Unit price ($)"
             className="field"
@@ -629,6 +752,10 @@ export default async function QuoteDetailPage({
           </button>
         </form>
 
+        {items.length === 0 && (
+          <p className="mt-3 text-xs text-muted-foreground">No line items yet. Add a row or start from a template when creating the estimate.</p>
+        )}
+
         <div className="table-wrap -mx-4 mt-3 overflow-x-auto sm:mx-0">
           <table className="min-w-full text-sm">
             <thead>
@@ -636,17 +763,105 @@ export default async function QuoteDetailPage({
                 <th className="table-header py-2 pl-4 pr-3 sm:pl-5">Description</th>
                 <th className="table-header py-2 pr-3">Qty</th>
                 <th className="table-header py-2 pr-3">Unit Price</th>
-                <th className="table-header py-2 pr-4 sm:pr-5">Line Total</th>
+                <th className="table-header py-2 pr-3">Line Total</th>
+                <th className="table-header py-2 pr-4 sm:pr-5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="border-b border-border transition hover:bg-muted/30">
-                  <td className="py-2 pl-4 pr-3 sm:pl-5">{item.description}</td>
+              {items.map((item, itemIndex) => (
+                <tr key={item.id} className="border-b border-border align-top transition hover:bg-muted/30">
+                  <td className="py-2 pl-4 pr-3 sm:pl-5">
+                    <span className="block">{item.description}</span>
+                    {!quote.job_id && (
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-xs font-medium text-primary hover:underline">
+                          Edit line
+                        </summary>
+                        <form action={updateQuoteLineItem.bind(null, id)} className="mt-2 grid max-w-xl gap-2 sm:grid-cols-2">
+                          <input type="hidden" name="item_id" value={item.id} />
+                          <label className="sm:col-span-2">
+                            <span className="mb-1 block text-xs text-muted-foreground">Description</span>
+                            <input
+                              name="description"
+                              type="text"
+                              required
+                              defaultValue={item.description}
+                              className="field w-full"
+                            />
+                          </label>
+                          <label>
+                            <span className="mb-1 block text-xs text-muted-foreground">Qty</span>
+                            <input
+                              name="qty"
+                              type="number"
+                              min="0.01"
+                              step="0.01"
+                              defaultValue={String(item.qty)}
+                              className="field w-full"
+                            />
+                          </label>
+                          <label>
+                            <span className="mb-1 block text-xs text-muted-foreground">Unit price ($)</span>
+                            <input
+                              name="unit_price"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              defaultValue={centsToDollars(item.unit_price_cents).toFixed(2)}
+                              className="field w-full"
+                            />
+                          </label>
+                          <div className="sm:col-span-2">
+                            <SubmitButton variant="secondary" pendingLabel="Saving…" className="text-xs">
+                              Save line
+                            </SubmitButton>
+                          </div>
+                        </form>
+                      </details>
+                    )}
+                  </td>
                   <td className="py-2 pr-3 tabular-nums">{item.qty}</td>
                   <td className="py-2 pr-3 tabular-nums">{formatCents(item.unit_price_cents)}</td>
-                  <td className="py-2 pr-4 font-medium tabular-nums sm:pr-5">
-                    {formatCents(item.line_total_cents)}
+                  <td className="py-2 pr-3 font-medium tabular-nums">{formatCents(item.line_total_cents)}</td>
+                  <td className="py-2 pr-4 sm:pr-5">
+                    {!quote.job_id ? (
+                      <div className="flex flex-wrap items-center justify-end gap-1">
+                        <form action={moveQuoteLineItem.bind(null, id)} className="inline">
+                          <input type="hidden" name="item_id" value={item.id} />
+                          <input type="hidden" name="direction" value="up" />
+                          <button
+                            type="submit"
+                            className="rounded border border-border px-2 py-1 text-xs hover:bg-muted disabled:opacity-40"
+                            disabled={itemIndex === 0}
+                            title="Move up"
+                            aria-label="Move line up"
+                          >
+                            ↑
+                          </button>
+                        </form>
+                        <form action={moveQuoteLineItem.bind(null, id)} className="inline">
+                          <input type="hidden" name="item_id" value={item.id} />
+                          <input type="hidden" name="direction" value="down" />
+                          <button
+                            type="submit"
+                            className="rounded border border-border px-2 py-1 text-xs hover:bg-muted disabled:opacity-40"
+                            disabled={itemIndex >= items.length - 1}
+                            title="Move down"
+                            aria-label="Move line down"
+                          >
+                            ↓
+                          </button>
+                        </form>
+                        <form action={deleteQuoteLineItem.bind(null, id)} className="inline">
+                          <input type="hidden" name="item_id" value={item.id} />
+                          <SubmitButton variant="danger" className="text-xs" pendingLabel="Removing…">
+                            Remove
+                          </SubmitButton>
+                        </form>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -779,25 +994,66 @@ export default async function QuoteDetailPage({
           {revisions.length === 0 ? (
             <p className="mt-3 text-xs text-muted-foreground">No snapshots yet.</p>
           ) : (
-            <ol className="mt-4 space-y-3 border-l border-border pl-4">
-              {revisions.map((r) => (
-                <li key={r.id} className="relative text-sm">
-                  <span className="absolute -left-[1.15rem] top-1.5 h-2 w-2 rounded-full bg-primary" aria-hidden />
-                  <p className="font-medium text-foreground">Revision {r.revision_number}</p>
-                  {r.label && (
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{r.label}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(r.created_at).toLocaleString()}
-                    {r.created_by ? <> · {authorNames.get(r.created_by) ?? "Staff"}</> : null}
-                  </p>
-                </li>
-              ))}
+            <ol className="mt-4 space-y-4 border-l border-border pl-4">
+              {revisions.map((r) => {
+                const snap = r.snapshot as QuoteRevisionSnapshot | null | undefined;
+                return (
+                  <li key={r.id} className="relative text-sm">
+                    <span className="absolute -left-[1.15rem] top-1.5 h-2 w-2 rounded-full bg-primary" aria-hidden />
+                    <p className="font-medium text-foreground">Revision {r.revision_number}</p>
+                    {r.label && (
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{r.label}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(r.created_at).toLocaleString()}
+                      {r.created_by ? <> · {authorNames.get(r.created_by) ?? "Staff"}</> : null}
+                    </p>
+                    {snap && (
+                      <details className="mt-2 rounded-lg border border-border bg-muted/15 px-3 py-2">
+                        <summary className="cursor-pointer text-xs font-medium text-foreground">
+                          View snapshot summary
+                        </summary>
+                        <dl className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+                          <div>
+                            <dt className="font-medium text-foreground">Title</dt>
+                            <dd className="mt-0.5">{snap.title}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-medium text-foreground">Total</dt>
+                            <dd className="mt-0.5 tabular-nums">{formatCents(snap.total_cents)}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-medium text-foreground">Line items</dt>
+                            <dd className="mt-0.5">{snap.items?.length ?? 0}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-medium text-foreground">Status</dt>
+                            <dd className="mt-0.5 capitalize">{snap.status}</dd>
+                          </div>
+                        </dl>
+                      </details>
+                    )}
+                    {!quote.job_id && (
+                      <form action={restoreQuoteRevisionAction} className="mt-2">
+                        <input type="hidden" name="quote_id" value={id} />
+                        <input type="hidden" name="revision_id" value={r.id} />
+                        <p className="mb-2 text-xs text-muted-foreground">
+                          Restores live title, address, notes, line items, totals, and print overrides to this point in
+                          time.
+                        </p>
+                        <SubmitButton variant="danger" pendingLabel="Restoring…" className="text-xs">
+                          Restore live to this snapshot
+                        </SubmitButton>
+                      </form>
+                    )}
+                  </li>
+                );
+              })}
             </ol>
           )}
         </section>
 
-        {quote.notes && (
+        {quote.job_id && quote.notes && (
           <section className="border-t border-border px-4 py-3 sm:px-5 sm:py-3.5">
             <h2 className="text-sm font-semibold text-foreground">{quoteNotesSectionTitle(quote.notes)}</h2>
             {showQuoteNotesSubtitle && (

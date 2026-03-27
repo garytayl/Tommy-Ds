@@ -23,6 +23,7 @@ export default async function QuotePrintEditPage({ params }: { params: Promise<{
       .from("quote_items")
       .select("description,qty,unit_price_cents,line_total_cents")
       .eq("quote_id", id)
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true }),
   ]);
 

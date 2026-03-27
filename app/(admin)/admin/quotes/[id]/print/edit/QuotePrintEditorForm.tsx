@@ -39,6 +39,8 @@ export function QuotePrintEditorForm({ quoteId, merged, hasSavedOverrides }: Pro
   const [hideLineItems, setHideLineItems] = useState(merged.hideLineItems);
   const [footerNote, setFooterNote] = useState(merged.footerNote ?? "");
   const [lines, setLines] = useState<ItemLike[]>(() => merged.items.map((r) => ({ ...r })));
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
 
   const payload = useMemo((): QuotePrintOverrides => {
     const base: QuotePrintOverrides = {
@@ -99,30 +101,38 @@ export function QuotePrintEditorForm({ quoteId, merged, hasSavedOverrides }: Pro
   }
 
   async function onSave() {
+    setErrorMessage(null);
     startTransition(async () => {
       const r = await saveQuotePrintOverrides(quoteId, payload);
       if (!r.ok) {
-        alert(r.message);
+        setErrorMessage(r.message);
         return;
       }
+      setClearConfirmOpen(false);
       router.refresh();
     });
   }
 
-  async function onClear() {
-    if (!confirm("Clear all print-only edits and use live quote data on the PDF?")) return;
+  async function onClearConfirm() {
+    setErrorMessage(null);
     startTransition(async () => {
       const r = await clearQuotePrintOverrides(quoteId);
       if (!r.ok) {
-        alert(r.message);
+        setErrorMessage(r.message);
         return;
       }
+      setClearConfirmOpen(false);
       router.refresh();
     });
   }
 
   return (
     <div className="space-y-6">
+      {errorMessage && (
+        <p className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert">
+          {errorMessage}
+        </p>
+      )}
       {hasSavedOverrides && (
         <p className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-foreground">
           This quote has saved print overrides. They are used only for PDF/print — not the live line items on the
@@ -291,9 +301,38 @@ export function QuotePrintEditorForm({ quoteId, merged, hasSavedOverrides }: Pro
             "Save print version"
           )}
         </button>
-        <button type="button" className="btn-secondary" disabled={pending} onClick={() => void onClear()}>
-          Reset to live quote
-        </button>
+        {clearConfirmOpen ? (
+          <div className="w-full max-w-md rounded-lg border border-destructive/40 bg-destructive/5 p-3 sm:w-auto">
+            <p className="text-sm text-foreground">Clear all print-only edits and use live quote data on the PDF?</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn-danger text-xs"
+                disabled={pending}
+                onClick={() => void onClearConfirm()}
+              >
+                Yes, reset
+              </button>
+              <button
+                type="button"
+                className="btn-secondary text-xs"
+                disabled={pending}
+                onClick={() => setClearConfirmOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={pending}
+            onClick={() => setClearConfirmOpen(true)}
+          >
+            Reset to live quote
+          </button>
+        )}
         <Link href={`/admin/quotes/${quoteId}/print`} target="_blank" rel="noreferrer" className="btn-primary">
           Preview PDF
         </Link>

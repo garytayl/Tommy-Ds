@@ -11,10 +11,14 @@ const BRAND_SOFT = "#f4ecef";
 
 export default async function QuotePrintPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ live?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  const liveOnly = sp?.live === "1" || sp?.live === "true";
   const supabase = await createSupabaseServerClientForData();
 
   const [quoteResult, itemsResult] = await Promise.all([
@@ -29,6 +33,7 @@ export default async function QuotePrintPage({
       .from("quote_items")
       .select("description,qty,unit_price_cents,line_total_cents")
       .eq("quote_id", id)
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true }),
   ]);
 
@@ -39,7 +44,9 @@ export default async function QuotePrintPage({
 
   const customer = Array.isArray(quote.customers) ? quote.customers[0] : quote.customers;
   const stage = (quote as { workflow_stage?: string }).workflow_stage === "quote" ? "quote" : "estimate";
-  const overrides = parsePrintOverrides((quote as { print_overrides?: unknown }).print_overrides);
+  const overrides = liveOnly
+    ? null
+    : parsePrintOverrides((quote as { print_overrides?: unknown }).print_overrides);
 
   const merged = mergeQuoteForPrint({
     quote: {
@@ -114,6 +121,11 @@ export default async function QuotePrintPage({
         }}
       />
       <div className="min-h-screen bg-[#faf8f5] text-zinc-900 antialiased print:min-h-0 print:bg-white">
+        {liveOnly && (
+          <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-950 print:hidden">
+            Live quote data only — saved print overrides are ignored for this preview.
+          </div>
+        )}
         <article className="mx-auto max-w-[48rem] px-5 py-8 print:max-w-none print:px-0 print:py-0 sm:px-8 sm:py-10">
           <div className="quote-print-page1 flex flex-col gap-8 print:gap-14 print:pb-14">
           <header

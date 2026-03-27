@@ -69,12 +69,13 @@ export async function createQuoteFromForm(formData: FormData) {
 
   if (template.lineItems.length > 0) {
     const { error: itemsErr } = await supabase.from("quote_items").insert(
-      template.lineItems.map((row) => ({
+      template.lineItems.map((row, index) => ({
         quote_id: quoteId,
         description: row.description,
         qty: row.qty,
         unit_price_cents: row.unit_price_cents,
         line_total_cents: row.line_total_cents,
+        sort_order: index,
       })),
     );
     if (itemsErr) {

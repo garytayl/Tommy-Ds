@@ -30,7 +30,12 @@ export async function recordQuoteRevision(quoteId: string, label: string | null)
   const { data: q, error: qErr } = await supabaseData.from("quotes").select("*").eq("id", quoteId).single();
   if (qErr || !q) return { ok: false as const, message: "Quote not found" };
 
-  const { data: items } = await supabaseData.from("quote_items").select("*").eq("quote_id", quoteId);
+  const { data: items } = await supabaseData
+    .from("quote_items")
+    .select("*")
+    .eq("quote_id", quoteId)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
 
   const { data: maxRow } = await supabaseData
     .from("quote_revisions")
