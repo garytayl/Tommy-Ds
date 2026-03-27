@@ -14,6 +14,7 @@ type Mode = "admin" | "field";
 const ADMIN_PRIMARY: GlassNavLink[] = [
   { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/jobs", label: "Jobs" },
+  { href: "/admin/quotes", label: "Estimates" },
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/invoices", label: "Invoices" },
 ];
@@ -24,7 +25,6 @@ const ADMIN_MORE_ADMIN: GlassNavSection = {
   title: "More",
   links: [
     { href: "/admin", label: "Dashboard" },
-    { href: "/admin/quotes", label: "Estimates" },
     { href: "/admin/crews", label: "Crews" },
     { href: "/admin/team", label: "Team" },
   ],
@@ -34,7 +34,6 @@ const ADMIN_MORE_MANAGER: GlassNavSection = {
   title: "More",
   links: [
     { href: "/admin", label: "Dashboard" },
-    { href: "/admin/quotes", label: "Estimates" },
     { href: "/admin/crews", label: "Crews" },
   ],
 };
