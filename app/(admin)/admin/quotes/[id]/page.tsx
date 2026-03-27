@@ -523,7 +523,7 @@ export default async function QuoteDetailPage({
             </form>
           )}
           {canConvertToJob && (
-            <Link href={`/admin/quotes/${id}?tab=overview#convert-to-job`} scroll={false} className="btn-primary">
+            <Link href={`/admin/quotes/${id}?tab=sales#convert-to-job`} scroll={false} className="btn-primary">
               Convert to job
             </Link>
           )}
@@ -567,7 +567,7 @@ export default async function QuoteDetailPage({
       />
 
       <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-        {tab === "overview" && (
+        {tab === "details" && (
           <>
         {!quote.job_id && (
           <section className="border-b border-border px-4 py-3 sm:px-5 sm:py-3.5">
@@ -642,6 +642,47 @@ export default async function QuoteDetailPage({
           </section>
         )}
 
+        {quote.job_id && quote.notes && (
+          <section className="border-b border-border px-4 py-3 sm:px-5 sm:py-3.5">
+            <h2 className="text-sm font-semibold text-foreground">{quoteNotesSectionTitle(quote.notes)}</h2>
+            {showQuoteNotesSubtitle && (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Scope and terms; line items drive dollar totals.
+              </p>
+            )}
+            <div className="mt-2">
+              <QuoteNotesDisplay notes={quote.notes} compact />
+            </div>
+          </section>
+        )}
+
+        {quote.job_id && !quote.notes && (
+          <section className="px-4 py-6 sm:px-5 sm:py-8">
+            <p className="text-sm text-muted-foreground">
+              No scope notes on this quote. Schedules, photos, and field work live on the job.
+            </p>
+            <Link href={`/jobs/${quote.job_id}`} className="btn-primary mt-4 inline-flex">
+              Open job
+            </Link>
+          </section>
+        )}
+
+        {!quote.job_id && (
+          <section className="border-t border-border px-4 py-3 sm:px-5 sm:py-3.5">
+            <p className="text-sm text-muted-foreground">
+              Sales status, deposit, and convert to job live on the{" "}
+              <Link href={`/admin/quotes/${id}?tab=sales`} className="link font-medium text-foreground" scroll={false}>
+                Sales
+              </Link>{" "}
+              tab.
+            </p>
+          </section>
+        )}
+          </>
+        )}
+
+        {tab === "sales" && (
+          <>
         <section className="border-b border-border px-4 py-3 sm:px-5 sm:py-3.5">
           <h2 className="text-sm font-semibold text-foreground">Sales status</h2>
           <form action={updateQuoteStatus} className="mt-2 flex flex-wrap items-end gap-2">
@@ -740,21 +781,10 @@ export default async function QuoteDetailPage({
             </form>
           </section>
         )}
-
-        {quote.job_id && quote.notes && (
-          <section className="border-t border-border px-4 py-3 sm:px-5 sm:py-3.5">
-            <h2 className="text-sm font-semibold text-foreground">{quoteNotesSectionTitle(quote.notes)}</h2>
-            {showQuoteNotesSubtitle && (
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Scope and terms; line items drive dollar totals.
-              </p>
-            )}
-            <div className="mt-2">
-              <QuoteNotesDisplay notes={quote.notes} compact />
-            </div>
-          </section>
+          </>
         )}
 
+        {tab === "danger" && (
         <section className="border-t border-destructive/30 bg-destructive/5 px-4 py-3 sm:px-5 sm:py-3.5">
           <h2 className="text-sm font-semibold text-foreground">Delete</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -768,7 +798,6 @@ export default async function QuoteDetailPage({
             </SubmitButton>
           </form>
         </section>
-          </>
         )}
 
         {tab === "lines" && (
