@@ -164,26 +164,7 @@ values (
   '47404',
   'draft',
   18424,
-  $q2$QUOTE
-Kitchen – Granite Countertop (Quote #2)
-Prepared March 12, 2026
-Reference F2F000010000
-Tommy D's Windows, Doors & More
-CUSTOMER
-Matt & Wendy Graphman
-Phone (317) 607-1064
-PROJECT ADDRESS
-1088 W Burma Road, Bloomington, IN 47404
-PRICING
-DESCRIPTION	QTY	UNIT	TOTAL
-Kitchen granite — Black Pearl (Suede); bevel edge; 4" backsplash; negative reveal; 3 cm; Intrepid #16509 undermount sink (16 ga); sink install included	1	$2,632.00	$2,632.00
-Subtotal
-$2,632.00
-Sales tax
-$184.24
-Total
-$2,816.24
-DETAILS & NOTES
+  $q2$DETAILS & NOTES
 COUNTERTOP ESTIMATE (Quote #2)
 Date: March 12, 2026
 
