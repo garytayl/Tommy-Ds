@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { SubmitButton } from "@/components/SubmitButton";
+import { deleteQuoteAndOptionalJob } from "@/lib/job-destruct";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
 import { setToastCookie } from "@/lib/toast";
@@ -306,6 +307,22 @@ export default async function QuoteDetailPage({
     revalidatePath(`/admin/quotes/${id}`);
   }
 
+  async function deleteQuoteAction() {
+    "use server";
+    const supabase = await createSupabaseServerClientForData();
+    const result = await deleteQuoteAndOptionalJob(supabase, id);
+    if (!result.ok) {
+      await setToastCookie(result.message);
+      revalidatePath(`/admin/quotes/${id}`);
+      return;
+    }
+    revalidatePath("/admin/quotes");
+    revalidatePath("/admin/jobs");
+    revalidatePath("/admin/customers");
+    await setToastCookie("Quote deleted");
+    redirect("/admin/quotes");
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -535,6 +552,20 @@ export default async function QuoteDetailPage({
           <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{quote.notes}</p>
         </section>
       )}
+
+      <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-5 shadow-sm">
+        <h2 className="text-base font-semibold text-foreground">Delete quote</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {quote.job_id
+            ? "Removes this estimate and its linked job (invoice, schedule, photos). Blocked if any payment was recorded on the job."
+            : "Permanently delete this estimate and its line items and attachments."}
+        </p>
+        <form action={deleteQuoteAction} className="mt-4">
+          <SubmitButton variant="danger" pendingLabel="Deleting…">
+            Delete quote
+          </SubmitButton>
+        </form>
+      </div>
     </div>
   );
 }

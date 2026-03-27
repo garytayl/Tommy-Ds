@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { InvoiceSummary } from "@/components/InvoiceSummary";
@@ -11,6 +12,7 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { getCrewDisplayName } from "@/lib/crews";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
+import { jobHasRecordedPayments } from "@/lib/job-destruct";
 import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
@@ -460,6 +462,45 @@ export default async function JobWorkspacePage({
     revalidatePath(`/jobs/${id}`);
   }
 
+  async function revertJobToQuote() {
+    "use server";
+    const supabase = await createSupabaseServerClientForData();
+    const { data: q } = await supabase.from("quotes").select("id").eq("job_id", id).maybeSingle();
+    if (!q?.id) {
+      await setToastCookie("This job has no linked quote");
+      revalidatePath(`/jobs/${id}`);
+      return;
+    }
+    if (await jobHasRecordedPayments(supabase, id)) {
+      await setToastCookie("Cannot revert: this job has recorded invoice payments");
+      revalidatePath(`/jobs/${id}`);
+      return;
+    }
+    await supabase.from("jobs").delete().eq("id", id);
+    await supabase.from("quotes").update({ status: "sent" }).eq("id", q.id);
+    revalidatePath("/admin/quotes");
+    revalidatePath("/admin/jobs");
+    revalidatePath("/admin/schedule");
+    await setToastCookie("Job removed; estimate restored as a quote");
+    redirect(`/admin/quotes/${q.id}`);
+  }
+
+  async function deleteJob() {
+    "use server";
+    const supabase = await createSupabaseServerClientForData();
+    if (await jobHasRecordedPayments(supabase, id)) {
+      await setToastCookie("Cannot delete: this job has recorded invoice payments");
+      revalidatePath(`/jobs/${id}`);
+      return;
+    }
+    await supabase.from("jobs").delete().eq("id", id);
+    revalidatePath("/admin/jobs");
+    revalidatePath("/admin/schedule");
+    revalidatePath("/admin/quotes");
+    await setToastCookie("Job deleted");
+    redirect("/admin/jobs");
+  }
+
   return (
     <div className="space-y-0 pb-24 sm:pb-0">
       {/* Job header */}
@@ -690,6 +731,32 @@ export default async function JobWorkspacePage({
               ))}
               {jobNotes.length === 0 && <li className="text-sm text-muted-foreground">No notes yet.</li>}
             </ul>
+          </div>
+
+          <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-foreground">Remove job</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {quote
+                ? "Revert turns this back into an estimate only (removes the job, invoice, and schedule). Delete removes the job even if it was not created from a quote."
+                : "Permanently delete this job and its invoice, photos, and activities."}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {quote ? (
+                <form action={revertJobToQuote}>
+                  <SubmitButton variant="secondary" pendingLabel="Reverting…">
+                    Revert to quote
+                  </SubmitButton>
+                </form>
+              ) : null}
+              <form action={deleteJob}>
+                <SubmitButton variant="danger" pendingLabel="Deleting…">
+                  Delete job
+                </SubmitButton>
+              </form>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Blocked if any invoice payment has been recorded. Remove payments in Supabase first if you must delete anyway.
+            </p>
           </div>
         </div>
       )}

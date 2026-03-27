@@ -1,9 +1,32 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
-import { getCrewDisplayName } from "@/lib/crews";
 import { JobKindBadge } from "@/components/JobKindBadge";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
+import { SubmitButton } from "@/components/SubmitButton";
+import { getCrewDisplayName } from "@/lib/crews";
+import { jobHasRecordedPayments } from "@/lib/job-destruct";
+import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+
+async function deleteJobFromList(formData: FormData) {
+  "use server";
+  const jobId = String(formData.get("job_id") ?? "").trim();
+  if (!jobId) return;
+  const supabase = await createSupabaseServerClientForData();
+  if (await jobHasRecordedPayments(supabase, jobId)) {
+    await setToastCookie("Cannot delete: this job has recorded invoice payments");
+    revalidatePath("/admin/jobs");
+    return;
+  }
+  await supabase.from("jobs").delete().eq("id", jobId);
+  revalidatePath("/admin/jobs");
+  revalidatePath("/admin/schedule");
+  revalidatePath("/admin/quotes");
+  await setToastCookie("Job deleted");
+  redirect("/admin/jobs");
+}
 
 function jobsListHref(crewId: string | undefined, kind: "installation" | "service" | null): string {
   const params = new URLSearchParams();
@@ -210,10 +233,16 @@ export default async function JobsPage({
                     <span className="text-foreground/80">Scheduled:</span> {job.scheduledLabel}
                   </p>
                 </div>
-                <div className="mt-4">
+                <div className="mt-4 flex flex-col gap-2">
                   <Link href={`/jobs/${job.id}`} className="btn-secondary w-full text-center">
                     Open job
                   </Link>
+                  <form action={deleteJobFromList}>
+                    <input type="hidden" name="job_id" value={job.id} />
+                    <SubmitButton variant="danger" className="w-full text-xs" pendingLabel="Deleting…">
+                      Delete job
+                    </SubmitButton>
+                  </form>
                 </div>
               </article>
             ))
@@ -275,10 +304,18 @@ export default async function JobsPage({
                     <td className="py-3 pr-4">
                       <JobStatusBadge status={job.status} />
                     </td>
-                    <td className="py-3 pr-5 flex flex-wrap items-center gap-2">
-                      <Link href={`/jobs/${job.id}`} className="link">
-                        Open
-                      </Link>
+                    <td className="py-3 pr-5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link href={`/jobs/${job.id}`} className="link">
+                          Open
+                        </Link>
+                        <form action={deleteJobFromList} className="inline">
+                          <input type="hidden" name="job_id" value={job.id} />
+                          <SubmitButton variant="danger" className="text-xs" pendingLabel="Deleting…">
+                            Delete
+                          </SubmitButton>
+                        </form>
+                      </div>
                     </td>
                   </tr>
                 ))
