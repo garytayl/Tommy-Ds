@@ -76,7 +76,7 @@ export default async function QuotePrintPage({
       <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
         Tommy D&apos;s · Windows, Doors &amp; More
       </p>
-      <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-zinc-500 print:mt-2.5">
+      <p className="mx-auto mt-2 max-w-md text-xs leading-snug text-zinc-500 print:mt-2">
         Thank you for your business. Figures are subject to final field verification. Scheduling and final
         invoicing are handled separately unless otherwise agreed.
       </p>
@@ -88,12 +88,12 @@ export default async function QuotePrintPage({
       <style
         dangerouslySetInnerHTML={{
           __html: `
-            @page { size: letter; margin: 0.45in; }
+            @page { size: letter; margin: 0.425in; }
             @media print {
               .quote-print-notes-block { break-inside: auto; }
               .quote-print-site-footer {
-                margin-top: 0.75rem;
-                padding-top: 0.65rem;
+                margin-top: 0.55rem;
+                padding-top: 0.55rem;
                 break-inside: avoid;
                 page-break-inside: avoid;
               }
@@ -104,7 +104,10 @@ export default async function QuotePrintPage({
       <div className="min-h-screen bg-[#faf8f5] text-zinc-900 antialiased print:min-h-0 print:bg-white">
         <article className="mx-auto max-w-[48rem] px-5 py-8 print:max-w-none print:px-0 print:py-0 sm:px-8 sm:py-10">
           <div>
-          <header className="flex flex-col gap-6 border-b-2 pb-8 print:gap-4 print:pb-4 sm:flex-row sm:items-start sm:justify-between sm:pb-10" style={{ borderColor: BRAND }}>
+          <header
+            className="flex flex-col gap-6 border-b-2 pb-8 print:gap-3.5 print:pb-3.5 sm:flex-row sm:items-start sm:justify-between sm:pb-10"
+            style={{ borderColor: BRAND }}
+          >
             <div className="min-w-0 flex-1">
               <p
                 className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] sm:text-[0.75rem]"
@@ -115,7 +118,7 @@ export default async function QuotePrintPage({
               <h1 className="mt-3 text-2xl font-bold leading-tight tracking-tight text-zinc-900 print:text-xl sm:text-[1.75rem]">
                 {merged.title}
               </h1>
-              <p className="mt-4 text-sm leading-relaxed text-zinc-600 print:mt-3 print:text-xs">
+              <p className="mt-4 text-sm leading-relaxed text-zinc-600 print:mt-2.5 print:text-xs">
                 <span className="font-semibold text-zinc-800">Prepared </span>
                 {merged.preparedDateText}
               </p>
@@ -131,9 +134,9 @@ export default async function QuotePrintPage({
             </div>
           </header>
 
-          <div className="mt-8 grid gap-5 print:mt-6 print:gap-5 sm:grid-cols-2 sm:gap-6">
+          <div className="mt-8 grid gap-5 print:mt-5.5 print:gap-4.5 sm:grid-cols-2 sm:gap-6">
             <section
-              className="rounded-xl border border-zinc-200/80 p-5 shadow-sm print:border-zinc-300 print:p-5 print:shadow-none"
+              className="rounded-xl border border-zinc-200/80 p-5 shadow-sm print:border-zinc-300 print:p-4.5 print:shadow-none"
               style={{ backgroundColor: BRAND_SOFT }}
             >
               <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500">Customer</h2>
@@ -151,16 +154,16 @@ export default async function QuotePrintPage({
                 </p>
               )}
             </section>
-            <section className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm print:border-zinc-300 print:p-5 print:shadow-none">
+            <section className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm print:border-zinc-300 print:p-4.5 print:shadow-none">
               <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500">Project address</h2>
               <p className="mt-3 text-sm leading-relaxed text-zinc-800">{merged.projectAddress}</p>
             </section>
           </div>
 
           {!merged.hideLineItems && (
-            <section className="mt-10 print:mt-8">
+            <section className="mt-10 print:mt-7">
               <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500">Pricing</h2>
-              <div className="mt-3 overflow-hidden rounded-xl border border-zinc-200 print:mt-4 print:border-zinc-300">
+              <div className="mt-3 overflow-hidden rounded-xl border border-zinc-200 print:mt-3.5 print:border-zinc-300">
                 <table className="w-full border-collapse text-sm print:text-xs">
                   <thead>
                     <tr className="bg-zinc-100 text-left text-zinc-700 print:bg-zinc-100">
@@ -181,14 +184,14 @@ export default async function QuotePrintPage({
                   <tbody>
                     {merged.items.map((item, i) => (
                       <tr key={i} className="border-t border-zinc-100 bg-white">
-                        <td className="px-4 py-3.5 align-top leading-snug text-zinc-800 print:px-3 print:py-2.5">
+                        <td className="px-4 py-3.5 align-top leading-snug text-zinc-800 print:px-3 print:py-[9px]">
                           {item.description}
                         </td>
-                        <td className="px-2 py-3.5 text-right tabular-nums text-zinc-700 print:py-2.5">{item.qty}</td>
-                        <td className="px-2 py-3.5 text-right tabular-nums text-zinc-700 print:py-2.5">
+                        <td className="px-2 py-3.5 text-right tabular-nums text-zinc-700 print:py-[9px]">{item.qty}</td>
+                        <td className="px-2 py-3.5 text-right tabular-nums text-zinc-700 print:py-[9px]">
                           {formatCents(item.unit_price_cents)}
                         </td>
-                        <td className="px-4 py-3.5 text-right tabular-nums font-semibold text-zinc-900 print:px-3 print:py-2.5">
+                        <td className="px-4 py-3.5 text-right tabular-nums font-semibold text-zinc-900 print:px-3 print:py-[9px]">
                           {formatCents(item.line_total_cents)}
                         </td>
                       </tr>
@@ -197,9 +200,9 @@ export default async function QuotePrintPage({
                 </table>
               </div>
 
-              <div className="mt-6 flex justify-end print:mt-5 print:break-inside-avoid">
+              <div className="mt-6 flex justify-end print:mt-4.5 print:break-inside-avoid">
                 <div
-                  className="w-full max-w-xs space-y-2 rounded-xl border border-zinc-200 border-t-4 bg-white px-6 py-4 text-sm print:border-zinc-300 print:px-5 print:py-4"
+                  className="w-full max-w-xs space-y-2 rounded-xl border border-zinc-200 border-t-4 bg-white px-6 py-4 text-sm print:border-zinc-300 print:px-5 print:py-3.5"
                   style={{ borderTopColor: BRAND }}
                 >
                   <div className="flex justify-between text-zinc-600">
@@ -223,21 +226,21 @@ export default async function QuotePrintPage({
           )}
 
           {merged.footerNote && (
-            <p className="mt-8 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-center text-sm text-zinc-700 print:mt-6 print:py-3.5 print:break-inside-avoid">
+            <p className="mt-8 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-center text-sm text-zinc-700 print:mt-5.5 print:py-3 print:break-inside-avoid">
               {merged.footerNote}
             </p>
           )}
           </div>
 
           {notesForPrint && (
-            <section className="quote-print-notes-block mt-10 print:mt-0 print:break-before-page print:pt-3 print:break-inside-auto">
-              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-1">
+            <section className="quote-print-notes-block mt-10 print:mt-0 print:break-before-page print:pt-2 print:break-inside-auto">
+              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-0.5">
                 {quoteNotesSectionTitle(notesForPrint)}
               </h2>
-              <div className="mt-3 print:mt-3">
+              <div className="mt-3 print:mt-2.5">
                 <QuoteNotesDisplay notes={notesForPrint} variant="print" />
               </div>
-              <footer className="quote-print-site-footer mt-6 border-t border-zinc-200 pt-4 text-center print:mt-4">
+              <footer className="quote-print-site-footer mt-6 border-t border-zinc-200 pt-4 text-center print:mt-3.5">
                 {footerBody}
               </footer>
             </section>
