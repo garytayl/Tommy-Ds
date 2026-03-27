@@ -35,21 +35,14 @@ values (
   null
 );
 
-do $$
-begin
-  if exists (
-    select 1 from information_schema.columns
-    where table_schema = 'public' and table_name = 'customers' and column_name = 'address'
-  ) then
-    update public.customers
-    set
-      address = '1088 W Burma Road',
-      city = 'Bloomington',
-      state = 'IN',
-      zip = '47404'
-    where id = 'f2f00001-0000-4000-8000-000000000100';
-  end if;
-end $$;
+update public.customers
+set
+  address_line1 = '1088 W Burma Road',
+  address_line2 = null,
+  city = 'Bloomington',
+  state = 'IN',
+  zip = '47404'
+where id = 'f2f00001-0000-4000-8000-000000000100';
 
 -- Quote #1 — original scope / pricing
 insert into public.quotes (

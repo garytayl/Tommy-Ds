@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { CopyAddressFromCustomerButton } from "@/components/CopyAddressFromCustomerButton";
 import { SubmitButton } from "@/components/SubmitButton";
 import { getCrewDisplayName } from "@/lib/crews";
 
@@ -126,7 +127,7 @@ export default async function NewJobPage({ searchParams }: PageProps) {
     { data: crewMembers },
     { data: crewsRaw },
   ] = await Promise.all([
-    supabase.from("customers").select("id,name").order("name", { ascending: true }),
+    supabase.from("customers").select("id,name,address_line1,address_line2,city,state,zip").order("name", { ascending: true }),
     supabase.from("profiles").select("user_id,full_name").eq("role", "installer").order("full_name", { ascending: true }),
     supabase.from("crew_members").select("user_id,profiles(user_id,full_name)").order("user_id"),
     supabase.from("crews").select("id,name,specialty,crew_members(user_id,profiles(user_id,full_name))").order("name", { ascending: true }),
@@ -164,7 +165,7 @@ export default async function NewJobPage({ searchParams }: PageProps) {
           <div className="form-group sm:col-span-2">
             <label htmlFor="customer_id" className="form-label">Customer</label>
             <select
-              id="customer_id"
+              id="job-new-customer-id"
               name="customer_id"
               required
               className="field"
@@ -185,23 +186,62 @@ export default async function NewJobPage({ searchParams }: PageProps) {
           </div>
 
           <div className="form-group sm:col-span-2">
-            <label htmlFor="address_line1" className="form-label">Address</label>
-            <input id="address_line1" name="address_line1" type="text" required placeholder="Street address" className="field" />
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <label htmlFor="job-new-project-address-line1" className="form-label">
+                Project / job site address
+              </label>
+              <CopyAddressFromCustomerButton
+                customers={(customers ?? []).map((c) => ({
+                  id: c.id,
+                  address_line1: c.address_line1 ?? null,
+                  address_line2: c.address_line2 ?? null,
+                  city: c.city ?? null,
+                  state: c.state ?? null,
+                  zip: c.zip ?? null,
+                }))}
+                customerSelectId="job-new-customer-id"
+                targetIds={{
+                  address_line1: "job-new-project-address-line1",
+                  address_line2: "job-new-project-address-line2",
+                  city: "job-new-project-city",
+                  state: "job-new-project-state",
+                  zip: "job-new-project-zip",
+                }}
+              />
+            </div>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Where work is performed. Can differ from the customer&apos;s billing address on their profile.
+            </p>
+            <input
+              id="job-new-project-address-line1"
+              name="address_line1"
+              type="text"
+              required
+              placeholder="Street address"
+              className="field"
+            />
           </div>
           <div className="form-group sm:col-span-2">
-            <input id="address_line2" name="address_line2" type="text" placeholder="Apt, suite, unit (optional)" className="field" aria-label="Address line 2" />
+            <input
+              id="job-new-project-address-line2"
+              name="address_line2"
+              type="text"
+              placeholder="Apt, suite, unit (optional)"
+              className="field"
+              aria-label="Address line 2"
+            />
           </div>
           <div className="form-group">
-            <label htmlFor="city" className="form-label">City</label>
-            <input id="city" name="city" type="text" required placeholder="City" className="field" />
+            <label htmlFor="job-new-project-city" className="form-label">City</label>
+            <input id="job-new-project-city" name="city" type="text" required placeholder="City" className="field" />
           </div>
           <div className="form-group">
-            <label htmlFor="state" className="form-label">State</label>
-            <input id="state" name="state" type="text" defaultValue="IN" placeholder="State" className="field" />
+            <label htmlFor="job-new-project-state" className="form-label">State</label>
+            <input id="job-new-project-state" name="state" type="text" defaultValue="IN" placeholder="State" className="field" />
           </div>
           <div className="form-group sm:col-span-2">
-            <label htmlFor="zip" className="form-label">ZIP</label>
-            <input id="zip" name="zip" type="text" required placeholder="ZIP code" className="field" />
+            <label htmlFor="job-new-project-zip" className="form-label">ZIP</label>
+            <input id="job-new-project-zip" name="zip" type="text" required placeholder="ZIP code" className="field" />
           </div>
 
           <div className="form-group">

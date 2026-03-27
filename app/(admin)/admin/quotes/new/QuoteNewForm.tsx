@@ -10,11 +10,20 @@ import {
   QUOTE_TEMPLATES,
 } from "@/lib/quote-templates";
 
+import { CopyAddressFromCustomerButton } from "@/components/CopyAddressFromCustomerButton";
 import { SubmitButton } from "@/components/SubmitButton";
 
 import { createQuoteFromForm, quickAddCustomer } from "./actions";
 
-type CustomerOption = { id: string; name: string };
+type CustomerOption = {
+  id: string;
+  name: string;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+};
 
 export function QuoteNewForm({
   customers,
@@ -37,6 +46,7 @@ export function QuoteNewForm({
         <div className="sm:col-span-2">
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Customer</label>
           <select
+            id="new-quote-customer-id"
             name="customer_id"
             required
             className="field w-full"
@@ -119,8 +129,27 @@ export function QuoteNewForm({
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Address</label>
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              Project / service address
+            </label>
+            <CopyAddressFromCustomerButton
+              customers={customers}
+              customerSelectId="new-quote-customer-id"
+              targetIds={{
+                address_line1: "new-quote-project-address-line1",
+                address_line2: "new-quote-project-address-line2",
+                city: "new-quote-project-city",
+                state: "new-quote-project-state",
+                zip: "new-quote-project-zip",
+              }}
+            />
+          </div>
+          <p className="mb-2 text-xs text-muted-foreground">
+            Where the work is performed (can differ from the customer&apos;s billing address on their profile).
+          </p>
           <input
+            id="new-quote-project-address-line1"
             name="address_line1"
             type="text"
             required
@@ -128,10 +157,16 @@ export function QuoteNewForm({
             className="field w-full"
           />
         </div>
-        <input name="address_line2" type="text" placeholder="Address line 2" className="field" />
-        <input name="city" type="text" required placeholder="City" className="field" />
-        <input name="state" type="text" defaultValue="IN" className="field" />
-        <input name="zip" type="text" required placeholder="Zip" className="field" />
+        <input
+          id="new-quote-project-address-line2"
+          name="address_line2"
+          type="text"
+          placeholder="Address line 2"
+          className="field"
+        />
+        <input id="new-quote-project-city" name="city" type="text" required placeholder="City" className="field" />
+        <input id="new-quote-project-state" name="state" type="text" defaultValue="IN" className="field" />
+        <input id="new-quote-project-zip" name="zip" type="text" required placeholder="Zip" className="field" />
         <div className="sm:col-span-2">
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes (optional)</label>
           <textarea

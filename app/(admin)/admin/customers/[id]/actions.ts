@@ -11,6 +11,11 @@ export async function updateCustomer(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
+  const address_line1 = String(formData.get("address_line1") ?? "").trim();
+  const address_line2 = String(formData.get("address_line2") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
+  const state = String(formData.get("state") ?? "").trim();
+  const zip = String(formData.get("zip") ?? "").trim();
 
   if (!id || !name) return;
 
@@ -21,6 +26,11 @@ export async function updateCustomer(formData: FormData) {
       name,
       phone: phone || null,
       email: email || null,
+      address_line1: address_line1 || null,
+      address_line2: address_line2 || null,
+      city: city || null,
+      state: state || null,
+      zip: zip || null,
     })
     .eq("id", id);
 

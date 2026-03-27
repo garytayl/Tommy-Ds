@@ -20,7 +20,7 @@ export default async function CustomerDetailPage({
   const [{ data: customer }, { data: jobs }, { data: quotes }] = await Promise.all([
     supabase
       .from("customers")
-      .select("id,name,phone,email,created_at")
+      .select("id,name,phone,email,address_line1,address_line2,city,state,zip,created_at")
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -48,7 +48,7 @@ export default async function CustomerDetailPage({
             Back to customers
           </Link>
         </div>
-        <form action={updateCustomer} className="grid gap-3 sm:grid-cols-3">
+        <form action={updateCustomer} className="grid gap-3 sm:grid-cols-2">
           <input type="hidden" name="customer_id" value={id} />
           <input
             type="text"
@@ -67,9 +67,50 @@ export default async function CustomerDetailPage({
             type="email"
             name="email"
             defaultValue={customer.email ?? ""}
+            className="field sm:col-span-2"
+          />
+          <div className="sm:col-span-2 mt-1 border-t border-border pt-4">
+            <h2 className="text-sm font-semibold text-foreground">Customer address</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Billing or mailing address for this contact. Project and job site addresses are set per estimate or job.
+            </p>
+          </div>
+          <input
+            type="text"
+            name="address_line1"
+            placeholder="Address line 1"
+            defaultValue={customer.address_line1 ?? ""}
+            className="field sm:col-span-2"
+          />
+          <input
+            type="text"
+            name="address_line2"
+            placeholder="Address line 2 (optional)"
+            defaultValue={customer.address_line2 ?? ""}
+            className="field sm:col-span-2"
+          />
+          <input
+            type="text"
+            name="city"
+            placeholder="City"
+            defaultValue={customer.city ?? ""}
             className="field"
           />
-          <div className="sm:col-span-3 flex items-center gap-2">
+          <input
+            type="text"
+            name="state"
+            placeholder="State"
+            defaultValue={customer.state ?? ""}
+            className="field"
+          />
+          <input
+            type="text"
+            name="zip"
+            placeholder="ZIP"
+            defaultValue={customer.zip ?? ""}
+            className="field"
+          />
+          <div className="sm:col-span-2 flex items-center gap-2">
             <SubmitButton>Save customer</SubmitButton>
           </div>
         </form>

@@ -38,7 +38,9 @@ export default async function SearchPage({
       supabase
         .from("customers")
         .select("id,name")
-        .ilike("name", pattern)
+        .or(
+          `name.ilike.${quoted(pattern)},address_line1.ilike.${quoted(pattern)},city.ilike.${quoted(pattern)},zip.ilike.${quoted(pattern)}`,
+        )
         .order("name", { ascending: true })
         .limit(20),
       supabase

@@ -53,7 +53,7 @@ export default async function QuoteDetailPage({
     supabase
       .from("quotes")
       .select(
-        "id,customer_id,title,address_line1,address_line2,city,state,zip,status,workflow_stage,deposit_received,subtotal_cents,tax_cents,total_cents,notes,job_id,created_at,print_overrides,customers(id,name,phone,email)",
+        "id,customer_id,title,address_line1,address_line2,city,state,zip,status,workflow_stage,deposit_received,subtotal_cents,tax_cents,total_cents,notes,job_id,created_at,print_overrides,customers(id,name,phone,email,address_line1,address_line2,city,state,zip)",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -95,6 +95,24 @@ export default async function QuoteDetailPage({
     po != null && typeof po === "object" && Object.keys(po as Record<string, unknown>).length > 0;
 
   const customer = Array.isArray(quote.customers) ? quote.customers[0] : quote.customers;
+  type CustomerRow = {
+    id?: string;
+    name?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    address_line1?: string | null;
+    address_line2?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zip?: string | null;
+  };
+  const cust = customer as CustomerRow | null;
+  const hasCustomerProfileAddress = Boolean(
+    cust &&
+      [cust.address_line1, cust.address_line2, cust.city, cust.state, cust.zip].some(
+        (v) => v != null && String(v).trim() !== "",
+      ),
+  );
   const workflowStage =
     (quote as { workflow_stage?: string }).workflow_stage === "quote" ? "quote" : "estimate";
   const canConvertToJob =
@@ -573,8 +591,24 @@ export default async function QuoteDetailPage({
           <section className="border-b border-border px-4 py-3 sm:px-5 sm:py-3.5">
             <h2 className="text-sm font-semibold text-foreground">Quote details</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Title, project address, and notes (scope and terms). Line items below drive dollar totals.
+              Title, project address, and notes (scope and terms). Line items on the Line items tab drive dollar totals.
             </p>
+            {cust?.id && hasCustomerProfileAddress && (
+              <div className="mt-3 rounded-lg border border-border bg-muted/20 px-3 py-2.5">
+                <p className="text-xs font-medium text-foreground">Customer address (billing)</p>
+                <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">
+                  {[
+                    [cust.address_line1, cust.address_line2].filter(Boolean).join(", "),
+                    [cust.city, cust.state, cust.zip].filter(Boolean).join(", "),
+                  ]
+                    .filter(Boolean)
+                    .join("\n")}
+                </p>
+                <Link href={`/admin/customers/${cust.id}`} className="mt-2 inline-block text-xs font-medium text-primary hover:underline">
+                  Edit customer profile
+                </Link>
+              </div>
+            )}
             <form action={updateQuoteDetails.bind(null, id)} className="mt-3 grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Title</label>
@@ -587,6 +621,10 @@ export default async function QuoteDetailPage({
                 />
               </div>
               <div className="sm:col-span-2">
+                <p className="mb-1 text-xs font-medium text-muted-foreground">Project / service address</p>
+                <p className="mb-2 text-[0.65rem] text-muted-foreground">
+                  Job site or location for this estimate (separate from the customer&apos;s billing address above).
+                </p>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Address line 1</label>
                 <input
                   name="address_line1"

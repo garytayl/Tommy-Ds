@@ -13,7 +13,10 @@ export default async function NewQuotePage({
   const initialTemplateId = normalizeTemplateId(resolvedSearch.template);
 
   const supabase = await createSupabaseServerClientForData();
-  const { data: customers } = await supabase.from("customers").select("id,name").order("name", { ascending: true });
+  const { data: customers } = await supabase
+    .from("customers")
+    .select("id,name,address_line1,address_line2,city,state,zip")
+    .order("name", { ascending: true });
 
   return (
     <div className="space-y-8">
