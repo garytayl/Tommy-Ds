@@ -1,8 +1,12 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { formatCents } from "@/lib/money";
 import { workflowStageLabel } from "@/lib/quote-workflow";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+
+const BRAND = "#8b2942";
+const BRAND_SOFT = "#f4ecef";
 
 export default async function QuotePrintPage({
   params,
@@ -35,79 +39,156 @@ export default async function QuotePrintPage({
   const docLabel = workflowStageLabel(stage);
   const address2 = quote.address_line2 ? `, ${quote.address_line2}` : "";
   const address = `${quote.address_line1}${address2}, ${quote.city}, ${quote.state} ${quote.zip}`;
+  const prepared = new Date(quote.created_at).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const docRef = String(quote.id).replace(/-/g, "").slice(0, 12).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-white p-8 text-black print:p-6">
-      <div className="mx-auto max-w-2xl">
-        <header className="border-b border-gray-300 pb-4">
-          <h1 className="text-2xl font-bold">{docLabel}</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            {quote.title}
-          </p>
-          <p className="mt-2 text-sm">
-            Date: {new Date(quote.created_at).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-        </header>
-
-        <section className="mt-6 grid grid-cols-2 gap-6 text-sm">
-          <div>
-            <h2 className="font-semibold text-gray-700">Customer</h2>
-            <p className="mt-1 font-medium">{customer?.name ?? "-"}</p>
-            {customer?.phone && <p>{customer.phone}</p>}
-            {customer?.email && <p>{customer.email}</p>}
-          </div>
-          <div>
-            <h2 className="font-semibold text-gray-700">Job address</h2>
-            <p className="mt-1">{address}</p>
-          </div>
-        </section>
-
-        <section className="mt-8">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b-2 border-gray-300">
-                <th className="py-2 text-left font-semibold">Description</th>
-                <th className="py-2 text-right font-semibold w-20">Qty</th>
-                <th className="py-2 text-right font-semibold w-24">Unit price</th>
-                <th className="py-2 text-right font-semibold w-24">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, i) => (
-                <tr key={i} className="border-b border-gray-200">
-                  <td className="py-2">{item.description}</td>
-                  <td className="py-2 text-right tabular-nums">{item.qty}</td>
-                  <td className="py-2 text-right tabular-nums">{formatCents(item.unit_price_cents)}</td>
-                  <td className="py-2 text-right tabular-nums font-medium">{formatCents(item.line_total_cents)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div className="mt-6 flex justify-end">
-            <div className="text-right text-sm">
-              <p>Subtotal: {formatCents(quote.subtotal_cents)}</p>
-              <p>Tax: {formatCents(quote.tax_cents)}</p>
-              <p className="mt-2 text-lg font-bold">Total: {formatCents(quote.total_cents)}</p>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `@page { size: letter; margin: 0.6in; }` }} />
+      <div
+        className="min-h-screen bg-[#faf8f5] text-zinc-900 antialiased print:min-h-0 print:bg-white"
+        style={{ ["--brand" as string]: BRAND }}
+      >
+        <article className="mx-auto max-w-[48rem] px-5 py-8 print:max-w-none print:px-0 print:py-0 sm:px-8 sm:py-10">
+          <header className="flex flex-col gap-6 border-b-2 pb-8 sm:flex-row sm:items-start sm:justify-between sm:pb-10" style={{ borderColor: BRAND }}>
+            <div className="min-w-0 flex-1">
+              <p
+                className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] sm:text-[0.75rem]"
+                style={{ color: BRAND }}
+              >
+                {docLabel}
+              </p>
+              <h1 className="mt-3 text-2xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-[1.75rem]">
+                {quote.title}
+              </h1>
+              <p className="mt-4 text-sm leading-relaxed text-zinc-600">
+                <span className="font-semibold text-zinc-800">Prepared </span>
+                {prepared}
+              </p>
+              <p className="mt-1.5 font-mono text-[11px] text-zinc-400">Reference {docRef}</p>
             </div>
+            <div className="flex shrink-0 items-start justify-start sm:justify-end">
+              <Image
+                src="/images/tommyds-logo.png"
+                alt="Tommy D's Windows, Doors & More"
+                width={200}
+                height={72}
+                className="h-16 w-auto object-contain object-left sm:h-[4.5rem] sm:object-right"
+                priority
+              />
+            </div>
+          </header>
+
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 sm:gap-6">
+            <section
+              className="rounded-xl border border-zinc-200/80 p-5 shadow-sm print:border-zinc-300 print:shadow-none"
+              style={{ backgroundColor: BRAND_SOFT }}
+            >
+              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500">Customer</h2>
+              <p className="mt-3 text-base font-semibold text-zinc-900">{customer?.name ?? "—"}</p>
+              {customer?.phone && (
+                <p className="mt-1.5 text-sm text-zinc-700">
+                  <span className="text-zinc-500">Phone </span>
+                  {customer.phone}
+                </p>
+              )}
+              {customer?.email && (
+                <p className="mt-1 text-sm text-zinc-700">
+                  <span className="text-zinc-500">Email </span>
+                  {customer.email}
+                </p>
+              )}
+            </section>
+            <section className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm print:border-zinc-300 print:shadow-none">
+              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500">Project address</h2>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-800">{address}</p>
+            </section>
           </div>
-        </section>
 
-        {quote.notes && (
-          <section className="mt-8 border-t border-gray-200 pt-4 text-sm text-gray-600">
-            <h2 className="font-semibold text-gray-700">Notes</h2>
-            <p className="mt-1 whitespace-pre-wrap">{quote.notes}</p>
+          <section className="mt-10">
+            <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500">Pricing</h2>
+            <div className="mt-3 overflow-hidden rounded-xl border border-zinc-200 print:border-zinc-300">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="bg-zinc-100 text-left text-zinc-700 print:bg-zinc-100">
+                    <th className="px-4 py-3 text-[0.65rem] font-bold uppercase tracking-wider">Description</th>
+                    <th className="w-16 px-2 py-3 text-right text-[0.65rem] font-bold uppercase tracking-wider">Qty</th>
+                    <th className="w-28 px-2 py-3 text-right text-[0.65rem] font-bold uppercase tracking-wider">
+                      Unit
+                    </th>
+                    <th className="w-28 px-4 py-3 text-right text-[0.65rem] font-bold uppercase tracking-wider">
+                      Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, i) => (
+                    <tr key={i} className="border-t border-zinc-100 bg-white">
+                      <td className="px-4 py-3.5 align-top text-zinc-800 leading-snug">{item.description}</td>
+                      <td className="px-2 py-3.5 text-right tabular-nums text-zinc-700">{item.qty}</td>
+                      <td className="px-2 py-3.5 text-right tabular-nums text-zinc-700">
+                        {formatCents(item.unit_price_cents)}
+                      </td>
+                      <td className="px-4 py-3.5 text-right tabular-nums font-semibold text-zinc-900">
+                        {formatCents(item.line_total_cents)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-6 flex justify-end print:break-inside-avoid">
+              <div
+                className="w-full max-w-xs space-y-2 rounded-xl border border-zinc-200 bg-white px-6 py-4 text-sm print:border-zinc-300"
+                style={{ borderTopWidth: 3, borderTopColor: BRAND }}
+              >
+                <div className="flex justify-between text-zinc-600">
+                  <span>Subtotal</span>
+                  <span className="tabular-nums text-zinc-900">{formatCents(quote.subtotal_cents)}</span>
+                </div>
+                <div className="flex justify-between text-zinc-600">
+                  <span>Sales tax</span>
+                  <span className="tabular-nums text-zinc-900">{formatCents(quote.tax_cents)}</span>
+                </div>
+                <div
+                  className="flex justify-between border-t border-zinc-200 pt-3 text-lg font-bold text-zinc-900 print:pt-3"
+                  style={{ borderColor: `${BRAND}33` }}
+                >
+                  <span>Total</span>
+                  <span className="tabular-nums">{formatCents(quote.total_cents)}</span>
+                </div>
+              </div>
+            </div>
           </section>
-        )}
 
-        <footer className="mt-12 border-t border-gray-200 pt-4 text-center text-xs text-gray-500">
-          Thank you for your business. This is an estimate; actual job may be scheduled and invoiced separately.
-        </footer>
+          {quote.notes && (
+            <section className="mt-10 print:break-inside-avoid">
+              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500">Details &amp; notes</h2>
+              <div
+                className="mt-3 rounded-r-xl border-l-4 bg-zinc-50/90 py-4 pl-5 pr-4 text-sm leading-relaxed text-zinc-800 print:bg-zinc-50"
+                style={{ borderLeftColor: BRAND }}
+              >
+                <div className="whitespace-pre-wrap font-[family-name:var(--font-geist-sans)]">{quote.notes}</div>
+              </div>
+            </section>
+          )}
+
+          <footer className="mt-14 border-t border-zinc-200 pt-8 text-center print:mt-12 print:pt-6">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
+              Tommy D&apos;s · Windows, Doors &amp; More
+            </p>
+            <p className="mx-auto mt-3 max-w-md text-xs leading-relaxed text-zinc-500">
+              Thank you for your business. Figures are subject to final field verification. Scheduling and final
+              invoicing are handled separately unless otherwise agreed.
+            </p>
+          </footer>
+        </article>
       </div>
-    </div>
+    </>
   );
 }

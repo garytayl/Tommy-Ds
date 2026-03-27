@@ -33,7 +33,7 @@ export default async function QuoteDetailPage({
   const [quoteResult, itemsResult, docsResult] = await Promise.all([
     supabase
       .from("quotes")
-      .select("id,customer_id,title,address_line1,address_line2,city,state,zip,status,workflow_stage,subtotal_cents,tax_cents,total_cents,notes,job_id,created_at,customers(id,name,phone,email)")
+      .select("id,customer_id,title,address_line1,address_line2,city,state,zip,status,workflow_stage,deposit_received,subtotal_cents,tax_cents,total_cents,notes,job_id,created_at,customers(id,name,phone,email)")
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -59,6 +59,7 @@ export default async function QuoteDetailPage({
     (quote as { workflow_stage?: string }).workflow_stage === "quote" ? "quote" : "estimate";
   const canConvertToJob =
     !quote.job_id && workflowStage === "quote" && (quote.status === "draft" || quote.status === "sent");
+  const depositReceivedFlag = Boolean((quote as { deposit_received?: boolean }).deposit_received);
 
   let docsWithUrls: (QuoteDocRow & { signed_url: string | null })[] = docs.map((d) => ({
     ...d,
@@ -162,7 +163,7 @@ export default async function QuoteDetailPage({
     const supabase = await createSupabaseServerClientForData();
     const { data: quoteRow } = await supabase
       .from("quotes")
-      .select("id,customer_id,title,address_line1,address_line2,city,state,zip,notes,subtotal_cents,tax_cents,total_cents,job_id,workflow_stage")
+      .select("id,customer_id,title,address_line1,address_line2,city,state,zip,notes,subtotal_cents,tax_cents,total_cents,job_id,workflow_stage,deposit_received")
       .eq("id", quoteId)
       .maybeSingle();
 
@@ -170,6 +171,12 @@ export default async function QuoteDetailPage({
     const rowStage = (quoteRow as { workflow_stage?: string }).workflow_stage ?? "estimate";
     if (rowStage !== "quote") {
       await setToastCookie("Promote this record to a formal quote before converting to a job");
+      return;
+    }
+
+    const depositConfirmation = String(formData.get("deposit_confirmation") ?? "").trim();
+    if (depositConfirmation !== "received" && depositConfirmation !== "not_yet") {
+      await setToastCookie("Confirm whether the customer has paid a deposit before converting");
       return;
     }
 
@@ -220,9 +227,12 @@ export default async function QuoteDetailPage({
       await supabase.rpc("recompute_invoice_totals", { p_invoice_id: newInvoice.id });
     }
 
+    const hadDeposit = Boolean((quoteRow as { deposit_received?: boolean }).deposit_received);
+    const depositReceived = depositConfirmation === "received" ? true : hadDeposit;
+
     await supabase
       .from("quotes")
-      .update({ job_id: newJob.id, status: "accepted" })
+      .update({ job_id: newJob.id, status: "accepted", deposit_received: depositReceived })
       .eq("id", quoteId);
     await supabase.from("jobs").update({ status: "approved" }).eq("id", newJob.id);
     await supabase.from("activities").insert({
@@ -249,6 +259,18 @@ export default async function QuoteDetailPage({
     if ((row as { workflow_stage?: string }).workflow_stage === "quote") return;
     await supabase.from("quotes").update({ workflow_stage: "quote" }).eq("id", id);
     await setToastCookie("Promoted to formal quote — you can convert to a job when ready");
+    revalidatePath(`/admin/quotes/${id}`);
+    revalidatePath("/admin/quotes");
+  }
+
+  async function updateDepositReceived(formData: FormData) {
+    "use server";
+    const supabase = await createSupabaseServerClientForData();
+    const { data: row } = await supabase.from("quotes").select("job_id").eq("id", id).maybeSingle();
+    if (!row || row.job_id) return;
+    const checked = formData.get("deposit_received") === "true";
+    await supabase.from("quotes").update({ deposit_received: checked }).eq("id", id);
+    await setToastCookie(checked ? "Deposit marked as received" : "Deposit not marked");
     revalidatePath(`/admin/quotes/${id}`);
     revalidatePath("/admin/quotes");
   }
@@ -393,10 +415,9 @@ export default async function QuoteDetailPage({
             </form>
           )}
           {canConvertToJob && (
-            <form action={convertQuoteToJob}>
-              <input type="hidden" name="quote_id" value={quote.id} />
-              <SubmitButton pendingLabel="Converting…">Convert to job</SubmitButton>
-            </form>
+            <a href="#convert-to-job" className="btn-primary">
+              Convert to job
+            </a>
           )}
           {quote.job_id && (
             <Link href={`/jobs/${quote.job_id}`} className="btn-primary">
@@ -431,6 +452,82 @@ export default async function QuoteDetailPage({
           )}
         </form>
       </section>
+
+      {!quote.job_id && (
+        <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-foreground">Deposit</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Record when the customer pays a deposit (e.g. 50% to begin fabrication). You will confirm again when converting to a job.
+          </p>
+          <form action={updateDepositReceived} className="mt-3 flex flex-wrap items-center gap-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="deposit_received"
+                value="true"
+                defaultChecked={depositReceivedFlag}
+                className="h-4 w-4 rounded border-border"
+              />
+              <span>Customer deposit received</span>
+            </label>
+            <SubmitButton variant="secondary" pendingLabel="Saving…">
+              Save deposit status
+            </SubmitButton>
+          </form>
+        </section>
+      )}
+
+      {canConvertToJob && (
+        <section id="convert-to-job" className="scroll-mt-24 rounded-xl border border-border bg-card p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-foreground">Convert to job</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Confirm whether a deposit has been collected. This creates the job and invoice.
+          </p>
+          {depositReceivedFlag && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Deposit is already marked as received on this record.
+            </p>
+          )}
+          <form action={convertQuoteToJob} className="mt-4 space-y-4">
+            <input type="hidden" name="quote_id" value={quote.id} />
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-foreground">Deposit confirmation</legend>
+              <label className="flex cursor-pointer items-start gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="deposit_confirmation"
+                  value="received"
+                  required
+                  className="mt-1"
+                  defaultChecked={depositReceivedFlag}
+                />
+                <span>
+                  <span className="font-medium text-foreground">Deposit received</span>
+                  <span className="block text-muted-foreground">
+                    Customer has paid the required deposit. We will record this on the quote when you convert.
+                  </span>
+                </span>
+              </label>
+              <label className="flex cursor-pointer items-start gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="deposit_confirmation"
+                  value="not_yet"
+                  className="mt-1"
+                  defaultChecked={!depositReceivedFlag}
+                />
+                <span>
+                  <span className="font-medium text-foreground">No deposit yet</span>
+                  <span className="block text-muted-foreground">
+                    Continue anyway (exception). Deposit stays unrecorded unless you checked it above.
+                  </span>
+                </span>
+              </label>
+            </fieldset>
+            <SubmitButton pendingLabel="Converting…">Create job</SubmitButton>
+          </form>
+        </section>
+      )}
 
       <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <span className="block h-1 w-12 rounded-full bg-primary/80" />
