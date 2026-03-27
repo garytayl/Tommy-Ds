@@ -5,7 +5,14 @@ import { redirect } from "next/navigation";
 import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
-export default async function NewQuotePage() {
+export default async function NewQuotePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ customer_id?: string }>;
+}) {
+  const resolvedSearch = (await searchParams) ?? {};
+  const preselectCustomerId = resolvedSearch.customer_id?.trim() ?? "";
+
   const supabase = await createSupabaseServerClientForData();
   const { data: customers } = await supabase
     .from("customers")
@@ -70,6 +77,7 @@ export default async function NewQuotePage() {
               name="customer_id"
               required
               className="field w-full"
+              defaultValue={preselectCustomerId || ""}
             >
               <option value="">Select customer</option>
               {(customers ?? []).map((c) => (

@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { SubmitButton } from "@/components/SubmitButton";
+import { formatCents } from "@/lib/money";
 import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
@@ -15,7 +16,7 @@ export default async function CustomerDetailPage({
   const { id } = await params;
   const supabase = await createSupabaseServerClientForData();
 
-  const [{ data: customer }, { data: jobs }] = await Promise.all([
+  const [{ data: customer }, { data: jobs }, { data: quotes }] = await Promise.all([
     supabase
       .from("customers")
       .select("id,name,phone,email,created_at")
@@ -26,6 +27,11 @@ export default async function CustomerDetailPage({
       .select("id,title,status,scheduled_start")
       .eq("customer_id", id)
       .order("scheduled_start", { ascending: true, nullsFirst: false }),
+    supabase
+      .from("quotes")
+      .select("id,title,status,total_cents,job_id,created_at")
+      .eq("customer_id", id)
+      .order("created_at", { ascending: false }),
   ]);
 
   if (!customer) {
@@ -103,8 +109,66 @@ export default async function CustomerDetailPage({
       </section>
 
       <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/50 px-4 py-3 sm:px-5">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">Quotes &amp; estimates</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Estimates live here until you convert one to a job.
+            </p>
+          </div>
+          <Link href={`/admin/quotes/new?customer_id=${id}`} className="btn-secondary text-sm">
+            New quote
+          </Link>
+        </div>
+        <div className="table-wrap overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/50">
+                <th className="table-header py-3 pl-5 pr-4">Title</th>
+                <th className="table-header py-3 pr-4">Total</th>
+                <th className="table-header py-3 pr-4">Status</th>
+                <th className="table-header py-3 pr-5">Job</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(quotes ?? []).length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-5 py-6 text-muted-foreground">
+                    No quotes yet. Create an estimate before scheduling work.
+                  </td>
+                </tr>
+              )}
+              {(quotes ?? []).map((q) => (
+                <tr key={q.id} className="border-b border-border transition hover:bg-muted/30">
+                  <td className="py-3 pl-5 pr-4">
+                    <Link href={`/admin/quotes/${q.id}`} className="link font-medium">
+                      {q.title}
+                    </Link>
+                  </td>
+                  <td className="py-3 pr-4 tabular-nums">{formatCents(q.total_cents)}</td>
+                  <td className="py-3 pr-4 capitalize text-muted-foreground">{q.status}</td>
+                  <td className="py-3 pr-5">
+                    {q.job_id ? (
+                      <Link href={`/jobs/${q.job_id}`} className="link text-sm">
+                        Open job
+                      </Link>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
         <div className="border-b border-border bg-muted/50 px-4 py-3 sm:px-5">
-          <h2 className="text-base font-semibold text-foreground">Customer Jobs</h2>
+          <h2 className="text-base font-semibold text-foreground">Jobs</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Jobs appear after you schedule work or convert an accepted quote.
+          </p>
         </div>
         <div className="table-wrap overflow-x-auto">
           <table className="min-w-full text-sm">
@@ -116,6 +180,13 @@ export default async function CustomerDetailPage({
               </tr>
             </thead>
             <tbody>
+              {(jobs ?? []).length === 0 && (
+                <tr>
+                  <td colSpan={3} className="px-5 py-6 text-muted-foreground">
+                    No jobs for this customer yet.
+                  </td>
+                </tr>
+              )}
               {(jobs ?? []).map((job) => (
                 <tr key={job.id} className="border-b border-border transition hover:bg-muted/30">
                   <td className="py-3 pl-5 pr-4">

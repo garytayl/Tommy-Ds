@@ -1,24 +1,48 @@
 -- First quote: Graphman countertop estimate (March 26, 2026)
--- Run in Supabase SQL Editor after migrations. Safe to re-run: deletes prior seed rows for these IDs.
+-- Run in Supabase SQL Editor. Safe to re-run: deletes prior seed rows for these IDs.
+-- Works even if quote_documents table is not migrated yet (attachment cleanup is skipped).
 
 begin;
 
-delete from public.quote_documents where quote_id = 'f2f00001-0000-4000-8000-000000000101';
+-- Only if quote_documents migration (20260327120000_quote_documents.sql) has been applied
+do $$
+begin
+  if exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'quote_documents'
+  ) then
+    delete from public.quote_documents where quote_id = 'f2f00001-0000-4000-8000-000000000101';
+  end if;
+end $$;
+
 delete from public.quote_items where quote_id = 'f2f00001-0000-4000-8000-000000000101';
 delete from public.quotes where id = 'f2f00001-0000-4000-8000-000000000101';
 delete from public.customers where id = 'f2f00001-0000-4000-8000-000000000100';
 
-insert into public.customers (id, name, phone, email, address, city, state, zip)
+-- Core columns only (MVP customers table). Address fields added if migration 20260313140000 extended customers.
+insert into public.customers (id, name, phone, email)
 values (
   'f2f00001-0000-4000-8000-000000000100',
   'Matt & Wendy Graphman',
   '(317) 607-1064',
-  null,
-  '1088 West Burma Road',
-  'Bloomington',
-  'IN',
-  '47404'
+  null
 );
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'customers' and column_name = 'address'
+  ) then
+    update public.customers
+    set
+      address = '1088 West Burma Road',
+      city = 'Bloomington',
+      state = 'IN',
+      zip = '47404'
+    where id = 'f2f00001-0000-4000-8000-000000000100';
+  end if;
+end $$;
 
 insert into public.quotes (
   id,

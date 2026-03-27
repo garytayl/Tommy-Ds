@@ -4,6 +4,10 @@
 -- Keeps: table definitions, migrations, auth.users, public.profiles, public.crews (seeded crews).
 -- Removes: customers, jobs, quotes, inventory, materials, products, audit trail.
 --
+-- Demo customers: Anderson/Baker/etc. named "(seed)" come from supabase/seed.sql or npm run db:seed.
+-- After a full wipe they are gone until you run seed again. To remove only demos and keep real data,
+-- use scripts/remove-demo-seeds.sql instead of this file.
+--
 -- Storage: Supabase does NOT allow DELETE FROM storage.objects in SQL (storage.protect_delete).
 -- After this script, empty buckets via Dashboard (Storage → bucket → select all → delete) or run:
 --   npm run storage:clear
