@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { revalidatePath } from "next/cache";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { SubmitButton } from "@/components/SubmitButton";
 import { formatCents } from "@/lib/money";
 import { workflowStageLabel } from "@/lib/quote-workflow";
-import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+
+import { deleteCustomer, updateCustomer } from "./actions";
 
 export default async function CustomerDetailPage({
   params,
@@ -39,38 +39,6 @@ export default async function CustomerDetailPage({
     notFound();
   }
 
-  async function updateCustomer(formData: FormData) {
-    "use server";
-
-    const name = String(formData.get("name") ?? "").trim();
-    const phone = String(formData.get("phone") ?? "").trim();
-    const email = String(formData.get("email") ?? "").trim();
-
-    if (!name) return;
-
-    const supabase = await createSupabaseServerClientForData();
-    await supabase
-      .from("customers")
-      .update({
-        name,
-        phone: phone || null,
-        email: email || null,
-      })
-      .eq("id", id);
-
-    await setToastCookie("Customer saved");
-    revalidatePath(`/admin/customers/${id}`);
-    revalidatePath("/admin/customers");
-  }
-
-  async function deleteCustomer() {
-    "use server";
-    const supabase = await createSupabaseServerClientForData();
-    await supabase.from("customers").delete().eq("id", id);
-    revalidatePath("/admin/customers");
-    redirect("/admin/customers");
-  }
-
   return (
     <div className="space-y-6">
       <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -81,6 +49,7 @@ export default async function CustomerDetailPage({
           </Link>
         </div>
         <form action={updateCustomer} className="grid gap-3 sm:grid-cols-3">
+          <input type="hidden" name="customer_id" value={id} />
           <input
             type="text"
             name="name"
@@ -105,7 +74,10 @@ export default async function CustomerDetailPage({
           </div>
         </form>
         <form action={deleteCustomer} className="mt-3">
-          <SubmitButton variant="danger" pendingLabel="Deleting…">Delete customer</SubmitButton>
+          <input type="hidden" name="customer_id" value={id} />
+          <SubmitButton variant="danger" pendingLabel="Deleting…">
+            Delete customer
+          </SubmitButton>
         </form>
       </section>
 
