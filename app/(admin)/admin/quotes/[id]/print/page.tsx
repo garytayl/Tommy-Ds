@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { formatCents } from "@/lib/money";
@@ -49,10 +48,7 @@ export default async function QuotePrintPage({
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `@page { size: letter; margin: 0.6in; }` }} />
-      <div
-        className="min-h-screen bg-[#faf8f5] text-zinc-900 antialiased print:min-h-0 print:bg-white"
-        style={{ ["--brand" as string]: BRAND }}
-      >
+      <div className="min-h-screen bg-[#faf8f5] text-zinc-900 antialiased print:min-h-0 print:bg-white">
         <article className="mx-auto max-w-[48rem] px-5 py-8 print:max-w-none print:px-0 print:py-0 sm:px-8 sm:py-10">
           <header className="flex flex-col gap-6 border-b-2 pb-8 sm:flex-row sm:items-start sm:justify-between sm:pb-10" style={{ borderColor: BRAND }}>
             <div className="min-w-0 flex-1">
@@ -71,14 +67,12 @@ export default async function QuotePrintPage({
               </p>
               <p className="mt-1.5 font-mono text-[11px] text-zinc-400">Reference {docRef}</p>
             </div>
-            <div className="flex shrink-0 items-start justify-start sm:justify-end">
-              <Image
+            <div className="flex shrink-0 items-start justify-end">
+              {/* eslint-disable-next-line @next/next/no-img-element -- print/PDF engines handle <img> more reliably than next/image */}
+              <img
                 src="/images/tommyds-logo.png"
                 alt="Tommy D's Windows, Doors & More"
-                width={200}
-                height={72}
-                className="h-16 w-auto object-contain object-left sm:h-[4.5rem] sm:object-right"
-                priority
+                className="h-16 max-w-[200px] object-contain object-right sm:h-[4.5rem] sm:max-w-[220px]"
               />
             </div>
           </header>
@@ -144,8 +138,8 @@ export default async function QuotePrintPage({
 
             <div className="mt-6 flex justify-end print:break-inside-avoid">
               <div
-                className="w-full max-w-xs space-y-2 rounded-xl border border-zinc-200 bg-white px-6 py-4 text-sm print:border-zinc-300"
-                style={{ borderTopWidth: 3, borderTopColor: BRAND }}
+                className="w-full max-w-xs space-y-2 rounded-xl border border-zinc-200 border-t-4 bg-white px-6 py-4 text-sm print:border-zinc-300"
+                style={{ borderTopColor: BRAND }}
               >
                 <div className="flex justify-between text-zinc-600">
                   <span>Subtotal</span>
@@ -173,7 +167,7 @@ export default async function QuotePrintPage({
                 className="mt-3 rounded-r-xl border-l-4 bg-zinc-50/90 py-4 pl-5 pr-4 text-sm leading-relaxed text-zinc-800 print:bg-zinc-50"
                 style={{ borderLeftColor: BRAND }}
               >
-                <div className="whitespace-pre-wrap font-[family-name:var(--font-geist-sans)]">{quote.notes}</div>
+                <div className="whitespace-pre-wrap">{quote.notes}</div>
               </div>
             </section>
           )}
