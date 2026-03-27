@@ -76,7 +76,7 @@ export default async function QuotePrintPage({
       <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
         Tommy D&apos;s · Windows, Doors &amp; More
       </p>
-      <p className="mx-auto mt-3 max-w-md text-xs leading-relaxed text-zinc-500">
+      <p className="mx-auto mt-2 max-w-md text-xs leading-snug text-zinc-500 print:mt-1.5">
         Thank you for your business. Figures are subject to final field verification. Scheduling and final
         invoicing are handled separately unless otherwise agreed.
       </p>
@@ -87,13 +87,24 @@ export default async function QuotePrintPage({
     <>
       <style
         dangerouslySetInnerHTML={{
-          __html: `@page { size: letter; margin: 0.5in; }`,
+          __html: `
+            @page { size: letter; margin: 0.4in; }
+            @media print {
+              .quote-print-notes-block { break-inside: auto; }
+              .quote-print-site-footer {
+                margin-top: 0.35rem;
+                padding-top: 0.5rem;
+                break-inside: avoid;
+                page-break-inside: avoid;
+              }
+            }
+          `,
         }}
       />
       <div className="min-h-screen bg-[#faf8f5] text-zinc-900 antialiased print:min-h-0 print:bg-white">
         <article className="mx-auto max-w-[48rem] px-5 py-8 print:max-w-none print:px-0 print:py-0 sm:px-8 sm:py-10">
           <div>
-          <header className="flex flex-col gap-6 border-b-2 pb-8 print:gap-4 print:pb-5 sm:flex-row sm:items-start sm:justify-between sm:pb-10" style={{ borderColor: BRAND }}>
+          <header className="flex flex-col gap-6 border-b-2 pb-8 print:gap-3 print:pb-3 sm:flex-row sm:items-start sm:justify-between sm:pb-10" style={{ borderColor: BRAND }}>
             <div className="min-w-0 flex-1">
               <p
                 className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] sm:text-[0.75rem]"
@@ -101,10 +112,10 @@ export default async function QuotePrintPage({
               >
                 {merged.docLabel}
               </p>
-              <h1 className="mt-3 text-2xl font-bold leading-tight tracking-tight text-zinc-900 sm:text-[1.75rem]">
+              <h1 className="mt-3 text-2xl font-bold leading-tight tracking-tight text-zinc-900 print:text-xl sm:text-[1.75rem]">
                 {merged.title}
               </h1>
-              <p className="mt-4 text-sm leading-relaxed text-zinc-600">
+              <p className="mt-4 text-sm leading-relaxed text-zinc-600 print:mt-2 print:text-xs">
                 <span className="font-semibold text-zinc-800">Prepared </span>
                 {merged.preparedDateText}
               </p>
@@ -219,14 +230,14 @@ export default async function QuotePrintPage({
           </div>
 
           {notesForPrint && (
-            <section className="mt-10 print:mt-0 print:break-before-page print:pt-2 print:break-inside-auto">
-              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500">
+            <section className="quote-print-notes-block mt-10 print:mt-0 print:break-before-page print:pt-1 print:break-inside-auto">
+              <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-zinc-500 print:mb-0">
                 {quoteNotesSectionTitle(notesForPrint)}
               </h2>
-              <div className="mt-3 print:mt-2">
+              <div className="mt-2 print:mt-1.5">
                 <QuoteNotesDisplay notes={notesForPrint} variant="print" />
               </div>
-              <footer className="mt-8 border-t border-zinc-200 pt-5 text-center print:mt-5 print:pt-4 print:break-inside-avoid print:[break-before:avoid]">
+              <footer className="quote-print-site-footer mt-4 border-t border-zinc-200 pt-3 text-center print:mt-2">
                 {footerBody}
               </footer>
             </section>

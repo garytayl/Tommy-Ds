@@ -24,6 +24,7 @@ function SectionBody({
 }) {
   const isPrint = variant === "print";
   const tight = Boolean(compact);
+  const keyTermsBulletBlock = /key terms/i.test(sectionTitle);
   const segments: ReactNode[] = [];
   let i = 0;
   const sectionIsKeyTermsOnly = /key terms/i.test(sectionTitle);
@@ -155,12 +156,23 @@ function SectionBody({
         <ul
           key={`ul-${i}-${segments.length}`}
           className={cn(
-            "list-none space-y-2.5 border-l-2 pl-4",
-            isPrint ? "border-[#8b2942]/55" : "border-[#7A1D2B]/50",
+            "list-none border-l-2",
+            isPrint && keyTermsBulletBlock
+              ? "columns-2 border-[#8b2942]/40 pl-3 [column-gap:0.85rem] [column-fill:_balance]"
+              : cn("space-y-2.5 pl-4", isPrint ? "border-[#8b2942]/55" : "border-[#7A1D2B]/50"),
           )}
         >
           {items.map((t, j) => (
-            <li key={j} className={cn("text-sm leading-relaxed", paperText(isPrint, false))}>
+            <li
+              key={j}
+              className={cn(
+                "leading-relaxed",
+                isPrint && keyTermsBulletBlock && "break-inside-avoid text-[0.65rem] leading-snug",
+                isPrint && !keyTermsBulletBlock && "text-xs leading-snug",
+                !isPrint && "text-sm",
+                paperText(isPrint, false),
+              )}
+            >
               {t}
             </li>
           ))}
@@ -200,7 +212,13 @@ function SectionBody({
           >
             {key}
           </span>
-          <span className={cn("min-w-0 flex-1 text-sm leading-relaxed whitespace-pre-wrap", paperText(isPrint, false))}>
+          <span
+            className={cn(
+              "min-w-0 flex-1 whitespace-pre-wrap leading-relaxed",
+              isPrint ? "text-xs leading-snug" : "text-sm",
+              paperText(isPrint, false),
+            )}
+          >
             {val || "—"}
           </span>
         </div>,
@@ -257,7 +275,8 @@ function SectionBody({
         <p
           key={`kt-line-${i}`}
           className={cn(
-            "border-l-2 border-[#7A1D2B]/35 pl-3 text-sm leading-relaxed",
+            "border-l-2 border-[#7A1D2B]/35 pl-3 leading-relaxed",
+            isPrint ? "text-xs leading-snug" : "text-sm",
             paperText(isPrint, false),
             isPrint && "border-[#8b2942]/40",
           )}
@@ -270,14 +289,19 @@ function SectionBody({
     }
 
     segments.push(
-      <p key={`p-${i}`} className={cn("text-sm leading-relaxed", paperText(isPrint, false))}>
+      <p
+        key={`p-${i}`}
+        className={cn(isPrint ? "text-xs leading-snug" : "text-sm leading-relaxed", paperText(isPrint, false))}
+      >
         {line}
       </p>,
     );
     i++;
   }
 
-  return <div className={tight ? "space-y-2" : "space-y-3"}>{segments}</div>;
+  return (
+    <div className={cn(tight ? "space-y-2" : "space-y-3", isPrint && "space-y-1")}>{segments}</div>
+  );
 }
 
 function classifySectionTitleSafe(line: string): boolean {
@@ -321,10 +345,12 @@ export function QuoteNotesDisplay({
         className={cn(
           "rounded-xl border shadow-inner",
           padTight ? "p-3" : "p-5",
-          isPrint ? "border-zinc-200 bg-zinc-50" : "border-zinc-200 bg-white",
+          isPrint ? "border-zinc-200 bg-zinc-50 p-2" : "border-zinc-200 bg-white",
         )}
       >
-        <p className={cn("whitespace-pre-wrap text-sm leading-relaxed text-zinc-800")}>{notes}</p>
+        <p className={cn("whitespace-pre-wrap text-zinc-800 leading-relaxed", isPrint ? "text-xs leading-snug" : "text-sm")}>
+          {notes}
+        </p>
       </div>
     );
   }
@@ -335,7 +361,7 @@ export function QuoteNotesDisplay({
         "rounded-xl border shadow-sm",
         padTight ? "space-y-2 p-3" : "space-y-4 p-5",
         paper && "border-zinc-200 bg-white",
-        isPrint && "rounded-none border-0 p-0 shadow-none",
+        isPrint && "space-y-1 rounded-none border-0 p-0 shadow-none",
       )}
     >
       {parsed.map((block, idx) => {
@@ -385,14 +411,14 @@ export function QuoteNotesDisplay({
                 "relative overflow-hidden rounded-2xl border shadow-sm",
                 padTight ? "p-4" : "p-6",
                 isPrint
-                  ? "border-zinc-200 bg-gradient-to-br from-[#f4ecef] via-white to-white"
+                  ? "border-zinc-200 bg-gradient-to-br from-[#f4ecef] via-white to-white p-2 shadow-none"
                   : "border-zinc-200 bg-gradient-to-br from-[#f4ecef]/90 via-white to-white",
               )}
             >
               <div
                 className={cn(
                   "pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full blur-2xl",
-                  isPrint ? "bg-[#8b2942]/10" : "bg-[#7A1D2B]/12",
+                  isPrint ? "hidden" : "bg-[#7A1D2B]/12",
                 )}
                 aria-hidden
               />
@@ -400,6 +426,7 @@ export function QuoteNotesDisplay({
                 className={cn(
                   "relative font-bold tracking-tight text-zinc-900",
                   padTight ? "text-lg" : "text-xl",
+                  isPrint && "text-base",
                 )}
               >
                 {block.title}
@@ -409,6 +436,7 @@ export function QuoteNotesDisplay({
                   className={cn(
                     "relative border-t border-zinc-200",
                     padTight ? "mt-3 pt-3" : "mt-4 pt-4",
+                    isPrint && "mt-2 pt-2",
                   )}
                 >
                   <SectionBody
@@ -429,18 +457,18 @@ export function QuoteNotesDisplay({
             className={cn(
               "rounded-xl border shadow-sm",
               padTight ? "p-3" : "p-5",
-              isPrint ? "border-zinc-200 bg-zinc-50/90" : "border-zinc-200 bg-zinc-50/70",
+              isPrint ? "border-zinc-200 bg-zinc-50/90 p-2 py-2 shadow-sm" : "border-zinc-200 bg-zinc-50/70",
             )}
           >
             <h4
               className={cn(
                 "border-b border-zinc-200 pb-2 text-[0.7rem] font-bold uppercase tracking-[0.2em] text-[#7A1D2B]",
-                isPrint && "text-[#8b2942]",
+                isPrint && "border-zinc-200 pb-1 text-[0.65rem] text-[#8b2942]",
               )}
             >
               {block.title}
             </h4>
-            <div className={padTight ? "mt-2" : "mt-4"}>
+            <div className={cn(padTight ? "mt-2" : "mt-4", isPrint && "mt-1.5")}>
               <SectionBody
                 lines={block.bodyLines}
                 variant={variant}
