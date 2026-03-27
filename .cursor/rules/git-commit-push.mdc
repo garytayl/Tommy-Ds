@@ -1,0 +1,16 @@
+---
+description: After completing work, commit and push to origin
+alwaysApply: true
+---
+
+# Git: commit and push
+
+When a task or coherent batch of edits is **done** in this repo:
+
+1. Run `git status` and stage the files that belong to the change (not unrelated noise).
+2. **Commit** with a message in complete sentences: what changed and why it matters.
+3. **Push** to `origin` on the current branch (usually `main`).
+
+Do this **without waiting** for the user to say “commit” or “push,” unless they explicitly asked to hold off (e.g. local experiments only).
+
+**Do not** commit: secrets, `.env`, or local-only folders such as `cursor_templates/` or `cursor_memory/` if those paths are outside or ignored by this repo.
