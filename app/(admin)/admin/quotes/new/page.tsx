@@ -1,4 +1,4 @@
-import { normalizeTemplateIdInList } from "@/lib/quote-templates";
+import { normalizeTemplateIdInList, toQuoteTemplateClientOptions } from "@/lib/quote-templates";
 import { fetchMergedQuoteTemplateDefinitions } from "@/lib/quote-templates-load";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -22,6 +22,7 @@ export default async function NewQuotePage({
   ]);
 
   const initialTemplateId = normalizeTemplateIdInList(resolvedSearch.template, templateDefinitions);
+  const templateOptions = toQuoteTemplateClientOptions(templateDefinitions);
 
   return (
     <div className="space-y-8">
@@ -38,7 +39,7 @@ export default async function NewQuotePage({
         customers={customers ?? []}
         preselectCustomerId={preselectCustomerId}
         initialTemplateId={initialTemplateId}
-        templateDefinitions={templateDefinitions}
+        templateOptions={templateOptions}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import {
   BLANK_QUOTE_TEMPLATE_ID,
   mergeQuoteTemplateDefinitions,
   normalizeTemplateIdInList,
+  toQuoteTemplateClientOptions,
   VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID,
   type QuoteTemplateDbRow,
 } from "./quote-templates";
@@ -39,5 +40,16 @@ describe("normalizeTemplateIdInList", () => {
     expect(normalizeTemplateIdInList(VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID, defs)).toBe(
       VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID,
     );
+  });
+});
+
+describe("toQuoteTemplateClientOptions", () => {
+  it("produces only JSON-serializable fields for RSC → client props", () => {
+    const opts = toQuoteTemplateClientOptions(mergeQuoteTemplateDefinitions([]));
+    expect(opts.length).toBeGreaterThan(0);
+    for (const o of opts) {
+      expect(() => JSON.stringify(o)).not.toThrow();
+      expect(typeof o.defaultNotes).toBe("string");
+    }
   });
 });

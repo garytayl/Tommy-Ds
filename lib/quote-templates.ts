@@ -20,6 +20,31 @@ export type QuoteTemplateDefinition = {
   lineItems: QuoteTemplateLineItem[];
 };
 
+/**
+ * JSON-serializable template row for passing Server → Client (RSC cannot send functions like `buildNotes`).
+ */
+export type QuoteTemplateClientOption = {
+  id: string;
+  name: string;
+  description: string;
+  defaultTitle: string;
+  /** Result of `buildNotes(asOf)` computed on the server */
+  defaultNotes: string;
+};
+
+export function toQuoteTemplateClientOptions(
+  defs: readonly QuoteTemplateDefinition[],
+  asOf: Date = new Date(),
+): QuoteTemplateClientOption[] {
+  return defs.map((d) => ({
+    id: d.id,
+    name: d.name,
+    description: d.description,
+    defaultTitle: d.defaultTitle,
+    defaultNotes: d.buildNotes(asOf),
+  }));
+}
+
 /** Row shape from `public.quote_templates` (line_items JSON array). */
 export type QuoteTemplateDbRow = {
   id: string;
@@ -70,10 +95,10 @@ export function dbRowToDefinition(row: QuoteTemplateDbRow): QuoteTemplateDefinit
   };
 }
 
-export function findQuoteTemplateInList(
+export function findQuoteTemplateInList<T extends { id: string }>(
   id: string | null | undefined,
-  definitions: QuoteTemplateDefinition[],
-): QuoteTemplateDefinition | null {
+  definitions: readonly T[],
+): T | null {
   if (!id || id === BLANK_QUOTE_TEMPLATE_ID) {
     return definitions.find((t) => t.id === BLANK_QUOTE_TEMPLATE_ID) ?? null;
   }
@@ -82,7 +107,7 @@ export function findQuoteTemplateInList(
 
 export function normalizeTemplateIdInList(
   raw: string | null | undefined,
-  definitions: QuoteTemplateDefinition[],
+  definitions: ReadonlyArray<{ id: string }>,
 ): string {
   const s = String(raw ?? "").trim();
   if (!s) return BLANK_QUOTE_TEMPLATE_ID;

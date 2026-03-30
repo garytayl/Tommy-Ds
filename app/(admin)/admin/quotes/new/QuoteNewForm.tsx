@@ -10,7 +10,7 @@ import {
   BLANK_QUOTE_TEMPLATE_ID,
   findQuoteTemplateInList,
   normalizeTemplateIdInList,
-  type QuoteTemplateDefinition,
+  type QuoteTemplateClientOption,
 } from "@/lib/quote-templates";
 
 import { CopyAddressFromCustomerButton } from "@/components/CopyAddressFromCustomerButton";
@@ -32,24 +32,25 @@ export function QuoteNewForm({
   customers,
   preselectCustomerId,
   initialTemplateId,
-  templateDefinitions,
+  templateOptions,
 }: {
   customers: CustomerOption[];
   preselectCustomerId: string;
   initialTemplateId: string;
-  templateDefinitions: QuoteTemplateDefinition[];
+  /** Serializable template rows (no `buildNotes` functions — RSC cannot pass those to the client). */
+  templateOptions: QuoteTemplateClientOption[];
 }) {
   const [templateId, setTemplateId] = useState(() =>
-    normalizeTemplateIdInList(initialTemplateId, templateDefinitions),
+    normalizeTemplateIdInList(initialTemplateId, templateOptions),
   );
-  const template = findQuoteTemplateInList(templateId, templateDefinitions)!;
+  const template = findQuoteTemplateInList(templateId, templateOptions)!;
 
   const titleDefault = templateId === BLANK_QUOTE_TEMPLATE_ID ? "" : template.defaultTitle;
   const sectionDefaults = useMemo(() => {
-    const t = findQuoteTemplateInList(templateId, templateDefinitions)!;
+    const t = findQuoteTemplateInList(templateId, templateOptions)!;
     if (templateId === BLANK_QUOTE_TEMPLATE_ID) return quoteNotesToSections("");
-    return quoteNotesToSections(t.buildNotes());
-  }, [templateId, templateDefinitions]);
+    return quoteNotesToSections(t.defaultNotes);
+  }, [templateId, templateOptions]);
 
   return (
     <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -115,10 +116,10 @@ export function QuoteNewForm({
           <select
             className="field w-full"
             value={templateId}
-            onChange={(e) => setTemplateId(normalizeTemplateIdInList(e.target.value, templateDefinitions))}
+            onChange={(e) => setTemplateId(normalizeTemplateIdInList(e.target.value, templateOptions))}
             aria-label="Estimate template"
           >
-            {templateDefinitions.map((t) => (
+            {templateOptions.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
               </option>
