@@ -1,4 +1,5 @@
-import { normalizeTemplateId } from "@/lib/quote-templates";
+import { normalizeTemplateIdInList } from "@/lib/quote-templates";
+import { fetchMergedQuoteTemplateDefinitions } from "@/lib/quote-templates-load";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 import { QuoteNewForm } from "./QuoteNewForm";
@@ -10,13 +11,17 @@ export default async function NewQuotePage({
 }) {
   const resolvedSearch = (await searchParams) ?? {};
   const preselectCustomerId = resolvedSearch.customer_id?.trim() ?? "";
-  const initialTemplateId = normalizeTemplateId(resolvedSearch.template);
 
   const supabase = await createSupabaseServerClientForData();
-  const { data: customers } = await supabase
-    .from("customers")
-    .select("id,name,address_line1,address_line2,city,state,zip")
-    .order("name", { ascending: true });
+  const [templateDefinitions, { data: customers }] = await Promise.all([
+    fetchMergedQuoteTemplateDefinitions(supabase),
+    supabase
+      .from("customers")
+      .select("id,name,address_line1,address_line2,city,state,zip")
+      .order("name", { ascending: true }),
+  ]);
+
+  const initialTemplateId = normalizeTemplateIdInList(resolvedSearch.template, templateDefinitions);
 
   return (
     <div className="space-y-8">
@@ -33,6 +38,7 @@ export default async function NewQuotePage({
         customers={customers ?? []}
         preselectCustomerId={preselectCustomerId}
         initialTemplateId={initialTemplateId}
+        templateDefinitions={templateDefinitions}
       />
     </div>
   );

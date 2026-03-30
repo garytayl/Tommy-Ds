@@ -3,11 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import {
-  BLANK_QUOTE_TEMPLATE_ID,
-  getQuoteTemplate,
-  normalizeTemplateId,
-} from "@/lib/quote-templates";
+import { BLANK_QUOTE_TEMPLATE_ID, normalizeTemplateIdInList } from "@/lib/quote-templates";
+import { fetchMergedQuoteTemplateDefinitions, resolveQuoteTemplateForCreate } from "@/lib/quote-templates-load";
 import {
   composeNotesFromSections,
   emptyQuoteNotesSections,
@@ -24,14 +21,15 @@ export async function quickAddCustomer(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
-  const templateId = normalizeTemplateId(String(formData.get("template_id") ?? ""));
+  const supabase = await createSupabaseServerClientForData();
+  const merged = await fetchMergedQuoteTemplateDefinitions(supabase);
+  const templateId = normalizeTemplateIdInList(String(formData.get("template_id") ?? ""), merged);
 
   if (!name) {
     await setToastCookie("Enter a customer name to quick add.");
     return;
   }
 
-  const supabase = await createSupabaseServerClientForData();
   const { data: row, error } = await supabase
     .from("customers")
     .insert({
@@ -59,8 +57,10 @@ export async function quickAddCustomer(formData: FormData) {
 
 export async function createQuoteFromForm(formData: FormData) {
   const customerId = String(formData.get("customer_id") ?? "").trim();
-  const templateId = normalizeTemplateId(String(formData.get("template_id") ?? ""));
-  const template = getQuoteTemplate(templateId);
+  const supabase = await createSupabaseServerClientForData();
+  const merged = await fetchMergedQuoteTemplateDefinitions(supabase);
+  const templateId = normalizeTemplateIdInList(String(formData.get("template_id") ?? ""), merged);
+  const template = await resolveQuoteTemplateForCreate(supabase, templateId);
 
   let title = String(formData.get("title") ?? "").trim();
   const address1 = String(formData.get("address_line1") ?? "").trim();
@@ -90,7 +90,6 @@ export async function createQuoteFromForm(formData: FormData) {
   const sectionsPayload =
     composed !== null ? sections : notes ? quoteNotesToSections(notes) : emptyQuoteNotesSections();
 
-  const supabase = await createSupabaseServerClientForData();
   const { data: quote, error: quoteInsertError } = await supabase
     .from("quotes")
     .insert({

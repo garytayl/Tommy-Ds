@@ -1,5 +1,5 @@
 /**
- * Built-in estimate/quote starters. Add new templates here (DB-backed templates can come later).
+ * Built-in estimate starters live here; custom templates are stored in `quote_templates` and merged at runtime.
  */
 
 export type QuoteTemplateLineItem = {
@@ -19,6 +19,75 @@ export type QuoteTemplateDefinition = {
   buildNotes: (asOf?: Date) => string;
   lineItems: QuoteTemplateLineItem[];
 };
+
+/** Row shape from `public.quote_templates` (line_items JSON array). */
+export type QuoteTemplateDbRow = {
+  id: string;
+  name: string;
+  description: string;
+  default_title: string;
+  notes_text: string | null;
+  line_items: unknown;
+  sort_order: number;
+};
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isUuidString(s: string): boolean {
+  return UUID_RE.test(s.trim());
+}
+
+export function coerceQuoteTemplateLineItems(raw: unknown): QuoteTemplateLineItem[] {
+  if (!Array.isArray(raw)) return [];
+  const out: QuoteTemplateLineItem[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const o = row as Record<string, unknown>;
+    const description = String(o.description ?? "").trim();
+    if (!description) continue;
+    const qty = Number(o.qty);
+    const unit = Math.round(Number(o.unit_price_cents) || 0);
+    const line = Math.round(Number(o.line_total_cents) || 0);
+    out.push({
+      description,
+      qty: Number.isFinite(qty) && qty > 0 ? qty : 1,
+      unit_price_cents: unit,
+      line_total_cents: line,
+    });
+  }
+  return out;
+}
+
+export function dbRowToDefinition(row: QuoteTemplateDbRow): QuoteTemplateDefinition {
+  const notes = row.notes_text ?? "";
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description || "Custom template",
+    defaultTitle: row.default_title ?? "",
+    buildNotes: () => notes,
+    lineItems: coerceQuoteTemplateLineItems(row.line_items),
+  };
+}
+
+export function findQuoteTemplateInList(
+  id: string | null | undefined,
+  definitions: QuoteTemplateDefinition[],
+): QuoteTemplateDefinition | null {
+  if (!id || id === BLANK_QUOTE_TEMPLATE_ID) {
+    return definitions.find((t) => t.id === BLANK_QUOTE_TEMPLATE_ID) ?? null;
+  }
+  return definitions.find((t) => t.id === id) ?? null;
+}
+
+export function normalizeTemplateIdInList(
+  raw: string | null | undefined,
+  definitions: QuoteTemplateDefinition[],
+): string {
+  const s = String(raw ?? "").trim();
+  if (!s) return BLANK_QUOTE_TEMPLATE_ID;
+  return findQuoteTemplateInList(s, definitions) ? s : BLANK_QUOTE_TEMPLATE_ID;
+}
 
 export const BLANK_QUOTE_TEMPLATE_ID = "blank";
 
@@ -92,6 +161,12 @@ export const QUOTE_TEMPLATES: QuoteTemplateDefinition[] = [
     lineItems: [vwStoneWorxLineItem],
   },
 ];
+
+/** Built-ins first, then DB rows (by sort_order, then name — caller should order rows). */
+export function mergeQuoteTemplateDefinitions(dbRows: QuoteTemplateDbRow[]): QuoteTemplateDefinition[] {
+  const custom = dbRows.map(dbRowToDefinition);
+  return [...QUOTE_TEMPLATES, ...custom];
+}
 
 export function getQuoteTemplate(id: string | null | undefined): QuoteTemplateDefinition | null {
   if (!id || id === BLANK_QUOTE_TEMPLATE_ID) {

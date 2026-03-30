@@ -1,0 +1,43 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  BLANK_QUOTE_TEMPLATE_ID,
+  mergeQuoteTemplateDefinitions,
+  normalizeTemplateIdInList,
+  VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID,
+  type QuoteTemplateDbRow,
+} from "./quote-templates";
+
+describe("mergeQuoteTemplateDefinitions", () => {
+  it("places built-ins first and appends DB rows", () => {
+    const db: QuoteTemplateDbRow[] = [
+      {
+        id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        name: "Custom A",
+        description: "d",
+        default_title: "t",
+        notes_text: "n",
+        line_items: [],
+        sort_order: 0,
+      },
+    ];
+    const merged = mergeQuoteTemplateDefinitions(db);
+    expect(merged[0]?.id).toBe(BLANK_QUOTE_TEMPLATE_ID);
+    expect(merged[1]?.id).toBe(VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID);
+    expect(merged[2]?.id).toBe("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+  });
+});
+
+describe("normalizeTemplateIdInList", () => {
+  const defs = mergeQuoteTemplateDefinitions([]);
+
+  it("returns blank for unknown ids", () => {
+    expect(normalizeTemplateIdInList("not-a-template", defs)).toBe(BLANK_QUOTE_TEMPLATE_ID);
+  });
+
+  it("keeps valid built-in ids", () => {
+    expect(normalizeTemplateIdInList(VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID, defs)).toBe(
+      VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID,
+    );
+  });
+});

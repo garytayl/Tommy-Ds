@@ -124,6 +124,9 @@ export default async function QuotesListPage({
           <Link href="/admin/quotes/new" className="btn-primary">
             New estimate
           </Link>
+          <Link href="/admin/quotes/templates" className="btn-secondary">
+            Templates
+          </Link>
           <Link
             href={`/admin/quotes/new?template=${VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID}`}
             className="btn-secondary"

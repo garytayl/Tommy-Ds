@@ -8,9 +8,9 @@ import { QuoteNotesSectionFields } from "@/components/QuoteNotesSectionFields";
 
 import {
   BLANK_QUOTE_TEMPLATE_ID,
-  getQuoteTemplate,
-  normalizeTemplateId,
-  QUOTE_TEMPLATES,
+  findQuoteTemplateInList,
+  normalizeTemplateIdInList,
+  type QuoteTemplateDefinition,
 } from "@/lib/quote-templates";
 
 import { CopyAddressFromCustomerButton } from "@/components/CopyAddressFromCustomerButton";
@@ -32,20 +32,24 @@ export function QuoteNewForm({
   customers,
   preselectCustomerId,
   initialTemplateId,
+  templateDefinitions,
 }: {
   customers: CustomerOption[];
   preselectCustomerId: string;
   initialTemplateId: string;
+  templateDefinitions: QuoteTemplateDefinition[];
 }) {
-  const [templateId, setTemplateId] = useState(() => normalizeTemplateId(initialTemplateId));
-  const template = getQuoteTemplate(templateId)!;
+  const [templateId, setTemplateId] = useState(() =>
+    normalizeTemplateIdInList(initialTemplateId, templateDefinitions),
+  );
+  const template = findQuoteTemplateInList(templateId, templateDefinitions)!;
 
   const titleDefault = templateId === BLANK_QUOTE_TEMPLATE_ID ? "" : template.defaultTitle;
   const sectionDefaults = useMemo(() => {
-    const t = getQuoteTemplate(templateId)!;
+    const t = findQuoteTemplateInList(templateId, templateDefinitions)!;
     if (templateId === BLANK_QUOTE_TEMPLATE_ID) return quoteNotesToSections("");
     return quoteNotesToSections(t.buildNotes());
-  }, [templateId]);
+  }, [templateId, templateDefinitions]);
 
   return (
     <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -111,10 +115,10 @@ export function QuoteNewForm({
           <select
             className="field w-full"
             value={templateId}
-            onChange={(e) => setTemplateId(normalizeTemplateId(e.target.value))}
+            onChange={(e) => setTemplateId(normalizeTemplateIdInList(e.target.value, templateDefinitions))}
             aria-label="Estimate template"
           >
-            {QUOTE_TEMPLATES.map((t) => (
+            {templateDefinitions.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
               </option>

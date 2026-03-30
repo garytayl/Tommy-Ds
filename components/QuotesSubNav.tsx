@@ -27,7 +27,8 @@ export function QuotesSubNav() {
   const pathname = usePathname() ?? "";
 
   const isList = pathname === "/admin/quotes";
-  const isNew = pathname.startsWith("/admin/quotes/new");
+  const isNew = pathname === "/admin/quotes/new";
+  const isTemplates = pathname.startsWith("/admin/quotes/templates");
 
   return (
     <nav
@@ -41,6 +42,7 @@ export function QuotesSubNav() {
         <div className="flex flex-wrap items-center gap-2">
           <Tab href="/admin/quotes" label="All" active={isList} />
           <Tab href="/admin/quotes/new" label="New estimate" active={isNew} />
+          <Tab href="/admin/quotes/templates" label="Templates" active={isTemplates} />
         </div>
       </div>
     </nav>
