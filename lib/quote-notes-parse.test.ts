@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { parseStructuredQuoteNotes, structuredQuoteNoteTitles } from "./quote-notes-parse";
+import { type QuoteNoteBlock, parseStructuredQuoteNotes, structuredQuoteNoteTitles } from "./quote-notes-parse";
+
+function blockTitles(blocks: QuoteNoteBlock[]): string[] {
+  return blocks.filter((b): b is Extract<QuoteNoteBlock, { kind: "hero" | "section" }> => b.kind !== "plaintext").map((b) => b.title);
+}
 
 describe("parseStructuredQuoteNotes", () => {
   it("parses Graphman-style countertop seed (hero, project, scope, key terms)", () => {
@@ -19,7 +23,7 @@ KEY TERMS / CONDITIONS
 
     const parsed = parseStructuredQuoteNotes(notes);
     expect(parsed).not.toBeNull();
-    expect(parsed!.map((b) => b.title)).toEqual([
+    expect(blockTitles(parsed!)).toEqual([
       "COUNTERTOP ESTIMATE (Quote #1)",
       "PROJECT DETAILS",
       "SCOPE NOTES",
@@ -52,14 +56,14 @@ KEY TERMS / CONDITIONS
 
     const parsed = parseStructuredQuoteNotes(notes);
     expect(parsed).not.toBeNull();
-    expect(parsed!.map((b) => b.title)).toEqual([
+    expect(blockTitles(parsed!)).toEqual([
       "COUNTERTOP ESTIMATE (Quote #1)",
       "CUSTOMER INFORMATION",
       "PROJECT DETAILS",
       "PRICING (reference — line items control totals in the system)",
       "KEY TERMS / CONDITIONS",
     ]);
-    expect(structuredQuoteNoteTitles(notes)).toEqual(parsed!.map((b) => b.title));
+    expect(structuredQuoteNoteTitles(notes)).toEqual(blockTitles(parsed!));
   });
 
   it("returns null for unstructured notes", () => {

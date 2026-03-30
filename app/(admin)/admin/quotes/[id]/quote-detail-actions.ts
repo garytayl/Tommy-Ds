@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { autoRecordQuoteRevisionIfChanged } from "@/lib/quote-revision-auto";
+import { composeNotesFromSections, formDataToNotesSections, serializeNotesSections } from "@/lib/quote-notes-sections";
 import { dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
 import { setToastCookie } from "@/lib/toast";
@@ -36,8 +37,8 @@ export async function updateQuoteDetails(quoteId: string, formData: FormData) {
   const city = String(formData.get("city") ?? "").trim();
   const state = String(formData.get("state") ?? "").trim() || "IN";
   const zip = String(formData.get("zip") ?? "").trim();
-  const notesRaw = String(formData.get("notes") ?? "");
-  const notes = notesRaw.trim() === "" ? null : notesRaw;
+  const sections = formDataToNotesSections(formData);
+  const notes = composeNotesFromSections(sections);
 
   if (!title || !address_line1 || !city || !zip) {
     await setToastCookie("Title, address line 1, city, and zip are required.");
@@ -55,6 +56,7 @@ export async function updateQuoteDetails(quoteId: string, formData: FormData) {
       state,
       zip,
       notes,
+      notes_sections: serializeNotesSections(sections),
     })
     .eq("id", quoteId);
 

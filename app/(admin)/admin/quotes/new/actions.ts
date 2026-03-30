@@ -8,6 +8,13 @@ import {
   getQuoteTemplate,
   normalizeTemplateId,
 } from "@/lib/quote-templates";
+import {
+  composeNotesFromSections,
+  emptyQuoteNotesSections,
+  formDataToNotesSections,
+  quoteNotesToSections,
+  serializeNotesSections,
+} from "@/lib/quote-notes-sections";
 import { computeTaxCents } from "@/lib/tax";
 import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
@@ -56,7 +63,6 @@ export async function createQuoteFromForm(formData: FormData) {
   const template = getQuoteTemplate(templateId);
 
   let title = String(formData.get("title") ?? "").trim();
-  let notesRaw = String(formData.get("notes") ?? "").trim();
   const address1 = String(formData.get("address_line1") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
   const state = String(formData.get("state") ?? "IN").trim() || "IN";
@@ -75,10 +81,14 @@ export async function createQuoteFromForm(formData: FormData) {
     return;
   }
 
-  let notes: string | null = notesRaw || null;
+  const sections = formDataToNotesSections(formData);
+  const composed = composeNotesFromSections(sections);
+  let notes: string | null = composed;
   if (!notes && templateId !== BLANK_QUOTE_TEMPLATE_ID && template.buildNotes) {
     notes = template.buildNotes();
   }
+  const sectionsPayload =
+    composed !== null ? sections : notes ? quoteNotesToSections(notes) : emptyQuoteNotesSections();
 
   const supabase = await createSupabaseServerClientForData();
   const { data: quote, error: quoteInsertError } = await supabase
@@ -92,6 +102,7 @@ export async function createQuoteFromForm(formData: FormData) {
       state,
       zip,
       notes,
+      notes_sections: serializeNotesSections(sectionsPayload),
       status: "draft",
       workflow_stage: "estimate",
     })

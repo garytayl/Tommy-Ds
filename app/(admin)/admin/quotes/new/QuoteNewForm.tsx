@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
+import { quoteNotesToSections } from "@/lib/quote-notes-sections";
+import { QuoteNotesSectionFields } from "@/components/QuoteNotesSectionFields";
 
 import {
   BLANK_QUOTE_TEMPLATE_ID,
@@ -38,7 +41,11 @@ export function QuoteNewForm({
   const template = getQuoteTemplate(templateId)!;
 
   const titleDefault = templateId === BLANK_QUOTE_TEMPLATE_ID ? "" : template.defaultTitle;
-  const notesDefault = templateId === BLANK_QUOTE_TEMPLATE_ID ? "" : template.buildNotes();
+  const sectionDefaults = useMemo(() => {
+    const t = getQuoteTemplate(templateId)!;
+    if (templateId === BLANK_QUOTE_TEMPLATE_ID) return quoteNotesToSections("");
+    return quoteNotesToSections(t.buildNotes());
+  }, [templateId]);
 
   return (
     <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -168,15 +175,7 @@ export function QuoteNewForm({
         <input id="new-quote-project-state" name="state" type="text" defaultValue="IN" className="field" />
         <input id="new-quote-project-zip" name="zip" type="text" required placeholder="Zip" className="field" />
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes (optional)</label>
-          <textarea
-            key={`notes-${templateId}`}
-            name="notes"
-            placeholder="Scope, terms, fabricator notes…"
-            rows={templateId === BLANK_QUOTE_TEMPLATE_ID ? 2 : 14}
-            defaultValue={notesDefault}
-            className="field min-h-[4.5rem] w-full resize-y text-sm"
-          />
+          <QuoteNotesSectionFields key={templateId} defaults={sectionDefaults} variant="new" />
         </div>
         <div className="flex flex-wrap gap-2 sm:col-span-2">
           <button type="submit" className="btn-primary">
