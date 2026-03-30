@@ -597,24 +597,68 @@ export default async function QuoteDetailPage({
                 <label className="mb-1.5 block text-xs font-medium text-muted-foreground">ZIP</label>
                 <input name="zip" type="text" required defaultValue={quote.zip} className="field w-full" />
               </div>
-              <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                  Scope & terms (structured text)
-                </label>
-                <p className="mb-1.5 text-[0.65rem] leading-relaxed text-muted-foreground">
-                  Put each section title on its own line (for example{" "}
-                  <span className="font-mono text-[0.6rem]">PROJECT DETAILS</span>,{" "}
-                  <span className="font-mono text-[0.6rem]">SCOPE NOTES</span>,{" "}
-                  <span className="font-mono text-[0.6rem]">KEY TERMS / CONDITIONS</span>) so the preview below
-                  splits into separate cards.
-                </p>
-                <textarea
-                  name="notes"
-                  rows={8}
-                  defaultValue={quote.notes ?? ""}
-                  className="field min-h-[8rem] w-full resize-y font-mono text-sm leading-relaxed"
-                  placeholder="Optional — e.g. COUNTERTOP ESTIMATE, PROJECT DETAILS, KEY TERMS…"
-                />
+              <div className="sm:col-span-2 space-y-4">
+                <div>
+                  <h3 className="text-xs font-semibold tracking-tight text-foreground">Scope & terms</h3>
+                  <p className="mt-1 text-[0.65rem] leading-relaxed text-muted-foreground">
+                    One text field; each part below is a guide for what to type. Put each section title on its own line
+                    so the preview splits into separate cards.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-border bg-muted/25 px-3 py-2.5">
+                    <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-foreground">
+                      1 · Cover
+                    </p>
+                    <p className="mt-1 text-[0.65rem] leading-relaxed text-muted-foreground">
+                      Start with{" "}
+                      <span className="font-mono text-[0.6rem] text-foreground/90">COUNTERTOP ESTIMATE</span> (and quote #
+                      if you like), then a <span className="font-mono text-[0.6rem]">Date:</span> line.
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-muted/25 px-3 py-2.5">
+                    <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-foreground">
+                      2 · Customer & project
+                    </p>
+                    <p className="mt-1 text-[0.65rem] leading-relaxed text-muted-foreground">
+                      Use headers like{" "}
+                      <span className="font-mono text-[0.6rem]">CUSTOMER INFORMATION</span>,{" "}
+                      <span className="font-mono text-[0.6rem]">PROJECT DETAILS</span>, and optional{" "}
+                      <span className="font-mono text-[0.6rem]">PRICING</span> (reference only; line items set totals).
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-muted/25 px-3 py-2.5">
+                    <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-foreground">
+                      3 · Scope
+                    </p>
+                    <p className="mt-1 text-[0.65rem] leading-relaxed text-muted-foreground">
+                      Add <span className="font-mono text-[0.6rem]">SCOPE NOTES</span> with bullets for fabricator
+                      limits, measurement caveats, and what is or isn&apos;t included.
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-muted/25 px-3 py-2.5">
+                    <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-foreground">
+                      4 · Terms
+                    </p>
+                    <p className="mt-1 text-[0.65rem] leading-relaxed text-muted-foreground">
+                      Finish with <span className="font-mono text-[0.6rem]">KEY TERMS / CONDITIONS</span> (validity,
+                      deposit, exclusions, plumbing, template rules, etc.).
+                    </p>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border bg-card px-3 py-3 shadow-sm">
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground" htmlFor="quote-notes-editor">
+                    Editor (all sections in one field)
+                  </label>
+                  <textarea
+                    id="quote-notes-editor"
+                    name="notes"
+                    rows={8}
+                    defaultValue={quote.notes ?? ""}
+                    className="field min-h-[8rem] w-full resize-y font-mono text-sm leading-relaxed"
+                    placeholder="Optional — e.g. COUNTERTOP ESTIMATE, PROJECT DETAILS, KEY TERMS…"
+                  />
+                </div>
               </div>
               <div className="sm:col-span-2">
                 <SubmitButton pendingLabel="Saving…">Save quote details</SubmitButton>
