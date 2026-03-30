@@ -8,15 +8,17 @@ const TABS = [
   { id: "lines", label: "Line items" },
   { id: "documents", label: "Documents" },
   { id: "revisions", label: "Revisions" },
-  { id: "danger", label: "Delete" },
 ] as const;
 
-export type QuoteDetailTabId = (typeof TABS)[number]["id"];
+export type QuoteDetailNavTabId = (typeof TABS)[number]["id"];
+/** Includes `danger` for destructive panel (not shown as a main tab). */
+export type QuoteDetailTabId = QuoteDetailNavTabId | "danger";
 
 /** Legacy URLs used ?tab=overview — treat as Details. */
 export function normalizeQuoteDetailTab(raw: string | undefined | null): QuoteDetailTabId {
   if (raw === "overview") return "details";
-  if (raw && TABS.some((t) => t.id === raw)) return raw as QuoteDetailTabId;
+  if (raw === "danger") return "danger";
+  if (raw && TABS.some((t) => t.id === raw)) return raw as QuoteDetailNavTabId;
   return "details";
 }
 
@@ -59,10 +61,6 @@ export function QuoteDetailTabs({
                   active
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
-                  t.id === "danger" &&
-                    !active &&
-                    "border border-destructive/25 text-destructive hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive",
-                  t.id === "danger" && active && "bg-destructive text-destructive-foreground hover:bg-destructive",
                 )}
                 aria-current={active ? "page" : undefined}
               >
@@ -71,11 +69,7 @@ export function QuoteDetailTabs({
                   <span
                     className={cn(
                       "tabular-nums text-xs",
-                      active
-                        ? t.id === "danger"
-                          ? "text-destructive-foreground/90"
-                          : "text-primary-foreground/90"
-                        : "text-muted-foreground",
+                      active ? "text-primary-foreground/90" : "text-muted-foreground",
                     )}
                   >
                     ({count})

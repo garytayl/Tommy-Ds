@@ -237,7 +237,7 @@
   }
   /* Modern form fields: soft bg, clear focus, hover feedback */
   .field {
-    @apply w-full rounded-xl border bg-input/80 px-4 py-3 text-sm transition-all duration-200;
+    @apply w-full rounded-xl border bg-muted/45 px-4 py-3 text-sm transition-all duration-200;
     border-color: var(--border);
     color: var(--foreground);
     min-height: 2.75rem;
@@ -247,8 +247,8 @@
     opacity: 0.9;
   }
   .field:hover:not(:focus):not(:disabled) {
-    border-color: oklch(0.28 0.02 0);
-    background: var(--input);
+    border-color: oklch(0.32 0.02 0);
+    background: oklch(0.14 0 0 / 0.85);
   }
   .field:focus {
     @apply outline-none;

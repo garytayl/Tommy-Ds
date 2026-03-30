@@ -24,8 +24,8 @@ export default async function NewQuotePage({
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Admin</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">New estimate</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Starts as an estimate. Choose a template to pre-fill scope and line items, or start blank. Promote to a formal
-          quote when pricing is firm, then convert to a job.
+          Choose a template to pre-fill line items, or start blank—then promote to a formal quote and convert to a job when
+          ready.
         </p>
       </div>
 

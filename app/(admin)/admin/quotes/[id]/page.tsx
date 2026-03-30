@@ -2,8 +2,11 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
+import { QuoteDetailHeader } from "@/components/QuoteDetailHeader";
+import { QuoteDetailTabRow } from "@/components/QuoteDetailTabRow";
 import { QuoteNotesDisplay, quoteNotesSectionTitle, quoteNotesShowSubtitle } from "@/components/QuoteNotesDisplay";
-import { QuoteDetailTabs, normalizeQuoteDetailTab } from "@/components/QuoteDetailTabs";
+import { QuoteRecordActions } from "@/components/QuoteRecordActions";
+import { normalizeQuoteDetailTab } from "@/components/QuoteDetailTabs";
 import { SubmitButton } from "@/components/SubmitButton";
 import { deleteQuoteAndOptionalJob } from "@/lib/job-destruct";
 import { centsToDollars, formatCents, dollarsToCents } from "@/lib/money";
@@ -11,7 +14,7 @@ import { getPrintVsLiveDriftMessages } from "@/lib/quote-print-drift";
 import type { ItemLike } from "@/lib/quote-print-overrides";
 import type { QuoteRevisionSnapshot } from "@/lib/quote-revisions";
 import { setToastCookie } from "@/lib/toast";
-import { workflowStageDescription, workflowStageLabel } from "@/lib/quote-workflow";
+import { workflowStageLabel } from "@/lib/quote-workflow";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
@@ -456,125 +459,51 @@ export default async function QuoteDetailPage({
     await restoreQuoteFromRevision(id, formData);
   }
 
+  const wfStage: "estimate" | "quote" = workflowStage === "quote" ? "quote" : "estimate";
+
   return (
     <div className="mx-auto max-w-5xl space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">
-              {quote.job_id ? "Job" : workflowStageLabel(workflowStage)}
-            </p>
-            {!quote.job_id && (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                {workflowStage === "estimate" ? "Step 1 of 3" : "Step 2 of 3"}
-              </span>
-            )}
-            {quote.job_id && (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                Step 3 of 3
-              </span>
-            )}
-            <Link
-              href={`/admin/quotes/${id}?tab=revisions#quote-revisions`}
-              scroll={false}
-              className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-xs font-medium text-foreground underline-offset-2 transition-colors hover:border-primary/40 hover:bg-muted/80 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            >
-              {latestRevision ? (
-                <>
-                  Latest snapshot
-                  <span className="tabular-nums text-foreground">· Rev {latestRevision.revision_number}</span>
-                </>
-              ) : (
-                <>No snapshots yet</>
-              )}
-              <span className="text-muted-foreground" aria-hidden>
-                →
-              </span>
-              <span className="sr-only">Open revision history</span>
-            </Link>
-          </div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-            {quote.title}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {customer?.name ?? "-"} · {quote.address_line1}, {quote.city}, {quote.state} {quote.zip}
-          </p>
-          {!quote.job_id && (
-            <p className="mt-1 max-w-xl text-xs text-muted-foreground">
-              Estimate → formal quote → job. {workflowStageDescription(workflowStage)}
-            </p>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href={`/admin/quotes/${id}/print/edit`} className="btn-primary">
-            Prepare PDF
-          </Link>
-          <a
-            href={`/admin/quotes/${id}/print`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-secondary"
-          >
-            Preview PDF
-          </a>
-          {hasPrintOverrides && (
-            <>
-              <a
-                href={`/admin/quotes/${id}/print?live=1`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-secondary"
-                title="Ignore saved print overrides; use live quote data only"
-              >
-                Preview live data
-              </a>
-              <span className="text-xs text-muted-foreground" title="Saved print-only edits are applied on the PDF">
-                Print overrides on
-              </span>
-            </>
-          )}
-          {!quote.job_id && workflowStage === "estimate" && (
-            <form action={promoteToFormalQuote}>
-              <SubmitButton variant="secondary" pendingLabel="Promoting…">
-                Promote to formal quote
-              </SubmitButton>
-            </form>
-          )}
-          {canConvertToJob && (
-            <Link href={`/admin/quotes/${id}?tab=sales#convert-to-job`} scroll={false} className="btn-primary">
-              Convert to job
-            </Link>
-          )}
-          {quote.job_id && (
-            <Link href={`/jobs/${quote.job_id}`} className="btn-primary">
-              Open job
-            </Link>
-          )}
-          <Link href="/admin/quotes" className="btn-secondary">
-            Back to list
-          </Link>
-        </div>
-      </div>
+      <QuoteDetailHeader
+        quoteId={id}
+        quoteTitle={quote.title}
+        customerName={cust?.name ?? null}
+        addressSummary={`${quote.address_line1}, ${quote.city}, ${quote.state} ${quote.zip}`}
+        workflowStage={wfStage}
+        jobId={quote.job_id}
+        latestRevision={latestRevision}
+        status={quote.status}
+        totalCents={quote.total_cents}
+      />
+
+      <QuoteRecordActions
+        quoteId={id}
+        jobId={quote.job_id}
+        workflowStage={wfStage}
+        canConvertToJob={canConvertToJob}
+        hasPrintOverrides={hasPrintOverrides}
+        promoteToFormalQuote={promoteToFormalQuote}
+      />
 
       {driftMessages.length > 0 && (
         <div
-          className="rounded-xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100"
+          className="flex flex-col gap-3 rounded-lg border border-amber-200/80 bg-amber-50 px-3 py-2.5 text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
           role="status"
         >
-          <p className="font-medium">PDF differs from live data</p>
-          <p className="mt-1 text-xs opacity-90">
-            The saved print version does not match this page. Prepare PDF or use &quot;Preview live data&quot; to see the
-            quote without overrides.
-          </p>
-          <ul className="mt-2 list-inside list-disc space-y-0.5 text-xs">
-            {driftMessages.map((m) => (
-              <li key={m}>{m}</li>
-            ))}
-          </ul>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">PDF differs from live data</p>
+            <ul className="mt-1 list-inside list-disc space-y-0.5 text-xs opacity-90">
+              {driftMessages.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+          </div>
+          <Link href={`/admin/quotes/${id}/print/edit`} className="btn-primary shrink-0 text-sm">
+            Prepare PDF
+          </Link>
         </div>
       )}
 
-      <QuoteDetailTabs
+      <QuoteDetailTabRow
         quoteId={id}
         activeTab={tab}
         counts={{
@@ -590,9 +519,6 @@ export default async function QuoteDetailPage({
         {!quote.job_id && (
           <section className="border-b border-border px-4 py-3 sm:px-5 sm:py-3.5">
             <h2 className="text-sm font-semibold text-foreground">Quote details</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Title, project address, and notes (scope and terms). Line items on the Line items tab drive dollar totals.
-            </p>
             {cust?.id && hasCustomerProfileAddress && (
               <div className="mt-3 rounded-lg border border-border bg-muted/20 px-3 py-2.5">
                 <p className="text-xs font-medium text-foreground">Customer address (billing)</p>
@@ -617,7 +543,7 @@ export default async function QuoteDetailPage({
                   type="text"
                   required
                   defaultValue={quote.title}
-                  className="field w-full"
+                  className="field w-full text-lg font-semibold tracking-tight"
                 />
               </div>
               <div className="sm:col-span-2">

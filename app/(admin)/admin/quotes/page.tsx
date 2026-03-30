@@ -118,9 +118,7 @@ export default async function QuotesListPage({
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
             Estimates &amp; quotes
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Estimate → formal quote → job. New records start as estimates; promote when pricing is firm.
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">New records start as estimates; promote when pricing is firm.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/admin/quotes/new" className="btn-primary">
