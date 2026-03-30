@@ -81,6 +81,20 @@ Total: $4,497.50
 Call before arrival. Customer prefers Saturday morning.`,
 };
 
+/**
+ * Default body for the PRICING (reference) section when a template does not supply one.
+ * Shown on new-estimate wizard and form; replace $0.00 lines with real figures for the PDF if desired.
+ */
+export const DEFAULT_PRICING_REFERENCE_SECTION = `Subtotal: $0.00
+Tax: $0.00
+Total: $0.00
+(Reference only — line items control system totals.)`;
+
+export function applyDefaultPricingReferenceIfEmpty(s: QuoteNotesSections): QuoteNotesSections {
+  if (s.pricing.trim()) return s;
+  return { ...s, pricing: DEFAULT_PRICING_REFERENCE_SECTION };
+}
+
 /** Print PDF editor — project address (example site). */
 export const QUOTE_PRINT_EDITOR_PROJECT_ADDRESS_PLACEHOLDER = `456 Elm Street
 Greenwood, IN 46143`;

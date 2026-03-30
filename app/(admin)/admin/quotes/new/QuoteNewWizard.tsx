@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { QuoteNotesSectionFields } from "@/components/QuoteNotesSectionFields";
 import { SubmitButton } from "@/components/SubmitButton";
 import { formatCustomerInformationForQuoteNotes } from "@/lib/customer-quote-notes";
-import { quoteNotesToSections } from "@/lib/quote-notes-sections";
+import { applyDefaultPricingReferenceIfEmpty, quoteNotesToSections } from "@/lib/quote-notes-sections";
 import {
   BLANK_QUOTE_TEMPLATE_ID,
   findQuoteTemplateInList,
@@ -133,13 +133,16 @@ export function QuoteNewWizard({
   const template = findQuoteTemplateInList(templateId, templateOptions)!;
   const sectionDefaults = useMemo(() => {
     const t = findQuoteTemplateInList(templateId, templateOptions)!;
-    const base =
+    let merged =
       templateId === BLANK_QUOTE_TEMPLATE_ID ? quoteNotesToSections("") : quoteNotesToSections(t.defaultNotes);
     const c = customers.find((x) => x.id === customerId);
-    if (!c) return base;
-    const customerBlock = formatCustomerInformationForQuoteNotes(c);
-    if (!customerBlock.trim()) return base;
-    return { ...base, customer_information: customerBlock };
+    if (c) {
+      const customerBlock = formatCustomerInformationForQuoteNotes(c);
+      if (customerBlock.trim()) {
+        merged = { ...merged, customer_information: customerBlock };
+      }
+    }
+    return applyDefaultPricingReferenceIfEmpty(merged);
   }, [templateId, templateOptions, customerId, customers]);
 
   const persist = useCallback(() => {
