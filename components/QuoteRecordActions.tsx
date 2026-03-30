@@ -63,8 +63,9 @@ export function QuoteRecordActions({
               href={`/admin/quotes/${quoteId}/export`}
               className="btn-secondary whitespace-nowrap"
               download
+              title="Design Flex Project XML (Project.xsd) for Ponderosa / Eclipse import. Append ?format=tommyds for the simple export."
             >
-              Ponderosa XML
+              Design Flex XML
             </a>
           </div>
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="PDF">

@@ -1,3 +1,4 @@
+import { buildDesignFlexProjectXml } from "@/lib/design-flex-project-xml";
 import {
   buildQuoteExportXml,
   quoteExportFilename,
@@ -8,8 +9,9 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
+  const format = new URL(request.url).searchParams.get("format");
   const session = await getOfficeSessionOrNull();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -79,7 +81,8 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     })),
   };
 
-  const xml = buildQuoteExportXml(payload);
+  const xml =
+    format === "tommyds" ? buildQuoteExportXml(payload) : buildDesignFlexProjectXml(payload);
   const filename = quoteExportFilename(quote.title, quote.id);
 
   return new NextResponse(xml, {
