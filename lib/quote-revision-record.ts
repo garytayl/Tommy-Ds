@@ -7,6 +7,24 @@ export function canonicalSnapshotString(s: QuoteRevisionSnapshot): string {
   return JSON.stringify(s);
 }
 
+/**
+ * Returns the highest revision number whose snapshot equals `liveSnapshot` (revisions should be
+ * ordered by `revision_number` descending). Used to show "you are on Rev N".
+ */
+export function findMatchingRevisionNumber(
+  revisions: Array<{ revision_number: number; snapshot: unknown }>,
+  liveSnapshot: QuoteRevisionSnapshot,
+): number | null {
+  const fp = canonicalSnapshotString(liveSnapshot);
+  for (const r of revisions) {
+    const snap = r.snapshot as QuoteRevisionSnapshot;
+    if (canonicalSnapshotString(snap) === fp) {
+      return r.revision_number;
+    }
+  }
+  return null;
+}
+
 export async function insertQuoteRevisionRecord(
   supabase: SupabaseClient,
   quoteId: string,

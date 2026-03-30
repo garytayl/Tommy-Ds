@@ -15,7 +15,8 @@ import { getPrintVsLiveDriftMessages } from "@/lib/quote-print-drift";
 import type { ItemLike } from "@/lib/quote-print-overrides";
 import { autoRecordQuoteRevisionIfChanged, recordQuoteRevisionForced } from "@/lib/quote-revision-auto";
 import { describeQuoteSnapshotChanges } from "@/lib/quote-revision-diff";
-import type { QuoteRevisionSnapshot } from "@/lib/quote-revisions";
+import { findMatchingRevisionNumber } from "@/lib/quote-revision-record";
+import { buildRevisionSnapshot, type QuoteRevisionSnapshot } from "@/lib/quote-revisions";
 import { setToastCookie } from "@/lib/toast";
 import { workflowStageLabel } from "@/lib/quote-workflow";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
@@ -468,6 +469,12 @@ export default async function QuoteDetailPage({
 
   const wfStage: "estimate" | "quote" = workflowStage === "quote" ? "quote" : "estimate";
 
+  const liveSnapshot = buildRevisionSnapshot({
+    quote: quote as never,
+    items: items,
+  });
+  const liveRevisionMatch = findMatchingRevisionNumber(revisions, liveSnapshot);
+
   return (
     <div className="mx-auto max-w-5xl space-y-5">
       <QuoteDetailHeader
@@ -478,6 +485,8 @@ export default async function QuoteDetailPage({
         workflowStage={wfStage}
         jobId={quote.job_id}
         latestRevision={latestRevision}
+        liveRevisionMatch={liveRevisionMatch}
+        revisionCount={revisions.length}
         status={quote.status}
         totalCents={quote.total_cents}
       />
@@ -1069,10 +1078,9 @@ export default async function QuoteDetailPage({
         >
           <h2 className="text-sm font-semibold text-foreground">Revision history</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Revisions are saved automatically when you edit details, line items, tax, status, print overrides, and
-            other quote fields (same data as PDF: title, address, notes, totals, line items, overrides). Use Restore on
-            any revision to roll the live quote back
-            to that point (not available after the quote is linked to a job).
+            Revisions save automatically when you edit quote data (same fields as the PDF). The header shows{" "}
+            <span className="font-medium text-foreground">Live = Rev N</span> when your current quote matches a
+            snapshot; that row is highlighted here. Use Restore to roll back (not available after a job is linked).
           </p>
           <form action={recordQuoteRevisionAction} className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
             <input type="hidden" name="quote_id" value={id} />
@@ -1103,10 +1111,29 @@ export default async function QuoteDetailPage({
                   changeLines.length === 1 && changeLines[0].startsWith("First revision")
                     ? "About this revision"
                     : "Changes from previous revision";
+                const isLiveThis =
+                  liveRevisionMatch != null && r.revision_number === liveRevisionMatch;
                 return (
-                  <li key={r.id} className="relative text-sm">
-                    <span className="absolute -left-[1.15rem] top-1.5 h-2 w-2 rounded-full bg-primary" aria-hidden />
-                    <p className="font-medium text-foreground">Revision {r.revision_number}</p>
+                  <li
+                    key={r.id}
+                    className={`relative rounded-lg border py-1 pl-1 pr-2 text-sm -ml-1 ${
+                      isLiveThis
+                        ? "border-emerald-500/40 bg-emerald-500/5 ring-1 ring-emerald-500/25"
+                        : "border-transparent"
+                    }`}
+                  >
+                    <span
+                      className={`absolute -left-[1.15rem] top-1.5 h-2 w-2 rounded-full ${isLiveThis ? "bg-emerald-400" : "bg-primary"}`}
+                      aria-hidden
+                    />
+                    <p className="flex flex-wrap items-center gap-2 font-medium text-foreground">
+                      Revision {r.revision_number}
+                      {isLiveThis && (
+                        <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-100 ring-1 ring-emerald-500/40">
+                          Matches live quote
+                        </span>
+                      )}
+                    </p>
                     {r.label && (
                       <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{r.label}</p>
                     )}

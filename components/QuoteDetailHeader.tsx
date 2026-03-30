@@ -13,6 +13,8 @@ export function QuoteDetailHeader({
   workflowStage,
   jobId,
   latestRevision,
+  liveRevisionMatch,
+  revisionCount,
   status,
   totalCents,
 }: {
@@ -23,6 +25,9 @@ export function QuoteDetailHeader({
   workflowStage: "estimate" | "quote";
   jobId: string | null;
   latestRevision: RevisionRef;
+  /** Highest revision # whose snapshot matches live quote data, or null if none / no history. */
+  liveRevisionMatch: number | null;
+  revisionCount: number;
   status: string;
   totalCents: number;
 }) {
@@ -45,6 +50,25 @@ export function QuoteDetailHeader({
             ·
           </span>
           <span className="font-medium tabular-nums text-foreground">{formatCents(totalCents)}</span>
+          {revisionCount > 0 && liveRevisionMatch != null && (
+            <span
+              className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 font-semibold tabular-nums text-emerald-100 ring-1 ring-emerald-500/35"
+              title="Live quote data matches this saved revision snapshot"
+            >
+              Live = Rev {liveRevisionMatch}
+            </span>
+          )}
+          {revisionCount > 0 && liveRevisionMatch == null && (
+            <span
+              className="rounded-full bg-amber-500/12 px-2.5 py-0.5 font-medium text-amber-100 ring-1 ring-amber-500/30"
+              title="Live data does not match any saved revision (unusual—try saving again or check history)"
+            >
+              Live ≠ any saved rev
+            </span>
+          )}
+          {revisionCount === 0 && (
+            <span className="rounded-full bg-muted/80 px-2.5 py-0.5 text-muted-foreground">No revisions yet</span>
+          )}
         </div>
         <Link
           href={`/admin/quotes/${quoteId}?tab=revisions#quote-revisions`}
@@ -53,14 +77,14 @@ export function QuoteDetailHeader({
         >
           {latestRevision ? (
             <>
-              Rev {latestRevision.revision_number}
+              History · latest Rev {latestRevision.revision_number}
               <span className="text-muted-foreground" aria-hidden>
                 →
               </span>
             </>
           ) : (
             <>
-              Snapshots
+              Revisions
               <span className="text-muted-foreground" aria-hidden>
                 →
               </span>
