@@ -1186,7 +1186,7 @@ export default async function QuoteDetailPage({
                         <summary className="cursor-pointer text-xs font-medium text-foreground">
                           View snapshot summary
                         </summary>
-                        <dl className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+                        <dl className="mt-2 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
                           <div>
                             <dt className="font-medium text-foreground">Title</dt>
                             <dd className="mt-0.5">{snap.title}</dd>
@@ -1202,6 +1202,16 @@ export default async function QuoteDetailPage({
                           <div>
                             <dt className="font-medium text-foreground">Status</dt>
                             <dd className="mt-0.5 capitalize">{snap.status}</dd>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <dt className="font-medium text-foreground">Notes (this snapshot)</dt>
+                            <dd className="mt-0.5 max-h-36 overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-border/60 bg-background/50 px-2 py-1.5 text-[0.8rem] leading-snug">
+                              {(snap.notes ?? "").trim() ? (
+                                (snap.notes ?? "").length > 600 ? `${(snap.notes ?? "").slice(0, 600)}…` : (snap.notes ?? "")
+                              ) : (
+                                <span className="text-muted-foreground/80">—</span>
+                              )}
+                            </dd>
                           </div>
                         </dl>
                       </details>

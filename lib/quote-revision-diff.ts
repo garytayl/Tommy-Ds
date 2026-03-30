@@ -8,6 +8,30 @@ function trunc(s: string, max: number): string {
   return `${t.slice(0, max)}…`;
 }
 
+/**
+ * After stripping common prefix and suffix, returns the differing "middle" of each string.
+ * Useful for showing what actually changed in long notes without dumping full text.
+ */
+export function notesChangedMiddleExcerpts(
+  before: string,
+  after: string,
+  maxLen: number,
+): { before: string; after: string } {
+  let i = 0;
+  const minLen = Math.min(before.length, after.length);
+  while (i < minLen && before[i] === after[i]) i++;
+  const b = before.slice(i);
+  const a = after.slice(i);
+  let j = 0;
+  while (j < b.length && j < a.length && b[b.length - 1 - j] === a[a.length - 1 - j]) j++;
+  const midB = b.slice(0, b.length - j);
+  const midA = a.slice(0, a.length - j);
+  return {
+    before: trunc(midB, maxLen),
+    after: trunc(midA, maxLen),
+  };
+}
+
 function itemSig(it: QuoteRevisionSnapshot["items"][0]): string {
   return `${it.description}|${it.qty}|${it.unit_price_cents}|${it.line_total_cents}`;
 }
@@ -46,9 +70,22 @@ export function describeQuoteSnapshotChanges(
   const nBefore = (before.notes ?? "").trim();
   const nAfter = (after.notes ?? "").trim();
   if (nBefore !== nAfter) {
-    if (!nBefore) lines.push("Notes added");
-    else if (!nAfter) lines.push("Notes cleared");
-    else lines.push(`Notes updated (${nBefore.length} → ${nAfter.length} characters)`);
+    if (!nBefore) {
+      lines.push("Notes added (was empty)");
+      lines.push(`  preview: ${trunc(nAfter, 220)}`);
+    } else if (!nAfter) {
+      lines.push("Notes cleared");
+      lines.push(`  was: ${trunc(nBefore, 220)}`);
+    } else {
+      lines.push(`Notes: text changed (${nBefore.length} → ${nAfter.length} characters)`);
+      const { before: exB, after: exA } = notesChangedMiddleExcerpts(nBefore, nAfter, 200);
+      if (exB.length > 0) lines.push(`  removed: ${exB}`);
+      if (exA.length > 0) lines.push(`  added: ${exA}`);
+      if (exB.length === 0 && exA.length === 0) {
+        lines.push(`  was: ${trunc(nBefore, 200)}`);
+        lines.push(`  now: ${trunc(nAfter, 200)}`);
+      }
+    }
   }
 
   if (before.status !== after.status) {
