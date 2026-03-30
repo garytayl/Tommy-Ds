@@ -462,7 +462,7 @@ export default async function QuoteDetailPage({
   const wfStage: "estimate" | "quote" = workflowStage === "quote" ? "quote" : "estimate";
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
+    <div className="mx-auto max-w-5xl space-y-5">
       <QuoteDetailHeader
         quoteId={id}
         quoteTitle={quote.title}
@@ -517,10 +517,10 @@ export default async function QuoteDetailPage({
         {tab === "details" && (
           <>
         {!quote.job_id && (
-          <section className="border-b border-border px-4 py-3 sm:px-5 sm:py-3.5">
+          <section className="border-b border-border px-4 py-4 sm:px-5 sm:py-5">
             <h2 className="text-sm font-semibold text-foreground">Quote details</h2>
             {cust?.id && hasCustomerProfileAddress && (
-              <div className="mt-3 rounded-lg border border-border bg-muted/20 px-3 py-2.5">
+              <div className="mt-4 rounded-lg border border-border bg-muted/20 px-3 py-2.5">
                 <p className="text-xs font-medium text-foreground">Customer address (billing)</p>
                 <p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">
                   {[
@@ -535,9 +535,9 @@ export default async function QuoteDetailPage({
                 </Link>
               </div>
             )}
-            <form action={updateQuoteDetails.bind(null, id)} className="mt-3 grid gap-3 sm:grid-cols-2">
+            <form action={updateQuoteDetails.bind(null, id)} className="mt-4 grid max-w-3xl gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Title</label>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Title</label>
                 <input
                   name="title"
                   type="text"
@@ -548,10 +548,10 @@ export default async function QuoteDetailPage({
               </div>
               <div className="sm:col-span-2">
                 <p className="mb-1 text-xs font-medium text-muted-foreground">Project / service address</p>
-                <p className="mb-2 text-[0.65rem] text-muted-foreground">
+                <p className="mb-3 text-[0.65rem] leading-relaxed text-muted-foreground">
                   Job site or location for this estimate (separate from the customer&apos;s billing address above).
                 </p>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Address line 1</label>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Address line 1</label>
                 <input
                   name="address_line1"
                   type="text"
@@ -561,7 +561,7 @@ export default async function QuoteDetailPage({
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Address line 2</label>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Address line 2</label>
                 <input
                   name="address_line2"
                   type="text"
@@ -570,19 +570,19 @@ export default async function QuoteDetailPage({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">City</label>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">City</label>
                 <input name="city" type="text" required defaultValue={quote.city} className="field w-full" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">State</label>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">State</label>
                 <input name="state" type="text" defaultValue={quote.state} className="field w-full" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">ZIP</label>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">ZIP</label>
                 <input name="zip" type="text" required defaultValue={quote.zip} className="field w-full" />
               </div>
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes (scope, terms, details)</label>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Notes (scope, terms, details)</label>
                 <textarea
                   name="notes"
                   rows={8}

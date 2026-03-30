@@ -30,22 +30,26 @@ export function QuoteDetailHeader({
   const stepLabel = jobId ? "Step 3 of 3" : workflowStage === "estimate" ? "Step 1 of 3" : "Step 2 of 3";
 
   return (
-    <header className="space-y-3">
+    <header className="space-y-4">
       <h1 className="sr-only">
         {quoteTitle}
         {customerName ? ` — ${customerName}` : ""}
       </h1>
 
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-muted-foreground">
-        <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-foreground">{stageLabel}</span>
-        <span className="rounded-full bg-muted px-2 py-0.5 font-medium tabular-nums">{stepLabel}</span>
-        <span className="capitalize">{status}</span>
-        <span className="text-muted-foreground/80">·</span>
-        <span className="font-medium tabular-nums text-foreground">{formatCents(totalCents)}</span>
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-3 sm:gap-y-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span className="rounded-full bg-muted px-2.5 py-0.5 font-medium text-foreground">{stageLabel}</span>
+          <span className="rounded-full bg-muted px-2.5 py-0.5 font-medium tabular-nums">{stepLabel}</span>
+          <span className="capitalize">{status}</span>
+          <span className="text-muted-foreground/80" aria-hidden>
+            ·
+          </span>
+          <span className="font-medium tabular-nums text-foreground">{formatCents(totalCents)}</span>
+        </div>
         <Link
           href={`/admin/quotes/${quoteId}?tab=revisions#quote-revisions`}
           scroll={false}
-          className="inline-flex w-full items-center justify-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-xs font-medium text-foreground underline-offset-2 transition-colors hover:border-primary/40 hover:bg-muted/80 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:ml-auto sm:w-auto sm:justify-end"
+          className="inline-flex w-fit shrink-0 items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground underline-offset-2 transition-colors hover:border-primary/40 hover:bg-muted/80 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           {latestRevision ? (
             <>

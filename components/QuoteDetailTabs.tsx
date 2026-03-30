@@ -28,16 +28,22 @@ export function QuoteDetailTabs({
   quoteId,
   activeTab,
   counts,
+  embedded = false,
 }: {
   quoteId: string;
   activeTab: QuoteDetailTabId;
   counts: Counts;
+  /** When true, omit outer card chrome (use inside a parent bar). */
+  embedded?: boolean;
 }) {
   const base = `/admin/quotes/${quoteId}`;
 
   return (
     <nav
-      className="rounded-2xl border border-border bg-card/90 px-2 py-2 shadow-sm backdrop-blur-sm sm:px-3"
+      className={cn(
+        "rounded-2xl border border-border bg-card/90 px-2 py-2 shadow-sm backdrop-blur-sm sm:px-3",
+        embedded && "rounded-none border-0 bg-transparent p-0 shadow-none backdrop-blur-none",
+      )}
       aria-label="Quote sections"
     >
       <ul className="flex flex-wrap gap-1 overflow-x-auto pb-0.5 sm:gap-2 sm:pb-0">

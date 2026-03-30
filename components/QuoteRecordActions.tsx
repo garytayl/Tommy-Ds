@@ -23,67 +23,74 @@ export function QuoteRecordActions({
   const printHref = `/admin/quotes/${quoteId}/print`;
   const printLiveHref = `/admin/quotes/${quoteId}/print?live=1`;
 
+  const hasWorkflowCta =
+    (!jobId && workflowStage === "estimate") || canConvertToJob || Boolean(jobId);
+
   return (
     <div
       id="quote-actions"
-      className="flex flex-col gap-4 rounded-2xl border border-border bg-card/40 p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
+      className="rounded-2xl border border-border bg-card/40 p-4 shadow-sm"
     >
-      <div className="flex min-w-0 flex-wrap items-center gap-2">
-        {!jobId && workflowStage === "estimate" && (
-          <form action={promoteToFormalQuote}>
-            <SubmitButton variant="primary" pendingLabel="Promoting…">
-              Promote to formal quote
-            </SubmitButton>
-          </form>
+      <div className="flex flex-col gap-3">
+        {hasWorkflowCta && (
+          <div className="flex flex-wrap items-center gap-2">
+            {!jobId && workflowStage === "estimate" && (
+              <form action={promoteToFormalQuote} className="inline-flex items-center">
+                <SubmitButton variant="primary" pendingLabel="Promoting…">
+                  Promote to formal quote
+                </SubmitButton>
+              </form>
+            )}
+            {canConvertToJob && (
+              <Link href={`/admin/quotes/${quoteId}?tab=sales#convert-to-job`} scroll={false} className="btn-primary">
+                Convert to job
+              </Link>
+            )}
+            {jobId && (
+              <Link href={`/jobs/${jobId}`} className="btn-primary">
+                Open job
+              </Link>
+            )}
+          </div>
         )}
-        {canConvertToJob && (
-          <Link href={`/admin/quotes/${quoteId}?tab=sales#convert-to-job`} scroll={false} className="btn-primary">
-            Convert to job
-          </Link>
-        )}
-        {jobId && (
-          <Link href={`/jobs/${jobId}`} className="btn-primary">
-            Open job
-          </Link>
-        )}
-      </div>
 
-      <div
-        className="flex min-w-0 flex-col gap-2 sm:items-end"
-        role="group"
-        aria-label="PDF"
-      >
-        <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">PDF</span>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href={printEditHref} className="btn-primary">
-            Prepare
-          </Link>
-          <a href={printHref} target="_blank" rel="noopener noreferrer" className="btn-secondary">
-            Preview
-          </a>
-          {hasPrintOverrides && (
-            <>
-              <a
-                href={printLiveHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-secondary"
-                title="Ignore saved print overrides; use live quote data only"
-              >
-                Preview live
-              </a>
-              <span className="text-xs text-muted-foreground" title="Saved print-only edits are applied on the PDF">
-                Overrides on
-              </span>
-            </>
-          )}
+        <div
+          className={`flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-2 ${hasWorkflowCta ? "border-t border-border pt-3" : ""}`}
+        >
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="PDF">
+            <span className="text-xs font-medium text-muted-foreground">PDF</span>
+            <Link href={printEditHref} className="btn-primary whitespace-nowrap">
+              Prepare
+            </Link>
+            <a href={printHref} target="_blank" rel="noopener noreferrer" className="btn-secondary whitespace-nowrap">
+              Preview
+            </a>
+            {hasPrintOverrides && (
+              <>
+                <a
+                  href={printLiveHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary whitespace-nowrap"
+                  title="Ignore saved print overrides; use live quote data only"
+                >
+                  Live
+                </a>
+                <span
+                  className="text-xs text-muted-foreground"
+                  title="Saved print-only edits are applied on the PDF"
+                >
+                  Overrides on
+                </span>
+              </>
+            )}
+          </div>
+          <div className="flex items-center sm:shrink-0 sm:justify-end">
+            <Link href="/admin/quotes" className="btn-secondary w-full justify-center sm:w-auto">
+              Back to list
+            </Link>
+          </div>
         </div>
-      </div>
-
-      <div className="flex shrink-0 items-center sm:ml-auto">
-        <Link href="/admin/quotes" className="btn-secondary">
-          Back to list
-        </Link>
       </div>
     </div>
   );
