@@ -62,7 +62,7 @@ export default async function QuoteDetailPage({
     supabase
       .from("quotes")
       .select(
-        "id,customer_id,title,address_line1,address_line2,city,state,zip,status,workflow_stage,deposit_received,subtotal_cents,tax_cents,total_cents,notes,notes_sections,job_id,created_at,print_overrides,customers(id,name,phone,email,address_line1,address_line2,city,state,zip)",
+        "id,customer_id,title,address_line1,address_line2,city,state,zip,status,workflow_stage,deposit_received,subtotal_cents,tax_cents,total_cents,notes,job_id,created_at,print_overrides,customers(id,name,phone,email,address_line1,address_line2,city,state,zip)",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -129,10 +129,7 @@ export default async function QuoteDetailPage({
   const depositReceivedFlag = Boolean((quote as { deposit_received?: boolean }).deposit_received);
   const showQuoteNotesSubtitle = quote.notes ? quoteNotesShowSubtitle(quote.notes) : false;
   const quoteNotesOutlineTitles = quote.notes ? structuredQuoteNoteTitles(quote.notes) : null;
-  const quoteNotesSectionDefaults = resolveQuoteNotesSections(
-    quote.notes,
-    (quote as { notes_sections?: unknown }).notes_sections,
-  );
+  const quoteNotesSectionDefaults = resolveQuoteNotesSections(quote.notes, null);
 
   const itemsForDrift: ItemLike[] = items.map((i) => ({
     description: i.description,

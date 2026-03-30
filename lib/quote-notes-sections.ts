@@ -3,6 +3,11 @@
  * for print, revisions, and legacy consumers.
  */
 
+/** PostgREST/Supabase error when `notes_sections` is selected or written before migration is applied. */
+export function isNotesSectionsColumnError(error: { message?: string } | null | undefined): boolean {
+  return (error?.message ?? "").toLowerCase().includes("notes_sections");
+}
+
 import { parseStructuredQuoteNotes } from "@/lib/quote-notes-parse";
 
 export type QuoteNotesSections = {

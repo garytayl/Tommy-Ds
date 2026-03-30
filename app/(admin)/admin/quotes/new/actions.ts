@@ -9,6 +9,7 @@ import {
   composeNotesFromSections,
   emptyQuoteNotesSections,
   formDataToNotesSections,
+  isNotesSectionsColumnError,
   quoteNotesToSections,
   serializeNotesSections,
 } from "@/lib/quote-notes-sections";
@@ -90,23 +91,34 @@ export async function createQuoteFromForm(formData: FormData) {
   const sectionsPayload =
     composed !== null ? sections : notes ? quoteNotesToSections(notes) : emptyQuoteNotesSections();
 
-  const { data: quote, error: quoteInsertError } = await supabase
+  const insertBase = {
+    customer_id: customerId,
+    title,
+    address_line1: address1,
+    address_line2: String(formData.get("address_line2") ?? "").trim() || null,
+    city,
+    state,
+    zip,
+    notes,
+    status: "draft" as const,
+    workflow_stage: "estimate" as const,
+  };
+
+  let quoteRes = await supabase
     .from("quotes")
     .insert({
-      customer_id: customerId,
-      title,
-      address_line1: address1,
-      address_line2: String(formData.get("address_line2") ?? "").trim() || null,
-      city,
-      state,
-      zip,
-      notes,
+      ...insertBase,
       notes_sections: serializeNotesSections(sectionsPayload),
-      status: "draft",
-      workflow_stage: "estimate",
     })
     .select("id")
     .single();
+
+  if (quoteRes.error && isNotesSectionsColumnError(quoteRes.error)) {
+    quoteRes = await supabase.from("quotes").insert(insertBase).select("id").single();
+  }
+
+  const quote = quoteRes.data;
+  const quoteInsertError = quoteRes.error;
 
   if (quoteInsertError || !quote) {
     await setToastCookie(quoteInsertError?.message ?? "Could not create estimate");

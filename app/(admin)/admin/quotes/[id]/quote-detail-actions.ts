@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 
 import { autoRecordQuoteRevisionIfChanged } from "@/lib/quote-revision-auto";
-import { composeNotesFromSections, formDataToNotesSections, serializeNotesSections } from "@/lib/quote-notes-sections";
+import {
+  composeNotesFromSections,
+  formDataToNotesSections,
+  isNotesSectionsColumnError,
+  serializeNotesSections,
+} from "@/lib/quote-notes-sections";
 import { dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
 import { setToastCookie } from "@/lib/toast";
@@ -46,19 +51,29 @@ export async function updateQuoteDetails(quoteId: string, formData: FormData) {
     return;
   }
 
-  const { error } = await supabase
-    .from("quotes")
-    .update({
-      title,
-      address_line1,
-      address_line2,
-      city,
-      state,
-      zip,
-      notes,
-      notes_sections: serializeNotesSections(sections),
-    })
-    .eq("id", quoteId);
+  const baseRow = {
+    title,
+    address_line1,
+    address_line2,
+    city,
+    state,
+    zip,
+    notes,
+  };
+
+  let error = (
+    await supabase
+      .from("quotes")
+      .update({
+        ...baseRow,
+        notes_sections: serializeNotesSections(sections),
+      })
+      .eq("id", quoteId)
+  ).error;
+
+  if (error && isNotesSectionsColumnError(error)) {
+    error = (await supabase.from("quotes").update(baseRow).eq("id", quoteId)).error;
+  }
 
   if (error) {
     await setToastCookie(error.message);
