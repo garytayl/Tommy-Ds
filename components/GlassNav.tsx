@@ -8,6 +8,7 @@ import {
   BriefcaseBusiness,
   CalendarDays,
   ChartNoAxesCombined,
+  ChevronDown,
   Circle,
   ClipboardList,
   Fuel,
@@ -38,9 +39,18 @@ export type GlassNavLink = {
   description?: string;
 };
 
-export type GlassNavSection = {
+/** Collapsible group inside “Tools & back office” (Launchpad). */
+export type GlassNavToolGroup = {
   title: string;
   links: GlassNavLink[];
+};
+
+export type GlassNavSection = {
+  title: string;
+  /** Flat tiles (e.g. Look up). */
+  links?: GlassNavLink[];
+  /** Grouped, collapsed by default (e.g. back office). */
+  groups?: GlassNavToolGroup[];
 };
 
 type GlassNavProps = {
@@ -391,22 +401,27 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
               id="glass-app-pages-panel"
               className="pointer-events-auto w-full max-w-xl rounded-3xl border border-white/20 bg-black/70 p-4 shadow-2xl backdrop-blur-2xl"
             >
-              <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-3">
-                <div className="inline-flex items-center gap-2">
-                  <span className="rounded-full bg-white/10 p-1.5">
-                    <Sparkles className="size-4 text-white" />
+              <div className="flex items-start justify-between gap-2 border-b border-white/10 pb-3">
+                <Link
+                  href={mode === "admin" ? "/admin" : "/m"}
+                  onClick={closeMenu}
+                  className="group/lp -m-1 flex min-w-0 flex-1 items-start gap-2 rounded-xl p-1 text-left transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40"
+                  aria-label="Open command center (dashboard)"
+                >
+                  <span className="mt-0.5 shrink-0 rounded-full bg-white/10 p-1.5 transition group-hover/lp:bg-white/15">
+                    <Sparkles className="size-4 text-white" aria-hidden />
                   </span>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-white">Launchpad</p>
-                    <p className="text-xs text-white/60">
-                      Start with Jobs, Schedule, or Estimates — then look up or open tools.
+                    <p className="text-xs leading-snug text-white/60">
+                      Tap this row for Command center (dashboard). Scroll for Today, Look up, and back office menus.
                     </p>
                   </div>
-                </div>
+                </Link>
                 <button
                   type="button"
                   onClick={closeMenu}
-                  className="rounded-full border border-white/15 bg-white/5 p-1.5 text-white/80 transition hover:bg-white/15 hover:text-white"
+                  className="shrink-0 rounded-full border border-white/15 bg-white/5 p-1.5 text-white/80 transition hover:bg-white/15 hover:text-white"
                   aria-label="Close launchpad"
                 >
                   <X className="size-4" />
@@ -434,25 +449,69 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
                   </div>
                 ) : null}
 
-                {allSections.map((section) => (
-                  <div key={section.title}>
-                    <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
-                      {section.title}
-                    </p>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {section.links.map((link) => (
-                        <DockLink
-                          key={`${section.title}-${link.href}`}
-                          href={link.href}
-                          label={link.label}
-                          active={isLinkActive(pathname, link.href)}
-                          onNavigate={closeMenu}
-                          compact
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                {allSections.map((section) => {
+                  if (section.groups?.length) {
+                    return (
+                      <div key={section.title}>
+                        <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
+                          {section.title}
+                        </p>
+                        <div className="space-y-1.5">
+                          {section.groups.map((group) => (
+                            <details
+                              key={`${section.title}-${group.title}`}
+                              className="group/dtl overflow-hidden rounded-xl border border-white/15 bg-white/[0.04]"
+                            >
+                              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 text-sm font-medium text-white/90 transition hover:bg-white/[0.06] [&::-webkit-details-marker]:hidden">
+                                <span>{group.title}</span>
+                                <ChevronDown
+                                  className="size-4 shrink-0 text-white/45 transition duration-200 group-open/dtl:rotate-180"
+                                  aria-hidden
+                                />
+                              </summary>
+                              <div className="border-t border-white/10 px-2 pb-2 pt-1.5">
+                                <div className="grid gap-1.5 sm:grid-cols-2">
+                                  {group.links.map((link) => (
+                                    <DockLink
+                                      key={`${group.title}-${link.href}`}
+                                      href={link.href}
+                                      label={link.label}
+                                      active={isLinkActive(pathname, link.href)}
+                                      onNavigate={closeMenu}
+                                      compact
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </details>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (section.links?.length) {
+                    return (
+                      <div key={section.title}>
+                        <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
+                          {section.title}
+                        </p>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {section.links.map((link) => (
+                            <DockLink
+                              key={`${section.title}-${link.href}`}
+                              href={link.href}
+                              label={link.label}
+                              active={isLinkActive(pathname, link.href)}
+                              onNavigate={closeMenu}
+                              compact
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
 
                 <div className="grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-2">
                   <Link

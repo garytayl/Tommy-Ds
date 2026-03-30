@@ -28,27 +28,52 @@ const ADMIN_LOOKUP: GlassNavSection = {
   ],
 };
 
-const ADMIN_TOOLS_BASE: GlassNavLink[] = [
-  { href: "/admin", label: "Dashboard" },
+const INSIGHTS_LINKS: GlassNavLink[] = [
   { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/reports", label: "Reports" },
   { href: "/admin/reports/gas", label: "Gas" },
-  { href: "/admin/crews", label: "Crews" },
+];
+
+const YARD_LINKS: GlassNavLink[] = [
   { href: "/admin/locations", label: "Locations" },
   { href: "/admin/lots", label: "Lots" },
   { href: "/admin/materials", label: "Materials" },
   { href: "/admin/scan", label: "Scan" },
-  { href: "/admin/future-features", label: "Future features" },
 ];
 
 const ADMIN_TOOLS_ADMIN: GlassNavSection = {
   title: "Tools & back office",
-  links: [...ADMIN_TOOLS_BASE, { href: "/admin/team", label: "Team" }],
+  groups: [
+    { title: "Insights", links: INSIGHTS_LINKS },
+    {
+      title: "Team & crews",
+      links: [
+        { href: "/admin/crews", label: "Crews" },
+        { href: "/admin/team", label: "Team" },
+      ],
+    },
+    { title: "Yard & inventory", links: YARD_LINKS },
+    {
+      title: "Labs",
+      links: [{ href: "/admin/future-features", label: "Future features" }],
+    },
+  ],
 };
 
 const ADMIN_TOOLS_MANAGER: GlassNavSection = {
   title: "Tools & back office",
-  links: [...ADMIN_TOOLS_BASE],
+  groups: [
+    { title: "Insights", links: INSIGHTS_LINKS },
+    {
+      title: "Team & crews",
+      links: [{ href: "/admin/crews", label: "Crews" }],
+    },
+    { title: "Yard & inventory", links: YARD_LINKS },
+    {
+      title: "Labs",
+      links: [{ href: "/admin/future-features", label: "Future features" }],
+    },
+  ],
 };
 
 function sectionsFor(mode: Mode, role?: ProfileRole): GlassNavSection[] {

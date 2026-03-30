@@ -25,7 +25,6 @@ const NAV_TOOLS: ReadonlyArray<{
   label: string;
   exact?: boolean;
 }> = [
-  { href: "/admin", label: "Dashboard", exact: true },
   { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/reports", label: "Reports", exact: true },
   { href: "/admin/reports/gas", label: "Gas" },
