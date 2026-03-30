@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { QuoteDetailHeader } from "@/components/QuoteDetailHeader";
 import { QuoteDetailTabRow } from "@/components/QuoteDetailTabRow";
 import { QuoteNotesDisplay, quoteNotesSectionTitle, quoteNotesShowSubtitle } from "@/components/QuoteNotesDisplay";
+import { structuredQuoteNoteTitles } from "@/lib/quote-notes-parse";
 import { QuoteRecordActions } from "@/components/QuoteRecordActions";
 import { normalizeQuoteDetailTab } from "@/components/QuoteDetailTabs";
 import { SubmitButton } from "@/components/SubmitButton";
@@ -123,6 +124,7 @@ export default async function QuoteDetailPage({
     !quote.job_id && workflowStage === "quote" && (quote.status === "draft" || quote.status === "sent");
   const depositReceivedFlag = Boolean((quote as { deposit_received?: boolean }).deposit_received);
   const showQuoteNotesSubtitle = quote.notes ? quoteNotesShowSubtitle(quote.notes) : false;
+  const quoteNotesOutlineTitles = quote.notes ? structuredQuoteNoteTitles(quote.notes) : null;
 
   const itemsForDrift: ItemLike[] = items.map((i) => ({
     description: i.description,
@@ -586,13 +588,22 @@ export default async function QuoteDetailPage({
                 <input name="zip" type="text" required defaultValue={quote.zip} className="field w-full" />
               </div>
               <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Notes (scope, terms, details)</label>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Scope & terms (structured text)
+                </label>
+                <p className="mb-1.5 text-[0.65rem] leading-relaxed text-muted-foreground">
+                  Put each section title on its own line (for example{" "}
+                  <span className="font-mono text-[0.6rem]">PROJECT DETAILS</span>,{" "}
+                  <span className="font-mono text-[0.6rem]">SCOPE NOTES</span>,{" "}
+                  <span className="font-mono text-[0.6rem]">KEY TERMS / CONDITIONS</span>) so the preview below
+                  splits into separate cards.
+                </p>
                 <textarea
                   name="notes"
                   rows={8}
                   defaultValue={quote.notes ?? ""}
                   className="field min-h-[8rem] w-full resize-y font-mono text-sm leading-relaxed"
-                  placeholder="Optional — templates often include terms here"
+                  placeholder="Optional — e.g. COUNTERTOP ESTIMATE, PROJECT DETAILS, KEY TERMS…"
                 />
               </div>
               <div className="sm:col-span-2">
@@ -601,7 +612,21 @@ export default async function QuoteDetailPage({
             </form>
             {quote.notes && (
               <div className="mt-4 border-t border-border pt-4">
-                <p className="text-xs font-medium text-muted-foreground">Formatted preview</p>
+                <p className="text-xs font-medium text-muted-foreground">Preview</p>
+                {quoteNotesOutlineTitles && quoteNotesOutlineTitles.length > 0 && (
+                  <nav aria-label="Sections in this estimate" className="mt-1.5">
+                    <p className="text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">
+                      Sections
+                    </p>
+                    <ol className="mt-1 list-inside list-decimal text-xs text-muted-foreground">
+                      {quoteNotesOutlineTitles.map((title, i) => (
+                        <li key={`${i}-${title}`} className="truncate">
+                          {title}
+                        </li>
+                      ))}
+                    </ol>
+                  </nav>
+                )}
                 <div className="mt-2 rounded-lg border border-border bg-muted/20 p-3">
                   <QuoteNotesDisplay notes={quote.notes} compact />
                 </div>
@@ -617,6 +642,20 @@ export default async function QuoteDetailPage({
               <p className="mt-0.5 text-xs text-muted-foreground">
                 Scope and terms; line items drive dollar totals.
               </p>
+            )}
+            {quoteNotesOutlineTitles && quoteNotesOutlineTitles.length > 0 && (
+              <nav aria-label="Sections in this estimate" className="mt-2">
+                <p className="text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground">
+                  Sections
+                </p>
+                <ol className="mt-1 list-inside list-decimal text-xs text-muted-foreground">
+                  {quoteNotesOutlineTitles.map((title, i) => (
+                    <li key={`${i}-${title}`} className="truncate">
+                      {title}
+                    </li>
+                  ))}
+                </ol>
+              </nav>
             )}
             <div className="mt-2">
               <QuoteNotesDisplay notes={quote.notes} compact />

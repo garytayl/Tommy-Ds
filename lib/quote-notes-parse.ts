@@ -113,3 +113,13 @@ export function parseStructuredQuoteNotes(notes: string): QuoteNoteBlock[] | nul
   if (!hasStructure) return null;
   return out;
 }
+
+/** Titles of parsed hero/section blocks, for UI outlines. Null if notes are not structured. */
+export function structuredQuoteNoteTitles(notes: string): string[] | null {
+  const parsed = parseStructuredQuoteNotes(notes);
+  if (!parsed) return null;
+  const titles = parsed
+    .filter((b): b is Extract<QuoteNoteBlock, { kind: "hero" | "section" }> => b.kind === "hero" || b.kind === "section")
+    .map((b) => b.title);
+  return titles.length > 0 ? titles : null;
+}

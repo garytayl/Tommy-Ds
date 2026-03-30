@@ -353,6 +353,8 @@ export function QuoteNotesDisplay({
           padTight ? "p-3" : "p-5",
           isPrint ? "border-zinc-200 bg-zinc-50 p-2.5" : "border-zinc-200 bg-white",
         )}
+        role="region"
+        aria-label="Notes text"
       >
         <p className={cn("whitespace-pre-wrap text-zinc-800", isPrint ? "text-xs leading-snug" : "text-sm leading-relaxed")}>
           {notes}
@@ -361,6 +363,8 @@ export function QuoteNotesDisplay({
     );
   }
 
+  const multiBlock = parsed.length > 1;
+
   return (
     <div
       className={cn(
@@ -368,7 +372,11 @@ export function QuoteNotesDisplay({
         padTight ? "space-y-2 p-3" : "space-y-4 p-5",
         paper && "border-zinc-200 bg-white",
         isPrint && "space-y-1.5 rounded-none border-0 p-0 shadow-none",
+        !isPrint && multiBlock && padTight && "space-y-3.5",
+        !isPrint && multiBlock && !padTight && "space-y-5",
       )}
+      role="group"
+      aria-label="Estimate sections"
     >
       {parsed.map((block, idx) => {
         if (block.kind === "plaintext") {
@@ -380,6 +388,8 @@ export function QuoteNotesDisplay({
                 padTight ? "p-3" : "p-4",
                 isPrint ? "border-zinc-200 bg-zinc-50/90" : "border-zinc-200 bg-zinc-50/80",
               )}
+              role="region"
+              aria-label="Unstructured notes"
             >
               {block.text}
             </div>
@@ -397,6 +407,8 @@ export function QuoteNotesDisplay({
                   padTight ? "p-3" : "p-5",
                   isPrint && "bg-zinc-50/90",
                 )}
+                role="region"
+                aria-label="Quote summary"
               >
                 <span className="sr-only">Quote summary (cover)</span>
                 {block.bodyLines.length > 0 && (
@@ -410,6 +422,7 @@ export function QuoteNotesDisplay({
               </div>
             );
           }
+          const heroHeadingId = `quote-notes-heading-${idx}`;
           return (
             <div
               key={`hero-${idx}`}
@@ -420,6 +433,8 @@ export function QuoteNotesDisplay({
                   ? "border-zinc-200 bg-gradient-to-br from-[#f4ecef] via-white to-white p-2.5 shadow-none"
                   : "border-zinc-200 bg-gradient-to-br from-[#f4ecef]/90 via-white to-white",
               )}
+              role="region"
+              aria-labelledby={heroHeadingId}
             >
               <div
                 className={cn(
@@ -429,6 +444,7 @@ export function QuoteNotesDisplay({
                 aria-hidden
               />
               <h3
+                id={heroHeadingId}
                 className={cn(
                   "relative font-bold tracking-tight text-zinc-900",
                   padTight ? "text-lg" : "text-xl",
@@ -457,6 +473,7 @@ export function QuoteNotesDisplay({
           );
         }
 
+        const sectionHeadingId = `quote-notes-heading-${idx}`;
         return (
           <div
             key={`sec-${idx}`}
@@ -465,8 +482,11 @@ export function QuoteNotesDisplay({
               padTight ? "p-3" : "p-5",
               isPrint ? "border-zinc-200 bg-zinc-50/90 p-2.5 py-2.5 shadow-sm" : "border-zinc-200 bg-zinc-50/70",
             )}
+            role="region"
+            aria-labelledby={sectionHeadingId}
           >
             <h4
+              id={sectionHeadingId}
               className={cn(
                 "border-b border-zinc-200 pb-2 text-[0.7rem] font-bold uppercase tracking-[0.2em] text-[#7A1D2B]",
                 isPrint && "border-zinc-200 pb-1.5 text-[0.65rem] text-[#8b2942]",
