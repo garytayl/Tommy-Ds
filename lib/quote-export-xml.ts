@@ -132,7 +132,8 @@ export function buildQuoteExportXml(payload: QuoteExportPayload): string {
   ].join("\n");
 }
 
-export function quoteExportFilename(title: string, id: string): string {
+/** Shared stem for download filenames (quote / estimate exports). */
+export function quoteExportBaseName(title: string, id: string): string {
   const slug = title
     .trim()
     .toLowerCase()
@@ -140,6 +141,13 @@ export function quoteExportFilename(title: string, id: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
   const shortId = id.replace(/-/g, "").slice(0, 8);
-  const base = slug ? `quote-${slug}-${shortId}` : `quote-${shortId}`;
-  return `${base}.xml`;
+  return slug ? `quote-${slug}-${shortId}` : `quote-${shortId}`;
+}
+
+export function quoteExportFilename(title: string, id: string): string {
+  return `${quoteExportBaseName(title, id)}.xml`;
+}
+
+export function quoteExportTxtFilename(title: string, id: string): string {
+  return `${quoteExportBaseName(title, id)}.txt`;
 }

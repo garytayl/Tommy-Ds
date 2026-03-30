@@ -57,15 +57,23 @@ export function QuoteRecordActions({
         <div
           className={`flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-2 ${hasWorkflowCta ? "border-t border-border pt-3" : ""}`}
         >
-          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Export">
-            <span className="text-xs font-medium text-muted-foreground">Export</span>
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Ponderosa export">
+            <span className="text-xs font-medium text-muted-foreground">Ponderosa</span>
             <a
               href={`/admin/quotes/${quoteId}/export`}
               className="btn-secondary whitespace-nowrap"
               download
-              title="Design Flex Project XML (Project.xsd) for Ponderosa / Eclipse import. Append ?format=tommyds for the simple export."
+              title="Design Flex Project XML (Project.xsd) for Eclipse / Ponderosa. Use for estimates and formal quotes. ?format=tommyds = simple XML."
             >
-              Design Flex XML
+              XML
+            </a>
+            <a
+              href={`/admin/quotes/${quoteId}/export?format=txt`}
+              className="btn-secondary whitespace-nowrap"
+              download
+              title="Plain-text estimate/quote (tab-separated lines) for Ponderosa or drop-folder workflows."
+            >
+              TXT
             </a>
           </div>
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="PDF">

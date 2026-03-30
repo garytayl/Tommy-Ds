@@ -1,7 +1,9 @@
 import { buildDesignFlexProjectXml } from "@/lib/design-flex-project-xml";
+import { buildPonderosaEstimateTxt } from "@/lib/ponderosa-export-txt";
 import {
   buildQuoteExportXml,
   quoteExportFilename,
+  quoteExportTxtFilename,
   type QuoteExportPayload,
 } from "@/lib/quote-export-xml";
 import { getOfficeSessionOrNull } from "@/lib/server-action-guards";
@@ -80,6 +82,19 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
       sort_order: i.sort_order,
     })),
   };
+
+  if (format === "txt") {
+    const body = buildPonderosaEstimateTxt(payload);
+    const filename = quoteExportTxtFilename(quote.title, quote.id);
+    return new NextResponse(body, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
 
   const xml =
     format === "tommyds" ? buildQuoteExportXml(payload) : buildDesignFlexProjectXml(payload);
