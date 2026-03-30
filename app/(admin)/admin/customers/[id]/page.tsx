@@ -5,7 +5,7 @@ import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { SubmitButton } from "@/components/SubmitButton";
 import { formatCents } from "@/lib/money";
 import { workflowStageLabel } from "@/lib/quote-workflow";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { deleteCustomer, updateCustomer } from "./actions";
 
@@ -15,7 +15,7 @@ export default async function CustomerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
 
   const [{ data: customer }, { data: jobs }, { data: quotes }] = await Promise.all([
     supabase

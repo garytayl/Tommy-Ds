@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SearchForm } from "./SearchForm";
 
 function escapeLike(value: string): string {
@@ -29,7 +29,7 @@ export default async function SearchPage({
   }[] = [];
 
   if (query.length >= 1) {
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     const pattern = `%${escapeLike(query)}%`;
     const quoted = (s: string) => `"${s.replace(/"/g, '""')}"`;
     const orClause = `title.ilike.${quoted(pattern)},address_line1.ilike.${quoted(pattern)},city.ilike.${quoted(pattern)},zip.ilike.${quoted(pattern)}`;

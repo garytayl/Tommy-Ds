@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const LEAD_SOURCES = [
   "google_ads",
@@ -32,7 +32,7 @@ export default async function LeadsPage() {
     "use server";
     const leadId = String(formData.get("lead_id") ?? "").trim();
     if (!leadId) return;
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     const { data: lead } = await supabase
       .from("leads")
       .select("id,customer_id,customers(id,name)")
@@ -62,7 +62,7 @@ export default async function LeadsPage() {
     redirect(`/jobs/${job.id}`);
   }
 
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   const { data: leads } = await supabase
     .from("leads")
     .select("id,source,campaign,notes,created_at,converted_job_id,converted_quote_id,customers(id,name,phone,email)")

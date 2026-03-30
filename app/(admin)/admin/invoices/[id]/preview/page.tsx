@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { PrintButton } from "@/components/PrintButton";
 import { formatCents } from "@/lib/money";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function InvoicePreviewPage({
   params,
@@ -11,7 +11,7 @@ export default async function InvoicePreviewPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
 
   const [invoiceResult, itemsResult] = await Promise.all([
     supabase

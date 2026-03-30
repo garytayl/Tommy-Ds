@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 
 import { getCrewDisplayName } from "@/lib/crews";
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const SPECIALTIES = ["Windows and Doors", "Garage Doors"] as const;
 
@@ -12,7 +12,7 @@ export default async function CrewsPage() {
     const name = String(formData.get("name") ?? "").trim();
     const specialty = String(formData.get("specialty") ?? SPECIALTIES[0]).trim();
     if (!name) return;
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     await supabase.from("crews").insert({ name, specialty });
     await setToastCookie("Crew added");
     revalidatePath("/admin/crews");
@@ -23,7 +23,7 @@ export default async function CrewsPage() {
     const crewId = String(formData.get("crew_id") ?? "").trim();
     const userId = String(formData.get("user_id") ?? "").trim();
     if (!crewId || !userId) return;
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     await supabase.from("crew_members").insert({ crew_id: crewId, user_id: userId });
     await setToastCookie("Member added");
     revalidatePath("/admin/crews");
@@ -35,7 +35,7 @@ export default async function CrewsPage() {
     const name = String(formData.get("name") ?? "").trim();
     const specialty = String(formData.get("specialty") ?? SPECIALTIES[0]).trim();
     if (!crewId || !name) return;
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     await supabase
       .from("crews")
       .update({ name, specialty })
@@ -49,7 +49,7 @@ export default async function CrewsPage() {
     const crewId = String(formData.get("crew_id") ?? "").trim();
     const userId = String(formData.get("user_id") ?? "").trim();
     if (!crewId || !userId) return;
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     await supabase
       .from("crew_members")
       .delete()
@@ -59,7 +59,7 @@ export default async function CrewsPage() {
     revalidatePath("/admin/crews");
   }
 
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   const [
     { data: crews },
     { data: installers },

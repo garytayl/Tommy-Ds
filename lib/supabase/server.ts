@@ -2,8 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { type SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
-import { createSupabaseServiceClient } from "@/lib/supabase/service";
-
+/**
+ * Session-scoped Supabase client (anon key + user JWT). Row Level Security applies.
+ * Use this for all server components and server actions so access follows DB policies.
+ *
+ * For operations that truly require bypassing RLS (e.g. `auth.admin` invites), use
+ * `createSupabaseServiceClient` from `@/lib/supabase/service` in that module only.
+ */
 export async function createSupabaseServerClient(): Promise<SupabaseClient> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -33,17 +38,4 @@ export async function createSupabaseServerClient(): Promise<SupabaseClient> {
       },
     },
   });
-}
-
-/**
- * Use for server-side data (jobs, customers, invoices, etc.). When
- * SUPABASE_SERVICE_ROLE_KEY is set, uses the service client so existing DB data
- * is visible and new records persist without requiring auth (good for PoC/internal).
- * Otherwise uses the session-based client (RLS applies; user must be admin/manager).
- */
-export async function createSupabaseServerClientForData(): Promise<SupabaseClient> {
-  if (typeof process !== "undefined" && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return createSupabaseServiceClient();
-  }
-  return createSupabaseServerClient();
 }

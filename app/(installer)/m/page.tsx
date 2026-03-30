@@ -2,10 +2,10 @@ import Link from "next/link";
 
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { formatCents } from "@/lib/money";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function InstallerTodayPage() {
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
 
   const now = new Date();
   const todayStart = new Date(now);

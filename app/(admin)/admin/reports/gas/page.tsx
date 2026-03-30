@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { addGasCard, addVehicle, logFuelPurchase } from "@/app/(admin)/admin/reports/gas/actions";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +71,7 @@ function isMissingRelationError(error: { code?: string; message?: string } | nul
 }
 
 export default async function GasReportPage() {
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
 
   const [vehiclesResult, cardsResult, purchasesResult] = await Promise.all([
     supabase

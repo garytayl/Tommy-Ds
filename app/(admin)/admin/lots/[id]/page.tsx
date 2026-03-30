@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function LotDetailPage({
   params,
@@ -11,7 +11,7 @@ export default async function LotDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
 
   const [lotResult, inventoryResult, materialsResult] = await Promise.all([
     supabase
@@ -43,7 +43,7 @@ export default async function LotDetailPage({
 
     if (!materialId || !Number.isFinite(qty) || qty <= 0) return;
 
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     const { data: existing } = await supabase
       .from("inventory")
       .select("id,quantity")
@@ -75,7 +75,7 @@ export default async function LotDetailPage({
     const delta = Number(formData.get("delta"));
     if (!inventoryId || !Number.isFinite(delta)) return;
 
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     const { data: row } = await supabase
       .from("inventory")
       .select("quantity")

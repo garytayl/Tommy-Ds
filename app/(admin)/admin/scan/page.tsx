@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { BarcodeLookup } from "./BarcodeLookup";
 
 type LotRow = { id: string; name: string; barcode?: string | null; locations?: { name: string; code?: string } | { name: string; code?: string }[] };
@@ -22,7 +22,7 @@ export default async function ScanPage({
   let inventoryForMaterial: InvRow[] | null = null;
 
   if (barcode) {
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     const [lotRes, matRes] = await Promise.all([
       supabase.from("lots").select("id,name,barcode,location_id,locations(name,code)").eq("barcode", barcode).maybeSingle(),
       supabase.from("materials").select("id,name,sku,unit,barcode,default_location_id,locations(name)").eq("barcode", barcode).maybeSingle(),

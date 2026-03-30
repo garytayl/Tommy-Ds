@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { FormSubmitButton } from "@/components/forms/FormSubmitButton";
 import { getCurrentUserAndProfile, type ProfileRole } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { setToastCookie } from "@/lib/toast";
 
 export const dynamic = "force-dynamic";
@@ -100,8 +99,7 @@ export default async function OnboardingPage({
         redirect(`/auth/onboarding?next=${encodeURIComponent(nextPath)}`);
       }
 
-      const serviceClient = createSupabaseServiceClient();
-      const { error: profileError } = await serviceClient
+      const { error: profileError } = await sessionClient
         .from("profiles")
         .update({
           full_name: fullName,

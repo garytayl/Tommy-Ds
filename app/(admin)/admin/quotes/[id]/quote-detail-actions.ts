@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { autoRecordQuoteRevisionIfChanged } from "@/lib/quote-revision-auto";
 import {
   composeNotesFromSections,
@@ -10,16 +12,26 @@ import {
   serializeNotesSections,
 } from "@/lib/quote-notes-sections";
 import { dollarsToCents } from "@/lib/money";
+import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 import { computeTaxCents } from "@/lib/tax";
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
-async function quoteUnlocked(supabase: Awaited<ReturnType<typeof createSupabaseServerClientForData>>, quoteId: string) {
+async function requireOfficeSupabase(quoteId: string): Promise<SupabaseClient | null> {
+  const session = await getOfficeSessionOrNull();
+  if (!session) {
+    await setToastCookie(UNAUTHORIZED_TOAST);
+    revalidatePath(`/admin/quotes/${quoteId}`);
+    return null;
+  }
+  return session.supabase;
+}
+
+async function quoteUnlocked(supabase: SupabaseClient, quoteId: string) {
   const { data } = await supabase.from("quotes").select("job_id").eq("id", quoteId).maybeSingle();
   return Boolean(data && !data.job_id);
 }
 
-async function applyDefaultTaxAfterItemsChange(supabase: Awaited<ReturnType<typeof createSupabaseServerClientForData>>, quoteId: string) {
+async function applyDefaultTaxAfterItemsChange(supabase: SupabaseClient, quoteId: string) {
   const { data: q } = await supabase.from("quotes").select("subtotal_cents").eq("id", quoteId).single();
   if (q?.subtotal_cents != null) {
     const taxCents = computeTaxCents(q.subtotal_cents);
@@ -29,7 +41,8 @@ async function applyDefaultTaxAfterItemsChange(supabase: Awaited<ReturnType<type
 }
 
 export async function updateQuoteDetails(quoteId: string, formData: FormData) {
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await requireOfficeSupabase(quoteId);
+  if (!supabase) return;
   if (!(await quoteUnlocked(supabase, quoteId))) {
     await setToastCookie("This estimate is locked because it is linked to a job.");
     revalidatePath(`/admin/quotes/${quoteId}`);
@@ -88,7 +101,8 @@ export async function updateQuoteDetails(quoteId: string, formData: FormData) {
 }
 
 export async function addQuoteLineItem(quoteId: string, formData: FormData) {
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await requireOfficeSupabase(quoteId);
+  if (!supabase) return;
   if (!(await quoteUnlocked(supabase, quoteId))) {
     await setToastCookie("This estimate is locked because it is linked to a job.");
     revalidatePath(`/admin/quotes/${quoteId}`);
@@ -151,7 +165,8 @@ export async function addQuoteLineItem(quoteId: string, formData: FormData) {
 }
 
 export async function updateQuoteLineItem(quoteId: string, formData: FormData) {
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await requireOfficeSupabase(quoteId);
+  if (!supabase) return;
   if (!(await quoteUnlocked(supabase, quoteId))) {
     await setToastCookie("This estimate is locked because it is linked to a job.");
     revalidatePath(`/admin/quotes/${quoteId}`);
@@ -207,7 +222,8 @@ export async function updateQuoteLineItem(quoteId: string, formData: FormData) {
 }
 
 export async function deleteQuoteLineItem(quoteId: string, formData: FormData) {
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await requireOfficeSupabase(quoteId);
+  if (!supabase) return;
   if (!(await quoteUnlocked(supabase, quoteId))) {
     await setToastCookie("This estimate is locked because it is linked to a job.");
     revalidatePath(`/admin/quotes/${quoteId}`);
@@ -234,7 +250,8 @@ export async function deleteQuoteLineItem(quoteId: string, formData: FormData) {
 }
 
 export async function moveQuoteLineItem(quoteId: string, formData: FormData) {
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await requireOfficeSupabase(quoteId);
+  if (!supabase) return;
   if (!(await quoteUnlocked(supabase, quoteId))) {
     await setToastCookie("This estimate is locked because it is linked to a job.");
     revalidatePath(`/admin/quotes/${quoteId}`);
@@ -279,7 +296,8 @@ export async function restoreQuoteFromRevision(quoteId: string, formData: FormDa
   const revisionId = String(formData.get("revision_id") ?? "").trim();
   if (!revisionId) return;
 
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await requireOfficeSupabase(quoteId);
+  if (!supabase) return;
   const { data: rev } = await supabase
     .from("quote_revisions")
     .select("id")

@@ -4,7 +4,7 @@ import { QuoteNotesDisplay, quoteNotesSectionTitle } from "@/components/QuoteNot
 import { mergeQuoteForPrint, parsePrintOverrides, stripRedundantSectionsForPrint } from "@/lib/quote-print-overrides";
 import { formatCents } from "@/lib/money";
 import { workflowStageLabel } from "@/lib/quote-workflow";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const BRAND = "#8b2942";
 const BRAND_SOFT = "#f4ecef";
@@ -19,7 +19,7 @@ export default async function QuotePrintPage({
   const { id } = await params;
   const sp = await searchParams;
   const liveOnly = sp?.live === "1" || sp?.live === "true";
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
 
   const [quoteResult, itemsResult] = await Promise.all([
     supabase

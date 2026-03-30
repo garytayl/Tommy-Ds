@@ -5,7 +5,7 @@ import { QuoteNotesSectionFields } from "@/components/QuoteNotesSectionFields";
 import { SubmitButton } from "@/components/SubmitButton";
 import { quoteNotesToSections } from "@/lib/quote-notes-sections";
 import { coerceQuoteTemplateLineItems } from "@/lib/quote-templates";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { deleteQuoteTemplate, updateQuoteTemplate } from "../actions";
 import { ConfirmDeleteButton } from "../ConfirmDeleteButton";
@@ -13,7 +13,7 @@ import { QuoteTemplateLineItemsEditor } from "../QuoteTemplateLineItemsEditor";
 
 export default async function EditQuoteTemplatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   const { data: row, error } = await supabase
     .from("quote_templates")
     .select("id,name,description,default_title,notes_text,line_items,sort_order")

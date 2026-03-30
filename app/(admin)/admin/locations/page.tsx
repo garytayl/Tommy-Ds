@@ -1,7 +1,7 @@
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function LocationsPage() {
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   const { data: locations } = await supabase
     .from("locations")
     .select("id,code,name")

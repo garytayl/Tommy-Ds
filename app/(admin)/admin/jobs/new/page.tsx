@@ -2,8 +2,9 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { CopyAddressFromCustomerButton } from "@/components/CopyAddressFromCustomerButton";
 import { SubmitButton } from "@/components/SubmitButton";
 import { getCrewDisplayName } from "@/lib/crews";
@@ -60,9 +61,14 @@ export default async function NewJobPage({ searchParams }: PageProps) {
     const zip = String(formData.get("zip") ?? "").trim();
     if (!customerId || !title || !address1 || !city || !zip) return;
 
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const kindRaw = String(formData.get("job_kind") ?? "installation").trim();
     const job_kind = kindRaw === "service" ? "service" : "installation";
-    const supabase = await createSupabaseServerClientForData();
     const { data: newJob } = await supabase
       .from("jobs")
       .insert({
@@ -107,7 +113,12 @@ export default async function NewJobPage({ searchParams }: PageProps) {
     const phone = String(formData.get("phone") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim();
     if (!name) return;
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const { data: row } = await supabase
       .from("customers")
       .insert({ name, phone: phone || null, email: email || null })
@@ -120,7 +131,7 @@ export default async function NewJobPage({ searchParams }: PageProps) {
     redirect(`/admin/jobs/new?added=${row.id}`);
   }
 
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   const [
     { data: customers },
     { data: installersList },

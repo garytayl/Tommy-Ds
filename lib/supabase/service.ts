@@ -2,6 +2,11 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let serviceClient: SupabaseClient | undefined;
 
+/**
+ * Bypasses RLS. Use only for Supabase Auth admin APIs (invites, delete user), seed scripts,
+ * and other server-only operations that cannot run as the signed-in user.
+ * Never use for normal CRUD — use `createSupabaseServerClient` instead.
+ */
 export function createSupabaseServiceClient(): SupabaseClient {
   if (serviceClient) {
     return serviceClient;

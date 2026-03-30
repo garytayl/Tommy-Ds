@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -338,7 +338,7 @@ function InsightCard({ title, children }: { title: string; children: React.React
 }
 
 export default async function AnalyticsPage() {
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
 
   const [
     jobsResult,

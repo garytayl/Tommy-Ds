@@ -16,12 +16,13 @@ MVP for a local installer business:
 
 ## Required Environment Variables
 
-Copy `.env.example` to `.env.local` and fill in. **You must set `SUPABASE_SERVICE_ROLE_KEY`** (Supabase Dashboard → Project Settings → API → service_role) or the app will show no data (RLS blocks reads when not logged in).
+Copy `.env.example` to `.env.local` and fill in. The app uses the **anon key + user session** for normal data (RLS enforces access). **`SUPABASE_SERVICE_ROLE_KEY`** is optional for day-to-day use; keep it for local **seed scripts** and for **Admin → Team** actions that call Supabase Auth admin APIs (invite/delete user).
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=   # required for data to show
+# Optional: seed scripts + Team page auth.admin (invites / user delete)
+SUPABASE_SERVICE_ROLE_KEY=
 # optional but recommended for invite + auth callback links
 NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
 ```

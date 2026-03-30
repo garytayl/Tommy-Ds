@@ -7,14 +7,20 @@ import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { SubmitButton } from "@/components/SubmitButton";
 import { getCrewDisplayName } from "@/lib/crews";
 import { jobHasRecordedPayments } from "@/lib/job-destruct";
+import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 async function deleteJobFromList(formData: FormData) {
   "use server";
   const jobId = String(formData.get("job_id") ?? "").trim();
   if (!jobId) return;
-  const supabase = await createSupabaseServerClientForData();
+  const session = await getOfficeSessionOrNull();
+  if (!session) {
+    await setToastCookie(UNAUTHORIZED_TOAST);
+    return;
+  }
+  const { supabase } = session;
   if (await jobHasRecordedPayments(supabase, jobId)) {
     await setToastCookie("Cannot delete: this job has recorded invoice payments");
     revalidatePath("/admin/jobs");
@@ -44,7 +50,7 @@ export default async function JobsPage({
   const { crew_id: filterCrewId, kind: kindParam } = await searchParams;
   const kindFilter = kindParam === "service" || kindParam === "installation" ? kindParam : null;
 
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   let jobsQuery = supabase
     .from("jobs")
     .select("id,title,status,job_kind,scheduled_start,assigned_crew_id,customers(name),profiles(full_name),crews(name,specialty),invoices(id,invoice_number,balance_due_cents)")

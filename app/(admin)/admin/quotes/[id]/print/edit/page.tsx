@@ -3,13 +3,13 @@ import { notFound } from "next/navigation";
 
 import { mergeQuoteForPrint, parsePrintOverrides } from "@/lib/quote-print-overrides";
 import { workflowStageLabel } from "@/lib/quote-workflow";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { QuotePrintEditorForm } from "./QuotePrintEditorForm";
 
 export default async function QuotePrintEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
 
   const [quoteResult, itemsResult] = await Promise.all([
     supabase

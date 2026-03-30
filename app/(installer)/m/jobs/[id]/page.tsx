@@ -5,9 +5,9 @@ import { notFound } from "next/navigation";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { SubmitButton } from "@/components/SubmitButton";
 import { formatCents } from "@/lib/money";
+import { getInstallerOrOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
-import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type JobRow = {
   id: string;
@@ -40,7 +40,7 @@ export default async function InstallerJobPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
 
   const [jobResult, invoiceResult, photosResult] = await Promise.all([
     supabase
@@ -80,22 +80,26 @@ export default async function InstallerJobPage({
     signed_url: null,
   }));
   try {
-    const serviceClient = createSupabaseServiceClient();
     photosWithUrls = await Promise.all(
       photos.map(async (photo) => {
-        const { data } = await serviceClient.storage
+        const { data } = await supabase.storage
           .from("job-photos")
           .createSignedUrl(photo.storage_path, 60 * 30);
         return { ...photo, signed_url: data?.signedUrl ?? null };
       }),
     );
   } catch {
-    // no service role
+    // signed URL failed
   }
 
   async function updateFieldNotes(formData: FormData) {
     "use server";
-    const client = await createSupabaseServerClientForData();
+    const session = await getInstallerOrOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const client = session.supabase;
     const notes = String(formData.get("notes") ?? "").trim();
     await client.from("jobs").update({ notes: notes || null }).eq("id", id);
     await setToastCookie("Notes saved");
@@ -105,15 +109,19 @@ export default async function InstallerJobPage({
 
   async function uploadPhoto(formData: FormData) {
     "use server";
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getInstallerOrOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const file = formData.get("photo");
     if (!(file instanceof File) || file.size === 0) return;
     const caption = String(formData.get("caption") ?? "").trim();
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const storagePath = `${id}/${file.lastModified || "upload"}-${safeName}`;
     const arrayBuffer = await file.arrayBuffer();
-    const serviceClient = createSupabaseServiceClient();
-    const { error: uploadError } = await serviceClient.storage
+    const { error: uploadError } = await supabase.storage
       .from("job-photos")
       .upload(storagePath, Buffer.from(arrayBuffer), {
         contentType: file.type || "application/octet-stream",
@@ -133,7 +141,12 @@ export default async function InstallerJobPage({
 
   async function markComplete() {
     "use server";
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getInstallerOrOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     await supabase.from("jobs").update({ status: "installed" }).eq("id", id);
     await setToastCookie("Job marked complete");
     revalidatePath("/m");

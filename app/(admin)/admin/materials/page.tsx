@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function MaterialsPage() {
   async function createMaterial(formData: FormData) {
@@ -15,7 +15,7 @@ export default async function MaterialsPage() {
 
     if (!name) return;
 
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     await supabase.from("materials").insert({
       name,
       sku: sku || null,
@@ -28,7 +28,7 @@ export default async function MaterialsPage() {
     revalidatePath("/admin/materials");
   }
 
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   const [{ data: materials }, { data: locations }] = await Promise.all([
     supabase
       .from("materials")

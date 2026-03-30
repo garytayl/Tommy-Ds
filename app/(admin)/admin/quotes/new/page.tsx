@@ -1,6 +1,6 @@
 import { normalizeTemplateIdInList } from "@/lib/quote-templates";
 import { fetchMergedQuoteTemplateDefinitions } from "@/lib/quote-templates-load";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { QuoteNewForm } from "./QuoteNewForm";
 
@@ -12,7 +12,7 @@ export default async function NewQuotePage({
   const resolvedSearch = (await searchParams) ?? {};
   const preselectCustomerId = resolvedSearch.customer_id?.trim() ?? "";
 
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   const [templateDefinitions, { data: customers }] = await Promise.all([
     fetchMergedQuoteTemplateDefinitions(supabase),
     supabase

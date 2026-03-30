@@ -13,9 +13,9 @@ import { getCrewDisplayName } from "@/lib/crews";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
 import { jobHasRecordedPayments } from "@/lib/job-destruct";
+import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
-import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const JOB_STATUSES = [
   "lead",
@@ -80,7 +80,7 @@ export default async function JobWorkspacePage({
   const showDebug = searchParamsResolved.debug === "1";
 
   // Use the same data client as the jobs list so list and detail always see the same rows.
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   const jobResult = await supabase
     .from("jobs")
     .select(
@@ -251,22 +251,26 @@ export default async function JobWorkspacePage({
     signed_url: null,
   }));
   try {
-    const serviceClient = createSupabaseServiceClient();
     photosWithUrls = await Promise.all(
       photos.map(async (photo) => {
-        const { data } = await serviceClient.storage
+        const { data } = await supabase.storage
           .from("job-photos")
           .createSignedUrl(photo.storage_path, 60 * 30);
         return { ...photo, signed_url: data?.signedUrl ?? null };
       }),
     );
   } catch {
-    // no service role
+    // signed URL failed (e.g. storage policy)
   }
 
   async function updateJob(formData: FormData) {
     "use server";
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const kindRaw = String(formData.get("job_kind") ?? "installation").trim();
     const job_kind: JobKind = kindRaw === "service" ? "service" : "installation";
     await supabase
@@ -290,7 +294,12 @@ export default async function JobWorkspacePage({
 
   async function createInvoice() {
     "use server";
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     await supabase.from("invoices").insert({
       job_id: id,
       status: "draft",
@@ -303,7 +312,12 @@ export default async function JobWorkspacePage({
 
   async function markComplete() {
     "use server";
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     await supabase.from("jobs").update({ status: "installed" }).eq("id", id);
     await setToastCookie("Job marked complete");
     revalidatePath(`/jobs/${id}`);
@@ -313,7 +327,12 @@ export default async function JobWorkspacePage({
 
   async function updateFieldNotes(formData: FormData) {
     "use server";
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const notes = String(formData.get("notes") ?? "").trim();
     await supabase.from("jobs").update({ notes: notes || null }).eq("id", id);
     await setToastCookie("Notes saved");
@@ -322,15 +341,19 @@ export default async function JobWorkspacePage({
 
   async function uploadPhoto(formData: FormData) {
     "use server";
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const file = formData.get("photo");
     if (!(file instanceof File) || file.size === 0) return;
     const caption = String(formData.get("caption") ?? "").trim();
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const storagePath = `${id}/${file.lastModified || "upload"}-${safeName}`;
     const arrayBuffer = await file.arrayBuffer();
-    const serviceClient = createSupabaseServiceClient();
-    const { error: uploadError } = await serviceClient.storage
+    const { error: uploadError } = await supabase.storage
       .from("job-photos")
       .upload(storagePath, Buffer.from(arrayBuffer), {
         contentType: file.type || "application/octet-stream",
@@ -355,7 +378,12 @@ export default async function JobWorkspacePage({
     const unitPriceCents = dollarsToCents(String(formData.get("unit_price") ?? "0"));
     if (!description || !Number.isFinite(qty) || qty <= 0 || unitPriceCents <= 0) return;
     const lineTotalCents = Math.round(qty * unitPriceCents);
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     await supabase.from("invoice_items").insert({
       invoice_id: invoice.id,
       description,
@@ -379,7 +407,12 @@ export default async function JobWorkspacePage({
     "use server";
     if (!invoice) return;
     const taxCents = dollarsToCents(String(formData.get("tax") ?? "0"));
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     await supabase.from("invoices").update({ tax_cents: taxCents }).eq("id", invoice.id);
     await supabase.rpc("recompute_invoice_totals", { p_invoice_id: invoice.id });
     await setToastCookie("Tax updated");
@@ -394,7 +427,12 @@ export default async function JobWorkspacePage({
     const locationId = String(formData.get("location_id") ?? "").trim() || null;
     const notes = String(formData.get("notes") ?? "").trim() || null;
     if (!materialId || !Number.isFinite(qty) || qty <= 0) return;
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     await supabase.from("job_materials").insert({
       job_id: id,
       material_id: materialId,
@@ -410,7 +448,12 @@ export default async function JobWorkspacePage({
     "use server";
     const rowId = String(formData.get("job_material_id") ?? "").trim();
     if (!rowId) return;
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     await supabase.from("job_materials").delete().eq("id", rowId).eq("job_id", id);
     await setToastCookie("Material removed");
     revalidatePath(`/jobs/${id}`);
@@ -423,7 +466,12 @@ export default async function JobWorkspacePage({
     const description = String(formData.get("activity_description") ?? "").trim() || null;
     const scheduledDate = toIsoOrNull(formData.get("activity_scheduled_date"));
     if (!type) return;
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     await supabase.from("activities").insert({
       job_id: id,
       type: type as "created" | "note" | "consultation" | "pre_measure" | "measure" | "design" | "quote_sent" | "follow_up" | "customer_acceptance" | "deposit_received" | "schedule_install" | "walkthrough" | "install" | "payment_received",
@@ -442,15 +490,20 @@ export default async function JobWorkspacePage({
     const noteType = String(formData.get("note_type") ?? "internal").trim();
     const note = String(formData.get("note") ?? "").trim();
     if (!note) return;
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     let createdBy: string | null = null;
     try {
-      const { createSupabaseServerClient } = await import("@/lib/supabase/server");
-      const authClient = await createSupabaseServerClient();
-      const { data: { user } } = await authClient.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       createdBy = user?.id ?? null;
     } catch {
-      // service role or no auth
+      createdBy = null;
     }
     await supabase.from("job_notes").insert({
       job_id: id,
@@ -464,7 +517,12 @@ export default async function JobWorkspacePage({
 
   async function revertJobToQuote() {
     "use server";
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const { data: q } = await supabase.from("quotes").select("id").eq("job_id", id).maybeSingle();
     if (!q?.id) {
       await setToastCookie("This job has no linked quote");
@@ -487,7 +545,12 @@ export default async function JobWorkspacePage({
 
   async function deleteJob() {
     "use server";
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     if (await jobHasRecordedPayments(supabase, id)) {
       await setToastCookie("Cannot delete: this job has recorded invoice payments");
       revalidatePath(`/jobs/${id}`);

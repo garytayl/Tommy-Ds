@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 
 import { composeNotesFromSections, formDataToNotesSections } from "@/lib/quote-notes-sections";
 import type { QuoteTemplateLineItem } from "@/lib/quote-templates";
+import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 function parseLineItemsJson(raw: string): QuoteTemplateLineItem[] {
   try {
@@ -47,7 +47,12 @@ export async function createQuoteTemplate(formData: FormData) {
     return;
   }
 
-  const supabase = await createSupabaseServerClientForData();
+  const session = await getOfficeSessionOrNull();
+  if (!session) {
+    await setToastCookie(UNAUTHORIZED_TOAST);
+    return;
+  }
+  const { supabase } = session;
   const { error } = await supabase.from("quote_templates").insert({
     name,
     description,
@@ -82,7 +87,12 @@ export async function updateQuoteTemplate(formData: FormData) {
     return;
   }
 
-  const supabase = await createSupabaseServerClientForData();
+  const session = await getOfficeSessionOrNull();
+  if (!session) {
+    await setToastCookie(UNAUTHORIZED_TOAST);
+    return;
+  }
+  const { supabase } = session;
   const { error } = await supabase
     .from("quote_templates")
     .update({
@@ -110,7 +120,12 @@ export async function deleteQuoteTemplate(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim();
   if (!id) return;
 
-  const supabase = await createSupabaseServerClientForData();
+  const session = await getOfficeSessionOrNull();
+  if (!session) {
+    await setToastCookie(UNAUTHORIZED_TOAST);
+    return;
+  }
+  const { supabase } = session;
   const { error } = await supabase.from("quote_templates").delete().eq("id", id);
 
   if (error) {

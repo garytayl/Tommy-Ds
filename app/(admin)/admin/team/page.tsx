@@ -6,7 +6,7 @@ import { PendingFieldset } from "@/components/forms/PendingFieldset";
 import { getCurrentUserAndProfile } from "@/lib/auth";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 const ROLES = [
@@ -268,7 +268,7 @@ export default async function TeamPage() {
     }
   }
 
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   const { data: profiles } = await supabase
     .from("profiles")
     .select("user_id, role, full_name, onboarding_completed_at, created_at")

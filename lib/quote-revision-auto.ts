@@ -1,4 +1,4 @@
-import { createSupabaseServerClient, createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { insertQuoteRevisionRecord } from "./quote-revision-record";
 
@@ -8,11 +8,10 @@ import { insertQuoteRevisionRecord } from "./quote-revision-record";
  */
 export async function autoRecordQuoteRevisionIfChanged(quoteId: string, reason: string): Promise<void> {
   try {
-    const supabase = await createSupabaseServerClientForData();
-    const auth = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
     const {
       data: { user },
-    } = await auth.auth.getUser();
+    } = await supabase.auth.getUser();
     const label = `Auto — ${reason}`;
     const res = await insertQuoteRevisionRecord(supabase, quoteId, label, user?.id ?? null, {
       skipIfUnchanged: true,
@@ -30,11 +29,10 @@ export async function autoRecordQuoteRevisionIfChanged(quoteId: string, reason: 
  */
 export async function recordQuoteRevisionForced(quoteId: string, label: string): Promise<void> {
   try {
-    const supabase = await createSupabaseServerClientForData();
-    const auth = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
     const {
       data: { user },
-    } = await auth.auth.getUser();
+    } = await supabase.auth.getUser();
     const res = await insertQuoteRevisionRecord(supabase, quoteId, label, user?.id ?? null, {
       skipIfUnchanged: false,
     });

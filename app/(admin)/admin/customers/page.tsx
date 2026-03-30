@@ -2,7 +2,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function CustomersPage() {
   async function createCustomer(formData: FormData) {
@@ -14,7 +14,7 @@ export default async function CustomersPage() {
 
     if (!name) return;
 
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     await supabase.from("customers").insert({
       name,
       phone: phone || null,
@@ -25,7 +25,7 @@ export default async function CustomersPage() {
     revalidatePath("/admin/customers");
   }
 
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   const { data: customers } = await supabase
     .from("customers")
     .select("id,name,phone,email,created_at")

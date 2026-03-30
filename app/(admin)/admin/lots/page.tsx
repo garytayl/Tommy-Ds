@@ -2,7 +2,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function LotsPage() {
   async function createLot(formData: FormData) {
@@ -14,7 +14,7 @@ export default async function LotsPage() {
 
     if (!name || !locationId) return;
 
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     await supabase.from("lots").insert({
       name,
       location_id: locationId,
@@ -25,7 +25,7 @@ export default async function LotsPage() {
     revalidatePath("/admin/lots");
   }
 
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   const [{ data: lots }, { data: locations }] = await Promise.all([
     supabase
       .from("lots")

@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 export async function updateCustomer(formData: FormData) {
   const id = String(formData.get("customer_id") ?? "").trim();
@@ -19,7 +19,12 @@ export async function updateCustomer(formData: FormData) {
 
   if (!id || !name) return;
 
-  const supabase = await createSupabaseServerClientForData();
+  const session = await getOfficeSessionOrNull();
+  if (!session) {
+    await setToastCookie(UNAUTHORIZED_TOAST);
+    return;
+  }
+  const { supabase } = session;
   await supabase
     .from("customers")
     .update({
@@ -43,7 +48,12 @@ export async function deleteCustomer(formData: FormData) {
   const id = String(formData.get("customer_id") ?? "").trim();
   if (!id) return;
 
-  const supabase = await createSupabaseServerClientForData();
+  const session = await getOfficeSessionOrNull();
+  if (!session) {
+    await setToastCookie(UNAUTHORIZED_TOAST);
+    return;
+  }
+  const { supabase } = session;
   const { error } = await supabase.from("customers").delete().eq("id", id);
 
   if (error) {

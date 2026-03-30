@@ -5,11 +5,12 @@ import { revalidatePath } from "next/cache";
 import { autoRecordQuoteRevisionIfChanged } from "@/lib/quote-revision-auto";
 import type { QuotePrintOverrides } from "@/lib/quote-print-overrides";
 import { insertQuoteRevisionRecord } from "@/lib/quote-revision-record";
-import { createSupabaseServerClient, createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 
 export async function saveQuotePrintOverrides(quoteId: string, overrides: QuotePrintOverrides | null) {
-  const supabase = await createSupabaseServerClientForData();
-  const { error } = await supabase.from("quotes").update({ print_overrides: overrides }).eq("id", quoteId);
+  const session = await getOfficeSessionOrNull();
+  if (!session) return { ok: false as const, message: UNAUTHORIZED_TOAST };
+  const { error } = await session.supabase.from("quotes").update({ print_overrides: overrides }).eq("id", quoteId);
   if (error) return { ok: false as const, message: error.message };
   await autoRecordQuoteRevisionIfChanged(quoteId, "Print overrides updated");
   revalidatePath(`/admin/quotes/${quoteId}`);
@@ -23,13 +24,13 @@ export async function clearQuotePrintOverrides(quoteId: string) {
 }
 
 export async function recordQuoteRevision(quoteId: string, label: string | null) {
-  const supabaseData = await createSupabaseServerClientForData();
-  const authClient = await createSupabaseServerClient();
+  const session = await getOfficeSessionOrNull();
+  if (!session) return { ok: false as const, message: UNAUTHORIZED_TOAST };
   const {
     data: { user },
-  } = await authClient.auth.getUser();
+  } = await session.supabase.auth.getUser();
 
-  const res = await insertQuoteRevisionRecord(supabaseData, quoteId, label, user?.id ?? null, {
+  const res = await insertQuoteRevisionRecord(session.supabase, quoteId, label, user?.id ?? null, {
     skipIfUnchanged: false,
   });
   if (!res.ok) return { ok: false as const, message: res.message };

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
+import { getOfficeSessionOrNull } from "@/lib/server-action-guards";
 import { setToastCookie } from "@/lib/toast";
 
 import { getCrewDisplayName } from "@/lib/crews";
@@ -18,7 +19,6 @@ import { ScheduleTable } from "@/components/ScheduleTable";
 import { ScheduleTableNav } from "@/components/ScheduleTableNav";
 import { ScheduleTodayStrip } from "@/components/ScheduleTodayStrip";
 import { ScheduleUnscheduledBlock } from "@/components/ScheduleUnscheduledBlock";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 const DAYS_AHEAD = 90;
 const DAYS_PAST = 7;
@@ -104,7 +104,7 @@ export default async function SchedulePage({
     : today;
   const dayViewDateKey = dayViewDate.toISOString().slice(0, 10);
 
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
 
   const start = new Date();
   start.setHours(0, 0, 0, 0);
@@ -344,7 +344,9 @@ export default async function SchedulePage({
 
   async function rescheduleJob(jobId: string, newStartIso: string) {
     "use server";
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) return;
+    const { supabase } = session;
     const { data: job } = await supabase
       .from("jobs")
       .select("scheduled_start,scheduled_end")
@@ -400,13 +402,14 @@ export default async function SchedulePage({
       endsAt = toIsoOrNull(formData.get("ends_at"));
     }
     if (!startsAt) return;
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) return;
+    const { supabase } = session;
     let createdBy: string | null = null;
     try {
-      const authClient = await createSupabaseServerClient();
       const {
         data: { user },
-      } = await authClient.auth.getUser();
+      } = await supabase.auth.getUser();
       createdBy = user?.id ?? null;
     } catch {
       // no session
@@ -454,7 +457,9 @@ export default async function SchedulePage({
       endsAt = toIsoOrNull(formData.get("ends_at"));
     }
     if (!startsAt) return;
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) return;
+    const { supabase } = session;
     await supabase
       .from("schedule_events")
       .update({
@@ -473,7 +478,9 @@ export default async function SchedulePage({
     "use server";
     const id = String(formData.get("id") ?? "").trim();
     if (!id) return;
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) return;
+    const { supabase } = session;
     await supabase.from("schedule_events").delete().eq("id", id);
     await setToastCookie("Event deleted");
     revalidatePath("/admin/schedule");
@@ -486,7 +493,9 @@ export default async function SchedulePage({
     const title = String(formData.get("activity_title") ?? "").trim();
     const scheduledDate = toIsoOrNull(formData.get("activity_scheduled_date"));
     if (!jobId || !type) return;
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) return;
+    const { supabase } = session;
     await supabase.from("activities").insert({
       job_id: jobId,
       type: type as

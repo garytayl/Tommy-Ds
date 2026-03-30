@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/SubmitButton";
 
 const LEAD_SOURCES = [
@@ -40,7 +40,7 @@ export default async function NewLeadPage({ searchParams }: PageProps) {
     const campaign = String(formData.get("campaign") ?? "").trim() || null;
     const notes = String(formData.get("notes") ?? "").trim() || null;
     if (!customerId) return;
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     const validSource = LEAD_SOURCES.includes(source as (typeof LEAD_SOURCES)[number]) ? source : "other";
     await supabase.from("leads").insert({
       customer_id: customerId,
@@ -59,7 +59,7 @@ export default async function NewLeadPage({ searchParams }: PageProps) {
     const phone = String(formData.get("phone") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim();
     if (!name) return;
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     const { data: row } = await supabase
       .from("customers")
       .insert({ name, phone: phone || null, email: email || null })
@@ -72,7 +72,7 @@ export default async function NewLeadPage({ searchParams }: PageProps) {
     redirect(`/admin/leads/new?added=${row.id}`);
   }
 
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   const { data: customers } = await supabase
     .from("customers")
     .select("id,name")

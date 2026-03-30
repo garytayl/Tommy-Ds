@@ -6,15 +6,22 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { deleteQuoteAndOptionalJob } from "@/lib/job-destruct";
 import { formatCents } from "@/lib/money";
 import { workflowStageLabel } from "@/lib/quote-workflow";
+import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 import { setToastCookie } from "@/lib/toast";
 import { VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID } from "@/lib/quote-templates";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 async function deleteQuoteFromList(formData: FormData) {
   "use server";
   const quoteId = String(formData.get("quote_id") ?? "").trim();
   if (!quoteId) return;
-  const supabase = await createSupabaseServerClientForData();
+  const session = await getOfficeSessionOrNull();
+  if (!session) {
+    await setToastCookie(UNAUTHORIZED_TOAST);
+    revalidatePath("/admin/quotes");
+    return;
+  }
+  const { supabase } = session;
   const result = await deleteQuoteAndOptionalJob(supabase, quoteId);
   if (!result.ok) {
     await setToastCookie(result.message);
@@ -85,7 +92,7 @@ export default async function QuotesListPage({
   searchParams: Promise<ListSearchParams>;
 }) {
   const sp = await searchParams;
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
   const { data: quotes } = await supabase
     .from("quotes")
     .select("id,title,status,workflow_stage,total_cents,created_at,job_id,customers(id,name)")

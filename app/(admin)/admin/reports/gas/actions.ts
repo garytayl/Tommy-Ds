@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 import { setToastCookie } from "@/lib/toast";
 
 function parsePositiveNumber(raw: FormDataEntryValue | null): number | null {
@@ -37,7 +37,12 @@ export async function addVehicle(formData: FormData) {
     redirect("/admin/reports/gas");
   }
 
-  const supabase = await createSupabaseServerClientForData();
+  const session = await getOfficeSessionOrNull();
+  if (!session) {
+    await setToastCookie(UNAUTHORIZED_TOAST);
+    redirect("/admin/reports/gas");
+  }
+  const { supabase } = session;
   const { error } = await supabase.from("vehicles").insert({
     name,
     vehicle_type: vehicleType,
@@ -71,7 +76,12 @@ export async function addGasCard(formData: FormData) {
     redirect("/admin/reports/gas");
   }
 
-  const supabase = await createSupabaseServerClientForData();
+  const session = await getOfficeSessionOrNull();
+  if (!session) {
+    await setToastCookie(UNAUTHORIZED_TOAST);
+    redirect("/admin/reports/gas");
+  }
+  const { supabase } = session;
   const { error } = await supabase.from("gas_cards").insert({
     label,
     provider: provider || null,
@@ -127,7 +137,12 @@ export async function logFuelPurchase(formData: FormData) {
     redirect("/admin/reports/gas");
   }
 
-  const supabase = await createSupabaseServerClientForData();
+  const session = await getOfficeSessionOrNull();
+  if (!session) {
+    await setToastCookie(UNAUTHORIZED_TOAST);
+    redirect("/admin/reports/gas");
+  }
+  const { supabase } = session;
   const { error } = await supabase.from("fuel_purchases").insert({
     vehicle_id: vehicleId,
     gas_card_id: gasCardId || null,

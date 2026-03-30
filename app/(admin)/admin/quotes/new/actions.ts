@@ -14,15 +14,20 @@ import {
   serializeNotesSections,
 } from "@/lib/quote-notes-sections";
 import { computeTaxCents } from "@/lib/tax";
+import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 import { setToastCookie } from "@/lib/toast";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 /** Add a customer from the new-estimate page, then return with that customer selected. */
 export async function quickAddCustomer(formData: FormData) {
+  const session = await getOfficeSessionOrNull();
+  if (!session) {
+    await setToastCookie(UNAUTHORIZED_TOAST);
+    return;
+  }
+  const { supabase } = session;
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
-  const supabase = await createSupabaseServerClientForData();
   const merged = await fetchMergedQuoteTemplateDefinitions(supabase);
   const templateId = normalizeTemplateIdInList(String(formData.get("template_id") ?? ""), merged);
 
@@ -57,8 +62,13 @@ export async function quickAddCustomer(formData: FormData) {
 }
 
 export async function createQuoteFromForm(formData: FormData) {
+  const session = await getOfficeSessionOrNull();
+  if (!session) {
+    await setToastCookie(UNAUTHORIZED_TOAST);
+    return;
+  }
+  const { supabase } = session;
   const customerId = String(formData.get("customer_id") ?? "").trim();
-  const supabase = await createSupabaseServerClientForData();
   const merged = await fetchMergedQuoteTemplateDefinitions(supabase);
   const templateId = normalizeTemplateIdInList(String(formData.get("template_id") ?? ""), merged);
   const template = await resolveQuoteTemplateForCreate(supabase, templateId);

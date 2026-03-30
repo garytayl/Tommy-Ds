@@ -2,10 +2,10 @@ import Link from "next/link";
 
 import { DevHint } from "@/components/DevHint";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function TodayCommandCenterPage() {
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
 
   const now = new Date();
   const todayStart = new Date(now);

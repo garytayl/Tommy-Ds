@@ -19,10 +19,10 @@ import { autoRecordQuoteRevisionIfChanged, recordQuoteRevisionForced } from "@/l
 import { describeQuoteSnapshotChanges } from "@/lib/quote-revision-diff";
 import { findMatchingRevisionNumber } from "@/lib/quote-revision-record";
 import { buildRevisionSnapshot, type QuoteRevisionSnapshot } from "@/lib/quote-revisions";
+import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 import { setToastCookie } from "@/lib/toast";
 import { workflowStageLabel } from "@/lib/quote-workflow";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
-import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import {
   addQuoteLineItem,
@@ -56,7 +56,7 @@ export default async function QuoteDetailPage({
   const sp = (await searchParams) ?? {};
   const rawTab = typeof sp.tab === "string" ? sp.tab : Array.isArray(sp.tab) ? sp.tab[0] : undefined;
   const tab = normalizeQuoteDetailTab(rawTab);
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
 
   const [quoteResult, itemsResult, docsResult, revResult] = await Promise.all([
     supabase
@@ -162,24 +162,28 @@ export default async function QuoteDetailPage({
     signed_url: null,
   }));
   try {
-    const serviceClient = createSupabaseServiceClient();
     docsWithUrls = await Promise.all(
       docs.map(async (doc) => {
-        const { data } = await serviceClient.storage
+        const { data } = await supabase.storage
           .from("quote-documents")
           .createSignedUrl(doc.storage_path, 60 * 30);
         return { ...doc, signed_url: data?.signedUrl ?? null };
       }),
     );
   } catch {
-    // no service role
+    // signed URL failed
   }
 
   async function updateQuoteTax(formData: FormData) {
     "use server";
 
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const taxCents = dollarsToCents(String(formData.get("tax") ?? "0"));
-    const supabase = await createSupabaseServerClientForData();
     await supabase.from("quotes").update({ tax_cents: taxCents }).eq("id", id);
     await supabase.rpc("recompute_quote_totals", { p_quote_id: id });
 
@@ -191,10 +195,14 @@ export default async function QuoteDetailPage({
   async function updateQuoteStatus(formData: FormData) {
     "use server";
 
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const status = String(formData.get("status") ?? "draft");
     if (!QUOTE_STATUSES.includes(status)) return;
-
-    const supabase = await createSupabaseServerClientForData();
     const { data: current } = await supabase.from("quotes").select("job_id,status").eq("id", id).single();
     await supabase.from("quotes").update({ status }).eq("id", id);
 
@@ -225,10 +233,14 @@ export default async function QuoteDetailPage({
   async function convertQuoteToJob(formData: FormData) {
     "use server";
 
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const quoteId = formData.get("quote_id");
     if (typeof quoteId !== "string") return;
-
-    const supabase = await createSupabaseServerClientForData();
     const { data: quoteRow } = await supabase
       .from("quotes")
       .select("id,customer_id,title,address_line1,address_line2,city,state,zip,notes,subtotal_cents,tax_cents,total_cents,job_id,workflow_stage,deposit_received")
@@ -325,7 +337,12 @@ export default async function QuoteDetailPage({
 
   async function promoteToFormalQuote() {
     "use server";
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const { data: row } = await supabase.from("quotes").select("job_id,workflow_stage").eq("id", id).maybeSingle();
     if (!row || row.job_id) return;
     if ((row as { workflow_stage?: string }).workflow_stage === "quote") return;
@@ -338,7 +355,12 @@ export default async function QuoteDetailPage({
 
   async function updateDepositReceived(formData: FormData) {
     "use server";
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const { data: row } = await supabase.from("quotes").select("job_id").eq("id", id).maybeSingle();
     if (!row || row.job_id) return;
     const checked = formData.get("deposit_received") === "true";
@@ -364,7 +386,13 @@ export default async function QuoteDetailPage({
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_") || "file";
     const storagePath = `${id}/${Date.now()}-${safeName}`;
 
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      revalidatePath(`/admin/quotes/${id}`);
+      return;
+    }
+    const { supabase } = session;
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
 
@@ -409,7 +437,12 @@ export default async function QuoteDetailPage({
     const docId = String(formData.get("doc_id") ?? "");
     if (!docId) return;
 
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const { data: row } = await supabase
       .from("quote_documents")
       .select("id,storage_path,quote_id")
@@ -420,8 +453,7 @@ export default async function QuoteDetailPage({
     if (!row) return;
 
     try {
-      const serviceClient = createSupabaseServiceClient();
-      await serviceClient.storage.from("quote-documents").remove([row.storage_path]);
+      await supabase.storage.from("quote-documents").remove([row.storage_path]);
     } catch {
       // still remove DB row
     }
@@ -433,7 +465,12 @@ export default async function QuoteDetailPage({
 
   async function deleteQuoteAction() {
     "use server";
-    const supabase = await createSupabaseServerClientForData();
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    const { supabase } = session;
     const result = await deleteQuoteAndOptionalJob(supabase, id);
     if (!result.ok) {
       await setToastCookie(result.message);

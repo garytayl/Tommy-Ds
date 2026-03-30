@@ -6,7 +6,7 @@ import { InvoiceSummary } from "@/components/InvoiceSummary";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { setToastCookie } from "@/lib/toast";
 import { computeTaxCents } from "@/lib/tax";
-import { createSupabaseServerClientForData } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const INVOICE_STATUSES = ["draft", "sent", "partially_paid", "paid", "void"];
 
@@ -16,7 +16,7 @@ export default async function InvoiceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createSupabaseServerClientForData();
+  const supabase = await createSupabaseServerClient();
 
   const [invoiceResult, itemsResult, paymentsResult] = await Promise.all([
     supabase
@@ -60,7 +60,7 @@ export default async function InvoiceDetailPage({
     }
 
     const lineTotalCents = Math.round(qty * unitPriceCents);
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     await supabase.from("invoice_items").insert({
       invoice_id: id,
       description,
@@ -86,7 +86,7 @@ export default async function InvoiceDetailPage({
     "use server";
 
     const taxCents = dollarsToCents(String(formData.get("tax") ?? "0"));
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     await supabase.from("invoices").update({ tax_cents: taxCents }).eq("id", id);
     await supabase.rpc("recompute_invoice_totals", { p_invoice_id: id });
 
@@ -102,7 +102,7 @@ export default async function InvoiceDetailPage({
     const status = String(formData.get("status") ?? "draft");
     if (!INVOICE_STATUSES.includes(status)) return;
 
-    const supabase = await createSupabaseServerClientForData();
+    const supabase = await createSupabaseServerClient();
     await supabase.from("invoices").update({ status }).eq("id", id);
     await setToastCookie("Invoice updated");
     revalidatePath(`/admin/invoices/${id}`);
