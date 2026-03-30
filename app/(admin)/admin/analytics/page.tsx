@@ -76,6 +76,31 @@ type InventoryRow = {
   quantity: number | null;
 };
 
+type VehicleRow = {
+  id: string;
+  name: string | null;
+  vehicle_type: "truck" | "van" | "other" | null;
+  is_active: boolean | null;
+};
+
+type GasCardRow = {
+  id: string;
+  label: string | null;
+  provider: string | null;
+  card_last4: string | null;
+  assigned_vehicle_id: string | null;
+  is_active: boolean | null;
+};
+
+type FuelPurchaseRow = {
+  id: string;
+  purchased_at: string | null;
+  vehicle_id: string | null;
+  gas_card_id: string | null;
+  gallons: number | null;
+  total_cents: number | null;
+};
+
 type ChartDatum = {
   label: string;
   value: number;
@@ -91,6 +116,7 @@ type MonthBucket = {
   quotes: number;
   leads: number;
   customers: number;
+  fuelCents: number;
 };
 
 function asArray<T>(data: T[] | null | undefined): T[] {
@@ -151,6 +177,7 @@ function makeMonthBuckets(months = 12): MonthBucket[] {
       quotes: 0,
       leads: 0,
       customers: 0,
+      fuelCents: 0,
     });
   }
 
@@ -160,6 +187,12 @@ function makeMonthBuckets(months = 12): MonthBucket[] {
 function statusLabel(status: string | null): string {
   if (!status) return "unknown";
   return status.replaceAll("_", " ");
+}
+
+function isMissingRelationError(error: { code?: string; message?: string } | null | undefined): boolean {
+  if (!error) return false;
+  if (error.code === "42P01") return true;
+  return /does not exist/i.test(error.message ?? "");
 }
 
 function HorizontalBars({
@@ -319,6 +352,9 @@ export default async function AnalyticsPage() {
     materialsResult,
     lotsResult,
     inventoryResult,
+    vehiclesResult,
+    gasCardsResult,
+    fuelPurchasesResult,
   ] = await Promise.all([
     supabase
       .from("jobs")
@@ -339,6 +375,9 @@ export default async function AnalyticsPage() {
     supabase.from("materials").select("id"),
     supabase.from("lots").select("id"),
     supabase.from("inventory").select("id,quantity"),
+    supabase.from("vehicles").select("id,name,vehicle_type,is_active"),
+    supabase.from("gas_cards").select("id,label,provider,card_last4,assigned_vehicle_id,is_active"),
+    supabase.from("fuel_purchases").select("id,purchased_at,vehicle_id,gas_card_id,gallons,total_cents"),
   ]);
 
   const jobs = asArray(jobsResult.data as JobRow[] | null);
@@ -352,6 +391,28 @@ export default async function AnalyticsPage() {
   const materials = asArray(materialsResult.data as MaterialRow[] | null);
   const lots = asArray(lotsResult.data as LotRow[] | null);
   const inventory = asArray(inventoryResult.data as InventoryRow[] | null);
+  const fuelTablesMissing = [
+    vehiclesResult.error,
+    gasCardsResult.error,
+    fuelPurchasesResult.error,
+  ].some((error) => isMissingRelationError(error));
+  const vehicles = fuelTablesMissing
+    ? []
+    : asArray(vehiclesResult.data as VehicleRow[] | null);
+  const gasCards = fuelTablesMissing
+    ? []
+    : asArray(gasCardsResult.data as GasCardRow[] | null);
+  const fuelPurchases = fuelTablesMissing
+    ? []
+    : asArray(fuelPurchasesResult.data as FuelPurchaseRow[] | null);
+
+  const fuelQueryErrors = [
+    { name: "vehicles", error: vehiclesResult.error },
+    { name: "gas_cards", error: gasCardsResult.error },
+    { name: "fuel_purchases", error: fuelPurchasesResult.error },
+  ]
+    .filter((item) => Boolean(item.error) && !isMissingRelationError(item.error))
+    .map((item) => `${item.name}: ${item.error?.message ?? "Unknown query error"}`);
 
   const queryErrors = [
     { name: "jobs", error: jobsResult.error },
@@ -365,6 +426,7 @@ export default async function AnalyticsPage() {
     { name: "materials", error: materialsResult.error },
     { name: "lots", error: lotsResult.error },
     { name: "inventory", error: inventoryResult.error },
+    ...fuelQueryErrors.map((message) => ({ name: "fuel", error: { message } })),
   ]
     .filter((item) => Boolean(item.error))
     .map((item) => `${item.name}: ${item.error?.message ?? "Unknown query error"}`);
@@ -505,6 +567,12 @@ export default async function AnalyticsPage() {
     });
   }
 
+  for (const fuelPurchase of fuelPurchases) {
+    addToMonth(fuelPurchase.purchased_at, (bucket) => {
+      bucket.fuelCents += toNumber(fuelPurchase.total_cents);
+    });
+  }
+
   const monthVolumeMax = Math.max(
     1,
     ...months.flatMap((m) => [m.jobs, m.quotes, m.leads, m.customers]),
@@ -523,6 +591,63 @@ export default async function AnalyticsPage() {
     .slice(0, 6);
 
   const inventoryQuantity = inventory.reduce((sum, row) => sum + toNumber(row.quantity), 0);
+  const activeVehicles = vehicles.filter((vehicle) => vehicle.is_active !== false);
+  const activeGasCards = gasCards.filter((card) => card.is_active !== false);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const vehicleNameById = new Map(
+    vehicles.map((vehicle) => [vehicle.id, vehicle.name?.trim() || "Unnamed vehicle"]),
+  );
+  const gasCardLabelById = new Map(
+    gasCards.map((card) => {
+      const fallback = [
+        card.provider?.trim(),
+        card.card_last4 ? `•••• ${card.card_last4}` : undefined,
+      ]
+        .filter(Boolean)
+        .join(" ");
+      return [card.id, card.label?.trim() || fallback || "Unlabeled card"];
+    }),
+  );
+  const fuelByVehicleMap = new Map<string, number>();
+  const fuelByCardMap = new Map<string, number>();
+  let fuelSpendCentsTotal = 0;
+  let fuelSpendCentsLast30 = 0;
+  let fuelGallonsLast30 = 0;
+
+  for (const fuelPurchase of fuelPurchases) {
+    const cents = toNumber(fuelPurchase.total_cents);
+    const gallons = toNumber(fuelPurchase.gallons);
+    fuelSpendCentsTotal += cents;
+
+    const purchasedDate = safeDate(fuelPurchase.purchased_at);
+    if (purchasedDate && purchasedDate >= thirtyDaysAgo) {
+      fuelSpendCentsLast30 += cents;
+      fuelGallonsLast30 += gallons;
+    }
+
+    const vehicleLabel = fuelPurchase.vehicle_id
+      ? (vehicleNameById.get(fuelPurchase.vehicle_id) ?? "Unknown vehicle")
+      : "Unassigned vehicle";
+    fuelByVehicleMap.set(vehicleLabel, (fuelByVehicleMap.get(vehicleLabel) ?? 0) + cents);
+
+    const cardLabel = fuelPurchase.gas_card_id
+      ? (gasCardLabelById.get(fuelPurchase.gas_card_id) ?? "Unknown card")
+      : "No card linked";
+    fuelByCardMap.set(cardLabel, (fuelByCardMap.get(cardLabel) ?? 0) + cents);
+  }
+
+  const fuelByVehicleChart = Array.from(fuelByVehicleMap.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+  const fuelByCardChart = Array.from(fuelByCardMap.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+  const fuelAvgPricePerGallonCentsLast30 =
+    fuelGallonsLast30 > 0 ? Math.round(fuelSpendCentsLast30 / fuelGallonsLast30) : 0;
+  const fuelMonthMax = Math.max(1, ...months.map((month) => month.fuelCents));
 
   const insights: { title: string; body: string }[] = [];
   if (totalOutstandingCents > 0) {
@@ -541,6 +666,17 @@ export default async function AnalyticsPage() {
     insights.push({
       title: "Scheduling backlog",
       body: `${unscheduledJobs.length} jobs are unscheduled. Assigning these can smooth crew utilization and improve close time.`,
+    });
+  }
+  if (fuelTablesMissing) {
+    insights.push({
+      title: "Enable fuel analytics",
+      body: "Run the latest migrations to create vehicles, gas cards, and fuel purchases tables so gas spending can be tracked here and in reports.",
+    });
+  } else if (fuelSpendCentsLast30 > 0) {
+    insights.push({
+      title: "Fleet fuel spend snapshot",
+      body: `${formatMoney(fuelSpendCentsLast30)} spent on gas in the last 30 days at an average of ${formatMoney(fuelAvgPricePerGallonCentsLast30)} per gallon.`,
     });
   }
   if (insights.length === 0) {
@@ -603,6 +739,83 @@ export default async function AnalyticsPage() {
       </section>
 
       <MonthlyRevenueChart data={months} />
+
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">Fleet fuel spend</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Track gas costs across trucks, van, and multiple cards.
+            </p>
+          </div>
+          <Link href="/admin/reports/gas" className="rounded-xl border border-border px-3 py-2 text-sm font-medium hover:bg-muted/40">
+            Open dedicated gas report
+          </Link>
+        </div>
+
+        {fuelTablesMissing ? (
+          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">
+            Fuel tables are not available yet in this environment. Apply the latest migrations to enable gas analytics.
+          </div>
+        ) : (
+          <>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-xl border border-border bg-muted/20 p-4">
+                <p className="text-xs text-muted-foreground">Fuel spend (30d)</p>
+                <p className="mt-1 text-xl font-semibold text-foreground">{formatMoney(fuelSpendCentsLast30)}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/20 p-4">
+                <p className="text-xs text-muted-foreground">Fuel spend (all-time)</p>
+                <p className="mt-1 text-xl font-semibold text-foreground">{formatMoney(fuelSpendCentsTotal)}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/20 p-4">
+                <p className="text-xs text-muted-foreground">Avg price / gallon (30d)</p>
+                <p className="mt-1 text-xl font-semibold text-foreground">{formatMoney(fuelAvgPricePerGallonCentsLast30)}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/20 p-4">
+                <p className="text-xs text-muted-foreground">Active vehicles / cards</p>
+                <p className="mt-1 text-xl font-semibold text-foreground">
+                  {activeVehicles.length}/{activeGasCards.length}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-4 xl:grid-cols-2">
+              <HorizontalBars
+                title="Fuel spend by vehicle"
+                subtitle="All-time spend grouped by fleet unit."
+                data={fuelByVehicleChart}
+                formatter={formatMoney}
+              />
+              <HorizontalBars
+                title="Fuel spend by gas card"
+                subtitle="All-time spend grouped by card."
+                data={fuelByCardChart}
+                formatter={formatMoney}
+              />
+            </div>
+
+            <div className="mt-4 rounded-xl border border-border p-4">
+              <p className="text-xs text-muted-foreground">Monthly fuel spend (last 12 months)</p>
+              <div className="mt-3 space-y-2">
+                {months.map((month) => (
+                  <div key={`fuel-${month.key}`} className="grid grid-cols-[40px_1fr_auto] items-center gap-2 text-xs">
+                    <span className="text-muted-foreground">{month.label}</span>
+                    <div className="h-2 rounded-full bg-muted/70">
+                      <div
+                        className="h-2 rounded-full bg-orange-500"
+                        style={{ width: `${(month.fuelCents / fuelMonthMax) * 100}%` }}
+                        title={`${month.label}: ${formatMoney(month.fuelCents)}`}
+                      />
+                    </div>
+                    <span className="text-muted-foreground">{formatMoney(month.fuelCents)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
         <HorizontalBars
@@ -778,6 +991,9 @@ export default async function AnalyticsPage() {
           </Link>
           <Link href="/admin/materials" className="rounded-xl border border-border px-3 py-2 text-sm font-medium hover:bg-muted/40">
             Manage materials
+          </Link>
+          <Link href="/admin/reports/gas" className="rounded-xl border border-border px-3 py-2 text-sm font-medium hover:bg-muted/40">
+            Track gas spend
           </Link>
         </div>
       </section>
