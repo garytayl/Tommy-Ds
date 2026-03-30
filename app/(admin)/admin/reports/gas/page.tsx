@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { addGasCard, addVehicle, logFuelPurchase } from "@/app/(admin)/admin/reports/gas/actions";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -192,6 +193,232 @@ export default async function GasReportPage() {
               <li key={message}>{message}</li>
             ))}
           </ul>
+        </section>
+      ) : null}
+
+      {!tablesMissing ? (
+        <section className="grid gap-4 xl:grid-cols-3">
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
+            <h2 className="text-base font-semibold text-foreground">Log fuel purchase</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Record each fill-up to track spend by vehicle and by gas card.
+            </p>
+            <form action={logFuelPurchase} className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div>
+                <label htmlFor="vehicle_id" className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Vehicle
+                </label>
+                <select
+                  id="vehicle_id"
+                  name="vehicle_id"
+                  required
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Select vehicle
+                  </option>
+                  {vehicles.map((vehicle) => (
+                    <option key={vehicle.id} value={vehicle.id}>
+                      {vehicle.name?.trim() || "Unnamed vehicle"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="gas_card_id" className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Gas card
+                </label>
+                <select
+                  id="gas_card_id"
+                  name="gas_card_id"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                  defaultValue=""
+                >
+                  <option value="">No card linked</option>
+                  {gasCards.map((card) => (
+                    <option key={card.id} value={card.id}>
+                      {card.label?.trim() || card.provider?.trim() || "Unlabeled card"}
+                      {card.card_last4 ? ` (•••• ${card.card_last4})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="purchased_at" className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Date and time
+                </label>
+                <input
+                  id="purchased_at"
+                  name="purchased_at"
+                  type="datetime-local"
+                  required
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="station" className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Station
+                </label>
+                <input
+                  id="station"
+                  name="station"
+                  type="text"
+                  placeholder="Shell, Speedway, etc."
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="gallons" className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Gallons
+                </label>
+                <input
+                  id="gallons"
+                  name="gallons"
+                  type="number"
+                  inputMode="decimal"
+                  min="0.001"
+                  step="0.001"
+                  required
+                  placeholder="18.402"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="total_dollars" className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Total amount ($)
+                </label>
+                <input
+                  id="total_dollars"
+                  name="total_dollars"
+                  type="number"
+                  inputMode="decimal"
+                  min="0.01"
+                  step="0.01"
+                  required
+                  placeholder="64.22"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="odometer_miles" className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Odometer miles
+                </label>
+                <input
+                  id="odometer_miles"
+                  name="odometer_miles"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  step="1"
+                  placeholder="128455"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="notes" className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Notes
+                </label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows={2}
+                  placeholder="Optional notes"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <button
+                  type="submit"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-95"
+                >
+                  Save fuel purchase
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section className="space-y-4">
+            <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <h2 className="text-base font-semibold text-foreground">Add vehicle</h2>
+              <form action={addVehicle} className="mt-4 space-y-3">
+                <input
+                  name="name"
+                  type="text"
+                  required
+                  placeholder="Truck 1 / Van A"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+                <select
+                  name="vehicle_type"
+                  defaultValue="truck"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="truck">Truck</option>
+                  <option value="van">Van</option>
+                  <option value="other">Other</option>
+                </select>
+                <input
+                  name="plate"
+                  type="text"
+                  placeholder="Plate (optional)"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+                <button
+                  type="submit"
+                  className="w-full rounded-xl border border-border px-3 py-2 text-sm font-medium hover:bg-muted/40"
+                >
+                  Add vehicle
+                </button>
+              </form>
+            </section>
+
+            <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <h2 className="text-base font-semibold text-foreground">Add gas card</h2>
+              <form action={addGasCard} className="mt-4 space-y-3">
+                <input
+                  name="label"
+                  type="text"
+                  required
+                  placeholder="Fleet Card 1"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+                <input
+                  name="provider"
+                  type="text"
+                  placeholder="WEX, Shell, etc."
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+                <input
+                  name="card_last4"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  pattern="[0-9]{4}"
+                  placeholder="Last 4 digits"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+                <select
+                  name="assigned_vehicle_id"
+                  defaultValue=""
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Unassigned</option>
+                  {vehicles.map((vehicle) => (
+                    <option key={`assign-${vehicle.id}`} value={vehicle.id}>
+                      {vehicle.name?.trim() || "Unnamed vehicle"}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="submit"
+                  className="w-full rounded-xl border border-border px-3 py-2 text-sm font-medium hover:bg-muted/40"
+                >
+                  Add gas card
+                </button>
+              </form>
+            </section>
+          </section>
         </section>
       ) : null}
 
