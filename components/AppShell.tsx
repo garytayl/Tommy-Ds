@@ -16,6 +16,7 @@ const ADMIN_PRIMARY: GlassNavLink[] = [
   { href: "/admin/jobs", label: "Jobs" },
   { href: "/admin/quotes", label: "Estimates" },
   { href: "/admin/analytics", label: "Analytics" },
+  { href: "/admin/reports/gas", label: "Gas" },
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/invoices", label: "Invoices" },
 ];
