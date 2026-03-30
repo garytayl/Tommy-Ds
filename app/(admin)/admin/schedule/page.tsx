@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { setToastCookie } from "@/lib/toast";
 
 import { getCrewDisplayName } from "@/lib/crews";
-import { ScheduleCalendar } from "@/components/ScheduleCalendar";
+import {
+  ScheduleCalendarWithActions,
+  type ScheduleEventRow,
+} from "@/components/ScheduleCalendarWithActions";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ScheduleControls } from "@/components/ScheduleControls";
 import { type ScheduleJob } from "@/components/ScheduleDragDrop";
 import { ScheduleMobileWeekRedirect } from "@/components/ScheduleMobileWeekRedirect";
@@ -20,6 +24,31 @@ const DAYS_AHEAD = 90;
 const DAYS_PAST = 7;
 
 const TABLE_DAYS = 14;
+
+function toIsoOrNull(value: FormDataEntryValue | null): string | null {
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function localDateKeyFromIso(iso: string): string {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function eachDateKeyInclusive(startKey: string, endKey: string): string[] {
+  const out: string[] = [];
+  const a = new Date(startKey + "T12:00:00");
+  const b = new Date(endKey + "T12:00:00");
+  for (const d = new Date(a); d <= b; d.setDate(d.getDate() + 1)) {
+    out.push(d.toISOString().slice(0, 10));
+  }
+  return out;
+}
 
 export default async function SchedulePage({
   searchParams,
@@ -89,6 +118,8 @@ export default async function SchedulePage({
     { data: activitiesInRange },
     { data: crews },
     { data: installers },
+    { data: pointEvents },
+    { data: rangedEvents },
   ] = await Promise.all([
     supabase
       .from("jobs")
@@ -120,7 +151,26 @@ export default async function SchedulePage({
       .select("user_id,full_name")
       .eq("role", "installer")
       .order("full_name", { ascending: true }),
+    supabase
+      .from("schedule_events")
+      .select("id,title,description,starts_at,ends_at,all_day,job_id")
+      .is("ends_at", null)
+      .gte("starts_at", start.toISOString())
+      .lt("starts_at", end.toISOString()),
+    supabase
+      .from("schedule_events")
+      .select("id,title,description,starts_at,ends_at,all_day,job_id")
+      .not("ends_at", "is", null)
+      .lt("starts_at", end.toISOString())
+      .gte("ends_at", start.toISOString()),
   ]);
+
+  const scheduleEventMap = new Map<string, ScheduleEventRow>();
+  for (const row of [...(pointEvents ?? []), ...(rangedEvents ?? [])]) {
+    const r = row as ScheduleEventRow;
+    scheduleEventMap.set(r.id, r);
+  }
+  const scheduleEventsList = [...scheduleEventMap.values()];
 
   type JobRow = {
     id: string;
@@ -188,11 +238,12 @@ export default async function SchedulePage({
   type CalendarItem = {
     id: string;
     title: string;
-    type: "job" | "activity";
+    type: "job" | "activity" | "event";
     href: string;
     timeLabel?: string;
     customer?: string;
     crewName?: string;
+    sortKey?: string;
   };
   const itemsByDate: Record<string, CalendarItem[]> = {};
   for (let d = 0; d < DAYS_PAST + DAYS_AHEAD; d++) {
@@ -231,6 +282,7 @@ export default async function SchedulePage({
         timeLabel: formatTimeLabel(job.scheduled_start),
         customer: customer ?? undefined,
         crewName,
+        sortKey: job.scheduled_start,
       });
     }
   }
@@ -249,8 +301,38 @@ export default async function SchedulePage({
         type: "activity",
         href: `/jobs/${a.job_id}`,
         timeLabel,
+        sortKey: a.scheduled_date,
       });
     }
+  }
+
+  for (const ev of scheduleEventsList) {
+    const startKey = localDateKeyFromIso(ev.starts_at);
+    const endKey = ev.ends_at ? localDateKeyFromIso(ev.ends_at) : null;
+    const keys =
+      endKey && endKey !== startKey
+        ? eachDateKeyInclusive(
+            startKey <= endKey ? startKey : endKey,
+            startKey <= endKey ? endKey : startKey,
+          )
+        : [startKey];
+    const timeLabel = ev.all_day ? undefined : formatTimeLabel(ev.starts_at);
+    for (const key of keys) {
+      if (itemsByDate[key] === undefined) continue;
+      jobsByDateCount[key] = (jobsByDateCount[key] ?? 0) + 1;
+      itemsByDate[key].push({
+        id: ev.id,
+        title: ev.title,
+        type: "event",
+        href: "#",
+        timeLabel,
+        sortKey: ev.starts_at,
+      });
+    }
+  }
+
+  for (const key of Object.keys(itemsByDate)) {
+    itemsByDate[key].sort((a, b) => (a.sortKey ?? "").localeCompare(b.sortKey ?? ""));
   }
 
   const startDateStr = start.toISOString().slice(0, 10);
@@ -288,6 +370,169 @@ export default async function SchedulePage({
     revalidatePath("/admin/jobs");
     revalidatePath("/m");
   }
+
+  async function createScheduleEvent(formData: FormData) {
+    "use server";
+    const title = String(formData.get("title") ?? "").trim();
+    if (!title) return;
+    const description = String(formData.get("description") ?? "").trim() || null;
+    const allDay = formData.get("all_day") === "1";
+    const startsRaw = String(formData.get("starts_at") ?? "").trim();
+    const endsRaw = String(formData.get("ends_at") ?? "").trim();
+    let startsAt: string | null = null;
+    let endsAt: string | null = null;
+    if (allDay) {
+      const datePart = startsRaw.slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return;
+      const start = new Date(datePart + "T12:00:00");
+      startsAt = start.toISOString();
+      if (endsRaw) {
+        const endDatePart = endsRaw.slice(0, 10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(endDatePart)) {
+          const end = new Date(endDatePart + "T12:00:00");
+          endsAt = end.toISOString();
+        }
+      } else {
+        endsAt = new Date(datePart + "T23:59:59").toISOString();
+      }
+    } else {
+      startsAt = toIsoOrNull(formData.get("starts_at"));
+      endsAt = toIsoOrNull(formData.get("ends_at"));
+    }
+    if (!startsAt) return;
+    const supabase = await createSupabaseServerClientForData();
+    let createdBy: string | null = null;
+    try {
+      const authClient = await createSupabaseServerClient();
+      const {
+        data: { user },
+      } = await authClient.auth.getUser();
+      createdBy = user?.id ?? null;
+    } catch {
+      // no session
+    }
+    await supabase.from("schedule_events").insert({
+      title,
+      description,
+      starts_at: startsAt,
+      ends_at: endsAt,
+      all_day: allDay,
+      created_by: createdBy,
+    });
+    await setToastCookie("Event added");
+    revalidatePath("/admin/schedule");
+  }
+
+  async function updateScheduleEvent(formData: FormData) {
+    "use server";
+    const id = String(formData.get("id") ?? "").trim();
+    if (!id) return;
+    const title = String(formData.get("title") ?? "").trim();
+    if (!title) return;
+    const description = String(formData.get("description") ?? "").trim() || null;
+    const allDay = formData.get("all_day") === "1";
+    const startsRaw = String(formData.get("starts_at") ?? "").trim();
+    const endsRaw = String(formData.get("ends_at") ?? "").trim();
+    let startsAt: string | null = null;
+    let endsAt: string | null = null;
+    if (allDay) {
+      const datePart = startsRaw.slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return;
+      const start = new Date(datePart + "T12:00:00");
+      startsAt = start.toISOString();
+      if (endsRaw) {
+        const endDatePart = endsRaw.slice(0, 10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(endDatePart)) {
+          const end = new Date(endDatePart + "T12:00:00");
+          endsAt = end.toISOString();
+        }
+      } else {
+        endsAt = new Date(datePart + "T23:59:59").toISOString();
+      }
+    } else {
+      startsAt = toIsoOrNull(formData.get("starts_at"));
+      endsAt = toIsoOrNull(formData.get("ends_at"));
+    }
+    if (!startsAt) return;
+    const supabase = await createSupabaseServerClientForData();
+    await supabase
+      .from("schedule_events")
+      .update({
+        title,
+        description,
+        starts_at: startsAt,
+        ends_at: endsAt,
+        all_day: allDay,
+      })
+      .eq("id", id);
+    await setToastCookie("Event updated");
+    revalidatePath("/admin/schedule");
+  }
+
+  async function deleteScheduleEvent(formData: FormData) {
+    "use server";
+    const id = String(formData.get("id") ?? "").trim();
+    if (!id) return;
+    const supabase = await createSupabaseServerClientForData();
+    await supabase.from("schedule_events").delete().eq("id", id);
+    await setToastCookie("Event deleted");
+    revalidatePath("/admin/schedule");
+  }
+
+  async function quickAddScheduleActivity(formData: FormData) {
+    "use server";
+    const jobId = String(formData.get("job_id") ?? "").trim();
+    const type = String(formData.get("activity_type") ?? "note").trim();
+    const title = String(formData.get("activity_title") ?? "").trim();
+    const scheduledDate = toIsoOrNull(formData.get("activity_scheduled_date"));
+    if (!jobId || !type) return;
+    const supabase = await createSupabaseServerClientForData();
+    await supabase.from("activities").insert({
+      job_id: jobId,
+      type: type as
+        | "created"
+        | "note"
+        | "consultation"
+        | "pre_measure"
+        | "measure"
+        | "design"
+        | "quote_sent"
+        | "follow_up"
+        | "customer_acceptance"
+        | "deposit_received"
+        | "schedule_install"
+        | "walkthrough"
+        | "install"
+        | "payment_received",
+      title: title || null,
+      description: null,
+      scheduled_date: scheduledDate,
+      assigned_to: null,
+      status: "pending",
+    });
+    await setToastCookie("Activity added");
+    revalidatePath("/admin/schedule");
+    revalidatePath(`/jobs/${jobId}`);
+  }
+
+  const quickAddJobOptions = [
+    ...rows.map((job) => {
+      const customer = Array.isArray(job.customers) ? job.customers[0]?.name : job.customers?.name;
+      return {
+        id: job.id,
+        title: job.title,
+        customerLabel: customer ?? undefined,
+      };
+    }),
+    ...unscheduledRows.map((job) => {
+      const customer = Array.isArray(job.customers) ? job.customers[0]?.name : job.customers?.name;
+      return {
+        id: job.id,
+        title: job.title,
+        customerLabel: customer ?? undefined,
+      };
+    }),
+  ].slice(0, 100);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -355,13 +600,19 @@ export default async function SchedulePage({
 
       {!isDayView && (
       <div className="animate-schedule-calendar-in schedule-delay-400">
-      <ScheduleCalendar
+      <ScheduleCalendarWithActions
         jobsByDate={jobsByDateCount}
         itemsByDate={itemsByDate}
         startDate={startDateStr}
         endDate={endDateStr}
         visibleStart={isWeekView ? weekStartStr : undefined}
         visibleEnd={isWeekView ? weekEndStr : undefined}
+        scheduleEvents={scheduleEventsList}
+        createScheduleEvent={createScheduleEvent}
+        updateScheduleEvent={updateScheduleEvent}
+        deleteScheduleEvent={deleteScheduleEvent}
+        quickAddActivity={quickAddScheduleActivity}
+        quickAddJobOptions={quickAddJobOptions}
         weekNavigation={
           isWeekView
             ? (() => {
