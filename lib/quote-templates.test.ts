@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   BLANK_QUOTE_TEMPLATE_ID,
+  KITCHEN_QUARTZ_EXTENDED_FLUSH_COUNTERTOP_TEMPLATE_ID,
   mergeQuoteTemplateDefinitions,
   normalizeTemplateIdInList,
   toQuoteTemplateClientOptions,
@@ -27,7 +28,8 @@ describe("mergeQuoteTemplateDefinitions", () => {
     expect(merged[0]?.id).toBe(BLANK_QUOTE_TEMPLATE_ID);
     expect(merged[1]?.id).toBe(VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID);
     expect(merged[2]?.id).toBe(TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID);
-    expect(merged[3]?.id).toBe("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    expect(merged[3]?.id).toBe(KITCHEN_QUARTZ_EXTENDED_FLUSH_COUNTERTOP_TEMPLATE_ID);
+    expect(merged[4]?.id).toBe("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
   });
 });
 
@@ -44,6 +46,9 @@ describe("normalizeTemplateIdInList", () => {
     );
     expect(normalizeTemplateIdInList(TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID, defs)).toBe(
       TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID,
+    );
+    expect(normalizeTemplateIdInList(KITCHEN_QUARTZ_EXTENDED_FLUSH_COUNTERTOP_TEMPLATE_ID, defs)).toBe(
+      KITCHEN_QUARTZ_EXTENDED_FLUSH_COUNTERTOP_TEMPLATE_ID,
     );
   });
 });

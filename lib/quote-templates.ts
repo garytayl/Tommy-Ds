@@ -122,6 +122,9 @@ export const VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID = "vw_stone_worx_countertop";
 /** Deep link: `/admin/quotes/new?template=${TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID}` */
 export const TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID = "tommy_ds_cabinetry";
 
+/** Deep link: `/admin/quotes/new?template=${KITCHEN_QUARTZ_EXTENDED_FLUSH_COUNTERTOP_TEMPLATE_ID}` */
+export const KITCHEN_QUARTZ_EXTENDED_FLUSH_COUNTERTOP_TEMPLATE_ID = "kitchen_quartz_extended_flush";
+
 /**
  * VW / Stone Worx–style kitchen countertop scope + terms (Indiana).
  * Empty-field placeholders in the estimate UI mirror this (`QUOTE_NOTES_SECTION_PLACEHOLDERS` in `@/lib/quote-notes-sections`).
@@ -204,6 +207,53 @@ Countertop final price based on digital template
 Thank you for your inquiry; we look forward to working with you!`;
 }
 
+/**
+ * Kitchen quartz with extended flush section — tiered “Simply Better” pricing, additions, and sketch notes.
+ * Tier $ amounts are reference figures from the price sheet; enter the chosen scope on line items.
+ */
+export function buildKitchenQuartzExtendedFlushCountertopNotes(asOf: Date = new Date()): string {
+  const dateStr = asOf.toLocaleDateString("en-US", {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return `KITCHEN COUNTERTOP (W/ EXTENDED FLUSH SECTION)
+Date: ${dateStr}
+
+Customer: (customer name)
+
+Quartz Countertop with Flush Section
+Color: TBD
+Edge: TBD
+Splash: None
+“Simply Better” Quartz Line – 70 SF – 3CM
+
+Countertop Pricing (by Group)
+Group 0 Countertops: $5,568.75
+Group 1 Countertops: $6,513.75
+Group 2 Countertops: $7,269.75
+Group 3 Countertops: $7,836.75
+Group 4 Countertops: $8,592.72
+Group 5 Countertops: $9,065.25
+Group 6 Countertops: $10,955.25
+Group 7 Countertops: $12,372.75
+
+Additions
+Brackets — $324.00
+Includes four and installed by fabricator.
+They will determine at time of measure if brackets will work for this application.
+Stainless Steel Sink — $105.00
+Karran Sink Options (PU51, PU53, PU55)
+Application of Paintable Latex Caulk at Drywall — $70.00
+
+Handwritten Notes (from image)
+“Quartz” (written near top)
+“Flush” (top right)
+“Kitchen” (left margin)
+“Four” crossed out under brackets note`;
+}
+
 /** Same copy as the VW / Stone Worx starter line — default text for that template's line item. */
 export const VW_STONE_WORX_LINE_ITEM_DESCRIPTION_PLACEHOLDER =
   'Kitchen granite — Black Pearl (Suede); standard edge; 4" backsplash; negative reveal (3 cm); undermount sink install included (sink not included). Enter unit price when known.';
@@ -211,6 +261,10 @@ export const VW_STONE_WORX_LINE_ITEM_DESCRIPTION_PLACEHOLDER =
 /** Default text for the cabinetry template's starter line item. */
 export const CABINETRY_ESTIMATE_LINE_ITEM_DESCRIPTION_PLACEHOLDER =
   "Kitchen cabinetry — Shaker (Standard Door), Maple, painted TBD (non-custom color); rollout trays in selected cabinets; standard overlay and solid slab drawer fronts. Enter unit price when known.";
+
+/** Default text for the extended-flush quartz kitchen countertop starter line item. */
+export const KITCHEN_QUARTZ_EXTENDED_FLUSH_LINE_ITEM_DESCRIPTION_PLACEHOLDER =
+  'Kitchen quartz — extended flush section; “Simply Better” line, 3 cm, ~70 SF. Pick group tier and additions per notes. Enter unit price when known.';
 
 /** Neutral hint for custom template line-item fields (avoids countertop-only wording). */
 export const QUOTE_TEMPLATE_LINE_ITEM_EDITOR_PLACEHOLDER =
@@ -225,6 +279,13 @@ const vwStoneWorxLineItem: QuoteTemplateLineItem = {
 
 const cabinetryEstimateLineItem: QuoteTemplateLineItem = {
   description: CABINETRY_ESTIMATE_LINE_ITEM_DESCRIPTION_PLACEHOLDER,
+  qty: 1,
+  unit_price_cents: 0,
+  line_total_cents: 0,
+};
+
+const kitchenQuartzExtendedFlushLineItem: QuoteTemplateLineItem = {
+  description: KITCHEN_QUARTZ_EXTENDED_FLUSH_LINE_ITEM_DESCRIPTION_PLACEHOLDER,
   qty: 1,
   unit_price_cents: 0,
   line_total_cents: 0,
@@ -256,6 +317,15 @@ export const QUOTE_TEMPLATES: QuoteTemplateDefinition[] = [
     defaultTitle: "Kitchen Cabinetry",
     buildNotes: buildCabinetryEstimateNotes,
     lineItems: [cabinetryEstimateLineItem],
+  },
+  {
+    id: KITCHEN_QUARTZ_EXTENDED_FLUSH_COUNTERTOP_TEMPLATE_ID,
+    name: "Kitchen quartz – extended flush",
+    description:
+      "Quartz with flush section, tiered group pricing, additions, and sketch notes (line item starts at $0 — adjust on the quote).",
+    defaultTitle: "Kitchen Countertop – Quartz (Extended Flush)",
+    buildNotes: buildKitchenQuartzExtendedFlushCountertopNotes,
+    lineItems: [kitchenQuartzExtendedFlushLineItem],
   },
 ];
 

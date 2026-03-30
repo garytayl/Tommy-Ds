@@ -8,7 +8,11 @@ import { formatCents } from "@/lib/money";
 import { workflowStageLabel } from "@/lib/quote-workflow";
 import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 import { setToastCookie } from "@/lib/toast";
-import { TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID, VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID } from "@/lib/quote-templates";
+import {
+  KITCHEN_QUARTZ_EXTENDED_FLUSH_COUNTERTOP_TEMPLATE_ID,
+  TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID,
+  VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID,
+} from "@/lib/quote-templates";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 async function deleteQuoteFromList(formData: FormData) {
@@ -148,6 +152,12 @@ export default async function QuotesListPage({
             className="btn-secondary"
           >
             Cabinetry estimate
+          </Link>
+          <Link
+            href={`/admin/quotes/new?template=${KITCHEN_QUARTZ_EXTENDED_FLUSH_COUNTERTOP_TEMPLATE_ID}`}
+            className="btn-secondary"
+          >
+            Quartz extended flush
           </Link>
         </div>
       </div>
