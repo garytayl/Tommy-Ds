@@ -15,6 +15,7 @@ const ADMIN_PRIMARY: GlassNavLink[] = [
   { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/jobs", label: "Jobs" },
   { href: "/admin/quotes", label: "Estimates" },
+  { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/invoices", label: "Invoices" },
 ];
@@ -26,6 +27,7 @@ const ADMIN_MORE_ADMIN: GlassNavSection = {
   links: [
     { href: "/admin", label: "Dashboard" },
     { href: "/admin/crews", label: "Crews" },
+    { href: "/admin/reports", label: "Reports" },
     { href: "/admin/team", label: "Team" },
   ],
 };
@@ -35,6 +37,7 @@ const ADMIN_MORE_MANAGER: GlassNavSection = {
   links: [
     { href: "/admin", label: "Dashboard" },
     { href: "/admin/crews", label: "Crews" },
+    { href: "/admin/reports", label: "Reports" },
   ],
 };
 

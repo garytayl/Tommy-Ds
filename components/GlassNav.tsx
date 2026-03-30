@@ -1,12 +1,13 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { createElement, type ReactNode } from "react";
 
 import { FormSubmitButton } from "@/components/forms/FormSubmitButton";
 import {
   BriefcaseBusiness,
   CalendarDays,
   Circle,
+  ChartNoAxesCombined,
   FileCheck2,
   FileText,
   LayoutDashboard,
@@ -81,14 +82,11 @@ const LINK_ICONS: Record<string, LucideIcon> = {
   "/admin/customers": Users,
   "/admin/invoices": FileText,
   "/admin/quotes": FileCheck2,
+  "/admin/analytics": ChartNoAxesCombined,
   "/admin/crews": Users2,
   "/admin/team": UserCog,
   "/m": Wrench,
 };
-
-function iconForHref(href: string): LucideIcon {
-  return LINK_ICONS[href] ?? Circle;
-}
 
 function PublicNavBar() {
   const pathname = usePathname();
@@ -226,8 +224,11 @@ type DockLinkProps = {
   compact?: boolean;
 };
 
+function renderIconForHref(href: string, className: string) {
+  return createElement(LINK_ICONS[href] ?? Circle, { className });
+}
+
 function DockLink({ href, label, active, onNavigate, compact = false }: DockLinkProps) {
-  const Icon = iconForHref(href);
   return (
     <Link
       href={href}
@@ -242,7 +243,7 @@ function DockLink({ href, label, active, onNavigate, compact = false }: DockLink
           : "border-white/20 bg-white/[0.04] text-white hover:bg-white/12",
       )}
     >
-      <Icon className={cn("size-4", compact ? "shrink-0" : "size-4 sm:size-5")} />
+      {renderIconForHref(href, cn("size-4", compact ? "shrink-0" : "size-4 sm:size-5"))}
       <span>{label}</span>
     </Link>
   );
