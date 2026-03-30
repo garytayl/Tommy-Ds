@@ -2,6 +2,8 @@
  * Built-in estimate starters live here; custom templates are stored in `quote_templates` and merged at runtime.
  */
 
+import { DEFAULT_PRICING_REFERENCE_SECTION } from "@/lib/quote-notes-sections";
+
 export type QuoteTemplateLineItem = {
   description: string;
   qty: number;
@@ -149,6 +151,9 @@ Thickness: 3 cm
 Sink: Not provided by customer — customer to supply
 Installation: Undermount sink installation included
 
+PRICING (reference — line items control totals in the system)
+${DEFAULT_PRICING_REFERENCE_SECTION}
+
 SCOPE NOTES
 • Fabricator does not offer bevel edge for this material/finish
 • Final measurements may affect final pricing
@@ -197,7 +202,7 @@ Rollout trays included in selected cabinets
 Includes standard overlay and solid slab drawer fronts
 
 PRICING (reference — line items control totals in the system)
-Subtotal, tax, and total: from quote line items and tax settings below.
+${DEFAULT_PRICING_REFERENCE_SECTION}
 
 SCOPE NOTES
 Quote corresponds with drawing dated (drawing date)
@@ -254,12 +259,38 @@ Group 5 Countertops: $9,065.25
 Group 6 Countertops: $10,955.25
 Group 7 Countertops: $12,372.75
 
+${DEFAULT_PRICING_REFERENCE_SECTION}
+
 SCOPE NOTES
 Handwritten Notes (from image)
 “Quartz” (written near top)
 “Flush” (top right)
 “Kitchen” (left margin)
-“Four” crossed out under brackets note`;
+“Four” crossed out under brackets note
+
+KEY TERMS / CONDITIONS
+• Estimate valid for 30 days
+• Final pricing is contingent upon the digital template (measure)
+• Digital template, delivery, and installation (tops and undermount sink) included
+• Plumbing, Electrical, Gas & Carpentry excluded
+• The plumbing (faucet and drain lines) is to be shut off and disconnected prior to install
+• The reconnection of the plumbing is excluded and should be performed by a licensed plumber
+• If customer provides the sink and faucet, it must be on-site at the time of the digital template
+• Seam placement will be field verified and is left to the discretion of the fabricator
+• Veined or patterned designs may not match at seam locations
+
+Deposit: A 50% deposit is due to place your order and proceed with the measure (digital template).
+
+Thank you for your inquiry; we look forward to working with you!
+
+DETAILS & NOTES
+
+IMPORTANT NOTICE
+
+IMPORTANT: The homeowner will be responsible for the disconnection prior to and reconnection of plumbing after the installation
+
+Signature: ___________________________
+Date: ___________________________`;
 }
 
 /** Same copy as the VW / Stone Worx starter line — default text for that template's line item. */
