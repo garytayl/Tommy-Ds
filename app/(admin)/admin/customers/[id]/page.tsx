@@ -54,20 +54,26 @@ export default async function CustomerDetailPage({
             type="text"
             name="name"
             required
+            placeholder="Customer name"
             defaultValue={customer.name}
             className="field"
+            autoComplete="organization"
           />
           <input
             type="text"
             name="phone"
+            placeholder="Phone"
             defaultValue={customer.phone ?? ""}
             className="field"
+            autoComplete="tel"
           />
           <input
             type="email"
             name="email"
+            placeholder="Email"
             defaultValue={customer.email ?? ""}
             className="field sm:col-span-2"
+            autoComplete="email"
           />
           <div className="sm:col-span-2 mt-1 border-t border-border pt-4">
             <h2 className="text-sm font-semibold text-foreground">Customer address</h2>
@@ -110,16 +116,24 @@ export default async function CustomerDetailPage({
             defaultValue={customer.zip ?? ""}
             className="field"
           />
-          <div className="sm:col-span-2 flex items-center gap-2">
+          <div className="sm:col-span-2 flex flex-wrap items-center gap-2 pt-1">
             <SubmitButton>Save customer</SubmitButton>
           </div>
         </form>
-        <form action={deleteCustomer} className="mt-3">
-          <input type="hidden" name="customer_id" value={id} />
-          <SubmitButton variant="danger" pendingLabel="Deleting…">
-            Delete customer
-          </SubmitButton>
-        </form>
+
+        <div className="mt-8 rounded-lg border border-destructive/25 bg-destructive/5 px-4 py-4 sm:px-5">
+          <h2 className="text-sm font-semibold text-foreground">Delete customer</h2>
+          <p className="mt-1 max-w-xl text-xs text-muted-foreground">
+            This removes the customer from your directory. Estimates and jobs that reference this customer may be
+            affected—only delete if you&apos;re sure.
+          </p>
+          <form action={deleteCustomer} className="mt-4">
+            <input type="hidden" name="customer_id" value={id} />
+            <SubmitButton variant="danger" pendingLabel="Deleting…">
+              Delete customer
+            </SubmitButton>
+          </form>
+        </div>
       </section>
 
       <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
