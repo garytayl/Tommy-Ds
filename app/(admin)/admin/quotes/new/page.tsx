@@ -27,8 +27,12 @@ export default async function NewQuotePage({
   const templateOptions = toQuoteTemplateClientOptions(templateDefinitions);
 
   const wstepRaw = resolvedSearch.wstep?.trim() ?? "";
-  const initialWizardStep =
-    wstepRaw && /^[1-4]$/.test(wstepRaw) ? Number.parseInt(wstepRaw, 10) : null;
+  const initialWizardStep = (() => {
+    if (!wstepRaw || !/^[1-4]$/.test(wstepRaw)) return null;
+    const n = Number.parseInt(wstepRaw, 10);
+    const legacyToNew: Record<number, number> = { 1: 1, 2: 1, 3: 2, 4: 3 };
+    return legacyToNew[n] ?? null;
+  })();
 
   const formHref = (() => {
     const p = new URLSearchParams();
@@ -44,7 +48,7 @@ export default async function NewQuotePage({
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Admin</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">New estimate</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Step through customer, template, job site, and scope. Prefer everything on one screen? Use the{" "}
+          Pick a customer and a starting template on step 1, then job site and scope. Prefer everything on one screen? Use the{" "}
           <Link href={formHref} className="font-medium text-primary underline-offset-4 hover:underline">
             single-page form
           </Link>

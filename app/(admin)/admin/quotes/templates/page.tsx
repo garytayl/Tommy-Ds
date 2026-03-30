@@ -23,11 +23,15 @@ export default async function QuoteTemplatesPage() {
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Admin</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">Estimate templates</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Custom templates appear in the template dropdown on{" "}
+          Custom templates appear alongside built-in starters on{" "}
           <Link href="/admin/quotes/new" className="text-primary hover:underline">
             New estimate
+          </Link>{" "}
+          (step 1 cards or the single-page form dropdown) and in{" "}
+          <Link href="/admin/quotes/new/form" className="text-primary hover:underline">
+            single-page form
           </Link>
-          , after the built-in Blank and VW / Stone Worx options.
+          .
         </p>
       </div>
 

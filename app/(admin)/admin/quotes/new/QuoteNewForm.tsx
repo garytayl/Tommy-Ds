@@ -72,6 +72,24 @@ export function QuoteNewForm({
     <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <form action={createQuoteFromForm} className="grid gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2">
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Starting template</label>
+          <input type="hidden" name="template_id" value={templateId} />
+          <select
+            className="field w-full"
+            value={templateId}
+            onChange={(e) => setTemplateId(normalizeTemplateIdInList(e.target.value, templateOptions))}
+            aria-label="Estimate template"
+          >
+            {templateOptions.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-muted-foreground">{template.description}</p>
+        </div>
+
+        <div className="sm:col-span-2">
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Customer</label>
           <select
             id="new-quote-customer-id"
@@ -126,24 +144,6 @@ export function QuoteNewForm({
           <Link href="/admin/customers#add" className="mt-2 inline-block text-sm text-primary hover:underline">
             Open full customer form
           </Link>
-        </div>
-
-        <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Template</label>
-          <input type="hidden" name="template_id" value={templateId} />
-          <select
-            className="field w-full"
-            value={templateId}
-            onChange={(e) => setTemplateId(normalizeTemplateIdInList(e.target.value, templateOptions))}
-            aria-label="Estimate template"
-          >
-            {templateOptions.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-muted-foreground">{template.description}</p>
         </div>
 
         <div className="sm:col-span-2">

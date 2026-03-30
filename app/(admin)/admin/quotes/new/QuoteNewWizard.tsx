@@ -44,10 +44,9 @@ type Draft = {
 };
 
 const STEPS = [
-  { n: 1, label: "Customer", short: "Who" },
-  { n: 2, label: "Template", short: "Template" },
-  { n: 3, label: "Job site", short: "Site" },
-  { n: 4, label: "Scope", short: "Scope" },
+  { n: 1, label: "Customer & template", short: "Start" },
+  { n: 2, label: "Job site", short: "Site" },
+  { n: 3, label: "Scope", short: "Scope" },
 ] as const;
 
 function loadDraft(): Partial<Draft> | null {
@@ -125,7 +124,10 @@ export function QuoteNewWizard({
       if (draft.city != null) setCity(draft.city);
       if (draft.state != null) setState(draft.state);
       if (draft.zip != null) setZip(draft.zip);
-      if (typeof draft.step === "number" && draft.step >= 1 && draft.step <= 4) setStep(draft.step);
+      if (typeof draft.step === "number" && draft.step >= 1 && draft.step <= 4) {
+        const legacyToNew: Record<number, number> = { 1: 1, 2: 1, 3: 2, 4: 3 };
+        setStep(legacyToNew[draft.step] ?? 1);
+      }
     }
     setHydratedFromStorage(true);
   }, [initialWizardStep, preselectCustomerId, initialTemplateId, templateOptions]);
@@ -178,16 +180,14 @@ export function QuoteNewWizard({
     step === 1
       ? Boolean(customerId)
       : step === 2
-        ? Boolean(templateId)
-        : step === 3
-          ? Boolean(
-              title.trim() &&
-                address_line1.trim() &&
-                city.trim() &&
-                state.trim() &&
-                zip.trim(),
-            )
-          : true;
+        ? Boolean(
+            title.trim() &&
+              address_line1.trim() &&
+              city.trim() &&
+              state.trim() &&
+              zip.trim(),
+          )
+        : true;
 
   const clearWizard = () => {
     localStorage.removeItem(STORAGE_KEY);
@@ -265,9 +265,14 @@ export function QuoteNewWizard({
           <div className="space-y-6">
             <header>
               <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Step 1</p>
-              <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">Who is this estimate for?</h2>
+              <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">Customer &amp; starting template</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Pick an existing customer or add one on the fly—same data as the standard new-estimate form.
+                Choose who the estimate is for, then pick a template to pre-fill line items and notes (including blank and any
+                custom templates from{" "}
+                <Link href="/admin/quotes/templates" className="font-medium text-primary underline-offset-4 hover:underline">
+                  Templates
+                </Link>
+                ).
               </p>
             </header>
 
@@ -294,7 +299,8 @@ export function QuoteNewWizard({
             <div className="rounded-xl border border-border bg-muted/20 p-4">
               <p className="text-xs font-medium text-foreground">Quick add customer</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Name required; phone and email optional. You&apos;ll return here on step 2 with them selected.
+                Name required; phone and email optional. You&apos;ll return here with them selected so you can choose a
+                template and continue.
               </p>
               <form action={quickAddCustomer} className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
                 <input type="hidden" name="template_id" value={templateId} />
@@ -324,8 +330,51 @@ export function QuoteNewWizard({
               Open full customer form
             </Link>
 
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">Starting template</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {templateOptions.map((t) => {
+                  const selected = templateId === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        const next = normalizeTemplateIdInList(t.id, templateOptions);
+                        if (next === templateId) return;
+                        setTemplateId(next);
+                        const nt = findQuoteTemplateInList(next, templateOptions)!;
+                        setTitle(next === BLANK_QUOTE_TEMPLATE_ID ? "" : nt.defaultTitle);
+                      }}
+                      className={cn(
+                        "rounded-xl border-2 p-4 text-left transition-all",
+                        selected
+                          ? "border-primary bg-primary/5 shadow-md shadow-primary/10"
+                          : "border-border bg-card hover:border-primary/40 hover:bg-muted/30",
+                      )}
+                    >
+                      <p className="font-semibold text-foreground">{t.name}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{t.description}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-2 pt-2">
-              <button type="button" className="btn-primary" disabled={!customerId} onClick={() => setStep(2)}>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={!customerId}
+                onClick={() => {
+                  setTitle((prev) => {
+                    if (prev.trim()) return prev;
+                    const nt = findQuoteTemplateInList(templateId, templateOptions)!;
+                    return templateId === BLANK_QUOTE_TEMPLATE_ID ? "" : nt.defaultTitle;
+                  });
+                  setStep(2);
+                }}
+              >
                 Continue
               </button>
               <Link href="/admin/quotes" className="btn-secondary">
@@ -339,66 +388,6 @@ export function QuoteNewWizard({
           <div className="space-y-6">
             <header>
               <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Step 2</p>
-              <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">Choose a starting template</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Templates pre-fill line items and scope notes; you can still edit everything on the last step.
-              </p>
-            </header>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {templateOptions.map((t) => {
-                const selected = templateId === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => {
-                      const next = normalizeTemplateIdInList(t.id, templateOptions);
-                      if (next === templateId) return;
-                      setTemplateId(next);
-                      const nt = findQuoteTemplateInList(next, templateOptions)!;
-                      setTitle(next === BLANK_QUOTE_TEMPLATE_ID ? "" : nt.defaultTitle);
-                    }}
-                    className={cn(
-                      "rounded-xl border-2 p-4 text-left transition-all",
-                      selected
-                        ? "border-primary bg-primary/5 shadow-md shadow-primary/10"
-                        : "border-border bg-card hover:border-primary/40 hover:bg-muted/30",
-                    )}
-                  >
-                    <p className="font-semibold text-foreground">{t.name}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{t.description}</p>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-wrap gap-2 pt-2">
-              <button type="button" className="btn-secondary" onClick={() => setStep(1)}>
-                Back
-              </button>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => {
-                  setTitle((prev) => {
-                    if (prev.trim()) return prev;
-                    const nt = findQuoteTemplateInList(templateId, templateOptions)!;
-                    return templateId === BLANK_QUOTE_TEMPLATE_ID ? "" : nt.defaultTitle;
-                  });
-                  setStep(3);
-                }}
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="space-y-6">
-            <header>
-              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Step 3</p>
               <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">Title &amp; job site</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 Where the work happens (can differ from the customer&apos;s billing address).
@@ -463,20 +452,20 @@ export function QuoteNewWizard({
             </div>
 
             <div className="flex flex-wrap gap-2 pt-2">
-              <button type="button" className="btn-secondary" onClick={() => setStep(2)}>
+              <button type="button" className="btn-secondary" onClick={() => setStep(1)}>
                 Back
               </button>
-              <button type="button" className="btn-primary" disabled={!canGoNext} onClick={() => setStep(4)}>
+              <button type="button" className="btn-primary" disabled={!canGoNext} onClick={() => setStep(3)}>
                 Continue
               </button>
             </div>
           </div>
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <div className="space-y-6">
             <header>
-              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Step 4</p>
+              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Step 3</p>
               <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">Scope &amp; create</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 Fine-tune PDF sections, then create the estimate. Line items from <strong className="font-medium text-foreground">{template.name}</strong> are applied automatically.
@@ -518,7 +507,7 @@ export function QuoteNewWizard({
               />
 
               <div className="flex flex-wrap gap-2 pt-2">
-                <button type="button" className="btn-secondary" onClick={() => setStep(3)}>
+                <button type="button" className="btn-secondary" onClick={() => setStep(2)}>
                   Back
                 </button>
                 <SubmitButton pendingLabel="Creating…" disabled={!customerId}>

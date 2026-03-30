@@ -40,8 +40,8 @@ export default async function NewQuoteFormPage({
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Admin</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">New estimate — single-page form</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Choose a template to pre-fill line items, or start blank—then promote to a formal quote and convert to a job when
-          ready.
+          Pick a template first (or Blank)—it pre-fills line items and notes. Then add the customer and job site. Promote to a
+          formal quote when ready.
         </p>
         <p className="mt-3">
           <Link href={wizardHref} className="text-sm font-medium text-primary underline-offset-4 hover:underline">

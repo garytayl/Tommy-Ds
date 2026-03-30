@@ -61,7 +61,7 @@ export async function quickAddCustomer(formData: FormData) {
   const params = new URLSearchParams();
   params.set("customer_id", String(row.id));
   params.set("template", templateId);
-  params.set("wstep", "2");
+  params.set("wstep", "1");
   if (returnTo === "form") {
     redirect(`/admin/quotes/new/form?${params.toString()}`);
   }
