@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { QuoteExportDownloadButtons } from "@/components/QuoteExportDownloadButtons";
 import { SubmitButton } from "@/components/SubmitButton";
 
 type PromoteAction = (formData: FormData) => Promise<void>;
@@ -59,22 +60,7 @@ export function QuoteRecordActions({
         >
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Ponderosa export">
             <span className="text-xs font-medium text-muted-foreground">Ponderosa</span>
-            <a
-              href={`/admin/quotes/${quoteId}/export`}
-              className="btn-secondary whitespace-nowrap"
-              download
-              title="Design Flex Project XML (Project.xsd) for Eclipse / Ponderosa. Use for estimates and formal quotes. ?format=tommyds = simple XML."
-            >
-              XML
-            </a>
-            <a
-              href={`/admin/quotes/${quoteId}/export?format=txt`}
-              className="btn-secondary whitespace-nowrap"
-              download
-              title="Plain-text estimate/quote (tab-separated lines) for Ponderosa or drop-folder workflows."
-            >
-              TXT
-            </a>
+            <QuoteExportDownloadButtons quoteId={quoteId} />
           </div>
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="PDF">
             <span className="text-xs font-medium text-muted-foreground">PDF</span>
