@@ -131,8 +131,8 @@ export default async function QuotesListPage({
           <Link href="/admin/quotes/new" className="btn-primary">
             New estimate
           </Link>
-          <Link href="/admin/quotes/new/wizard" className="btn-secondary">
-            Guided setup
+          <Link href="/admin/quotes/new/form" className="btn-secondary">
+            Single-page form
           </Link>
           <Link href="/admin/quotes/templates" className="btn-secondary">
             Templates

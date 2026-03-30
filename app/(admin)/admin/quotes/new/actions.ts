@@ -54,15 +54,16 @@ export async function quickAddCustomer(formData: FormData) {
 
   await setToastCookie("Customer added");
   revalidatePath("/admin/quotes/new");
+  revalidatePath("/admin/quotes/new/form");
   revalidatePath("/admin/quotes/new/wizard");
   revalidatePath("/admin/customers");
 
   const params = new URLSearchParams();
   params.set("customer_id", String(row.id));
   params.set("template", templateId);
-  if (returnTo === "wizard") {
-    params.set("wstep", "2");
-    redirect(`/admin/quotes/new/wizard?${params.toString()}`);
+  params.set("wstep", "2");
+  if (returnTo === "form") {
+    redirect(`/admin/quotes/new/form?${params.toString()}`);
   }
   redirect(`/admin/quotes/new?${params.toString()}`);
 }

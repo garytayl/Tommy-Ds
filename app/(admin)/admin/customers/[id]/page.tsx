@@ -145,11 +145,11 @@ export default async function CustomerDetailPage({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href={`/admin/quotes/new?customer_id=${id}`} className="btn-secondary text-sm">
+            <Link href={`/admin/quotes/new?customer_id=${id}`} className="btn-primary text-sm">
               New estimate
             </Link>
-            <Link href={`/admin/quotes/new/wizard?customer_id=${id}`} className="btn-secondary text-sm">
-              Guided setup
+            <Link href={`/admin/quotes/new/form?customer_id=${id}`} className="btn-secondary text-sm">
+              Single-page form
             </Link>
           </div>
         </div>

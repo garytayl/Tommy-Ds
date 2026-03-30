@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { quoteNotesToSections } from "@/lib/quote-notes-sections";
 import { QuoteNotesSectionFields } from "@/components/QuoteNotesSectionFields";
+import { formatCustomerInformationForQuoteNotes } from "@/lib/customer-quote-notes";
+import { quoteNotesToSections } from "@/lib/quote-notes-sections";
 
 import {
   BLANK_QUOTE_TEMPLATE_ID,
@@ -21,6 +22,8 @@ import { createQuoteFromForm, quickAddCustomer } from "./actions";
 type CustomerOption = {
   id: string;
   name: string;
+  phone: string | null;
+  email: string | null;
   address_line1: string | null;
   address_line2: string | null;
   city: string | null;
@@ -43,14 +46,24 @@ export function QuoteNewForm({
   const [templateId, setTemplateId] = useState(() =>
     normalizeTemplateIdInList(initialTemplateId, templateOptions),
   );
+  const [customerId, setCustomerId] = useState(preselectCustomerId);
   const template = findQuoteTemplateInList(templateId, templateOptions)!;
+
+  useEffect(() => {
+    setCustomerId(preselectCustomerId);
+  }, [preselectCustomerId]);
 
   const titleDefault = templateId === BLANK_QUOTE_TEMPLATE_ID ? "" : template.defaultTitle;
   const sectionDefaults = useMemo(() => {
     const t = findQuoteTemplateInList(templateId, templateOptions)!;
-    if (templateId === BLANK_QUOTE_TEMPLATE_ID) return quoteNotesToSections("");
-    return quoteNotesToSections(t.defaultNotes);
-  }, [templateId, templateOptions]);
+    const base =
+      templateId === BLANK_QUOTE_TEMPLATE_ID ? quoteNotesToSections("") : quoteNotesToSections(t.defaultNotes);
+    const c = customers.find((x) => x.id === customerId);
+    if (!c) return base;
+    const customerBlock = formatCustomerInformationForQuoteNotes(c);
+    if (!customerBlock.trim()) return base;
+    return { ...base, customer_information: customerBlock };
+  }, [templateId, templateOptions, customerId, customers]);
 
   return (
     <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -62,7 +75,8 @@ export function QuoteNewForm({
             name="customer_id"
             required
             className="field w-full"
-            defaultValue={preselectCustomerId || ""}
+            value={customerId}
+            onChange={(e) => setCustomerId(e.target.value)}
           >
             <option value="">Select customer</option>
             {customers.map((c) => (
@@ -78,6 +92,7 @@ export function QuoteNewForm({
             </p>
             <form action={quickAddCustomer} className="mt-2 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
               <input type="hidden" name="template_id" value={templateId} />
+              <input type="hidden" name="return_to" value="form" />
               <input
                 name="name"
                 type="text"
@@ -180,7 +195,11 @@ export function QuoteNewForm({
         <input id="new-quote-project-state" name="state" type="text" defaultValue="IN" className="field" />
         <input id="new-quote-project-zip" name="zip" type="text" required placeholder="Zip" className="field" />
         <div className="sm:col-span-2">
-          <QuoteNotesSectionFields key={templateId} defaults={sectionDefaults} variant="new" />
+          <QuoteNotesSectionFields
+            key={`${templateId}-${customerId}`}
+            defaults={sectionDefaults}
+            variant="new"
+          />
         </div>
         <div className="flex flex-wrap gap-2 sm:col-span-2">
           <button type="submit" className="btn-primary">

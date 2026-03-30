@@ -4,12 +4,12 @@ import { normalizeTemplateIdInList, toQuoteTemplateClientOptions } from "@/lib/q
 import { fetchMergedQuoteTemplateDefinitions } from "@/lib/quote-templates-load";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-import { QuoteNewWizard } from "./QuoteNewWizard";
+import { QuoteNewForm } from "../QuoteNewForm";
 
-export default async function NewQuotePage({
+export default async function NewQuoteFormPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ customer_id?: string; template?: string; wstep?: string }>;
+  searchParams?: Promise<{ customer_id?: string; template?: string }>;
 }) {
   const resolvedSearch = (await searchParams) ?? {};
   const preselectCustomerId = resolvedSearch.customer_id?.trim() ?? "";
@@ -26,38 +26,36 @@ export default async function NewQuotePage({
   const initialTemplateId = normalizeTemplateIdInList(resolvedSearch.template, templateDefinitions);
   const templateOptions = toQuoteTemplateClientOptions(templateDefinitions);
 
-  const wstepRaw = resolvedSearch.wstep?.trim() ?? "";
-  const initialWizardStep =
-    wstepRaw && /^[1-4]$/.test(wstepRaw) ? Number.parseInt(wstepRaw, 10) : null;
-
-  const formHref = (() => {
+  const wizardHref = (() => {
     const p = new URLSearchParams();
     if (preselectCustomerId) p.set("customer_id", preselectCustomerId);
     if (initialTemplateId) p.set("template", initialTemplateId);
     const q = p.toString();
-    return q ? `/admin/quotes/new/form?${q}` : "/admin/quotes/new/form";
+    return q ? `/admin/quotes/new?${q}` : "/admin/quotes/new";
   })();
 
   return (
     <div className="space-y-8">
       <div>
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Admin</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">New estimate</h1>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Step through customer, template, job site, and scope. Prefer everything on one screen? Use the{" "}
-          <Link href={formHref} className="font-medium text-primary underline-offset-4 hover:underline">
-            single-page form
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">New estimate — single-page form</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Choose a template to pre-fill line items, or start blank—then promote to a formal quote and convert to a job when
+          ready.
+        </p>
+        <p className="mt-3">
+          <Link href={wizardHref} className="text-sm font-medium text-primary underline-offset-4 hover:underline">
+            Use guided setup
           </Link>
-          —same result.
+          <span className="text-sm text-muted-foreground"> — recommended for new customers and estimates.</span>
         </p>
       </div>
 
-      <QuoteNewWizard
+      <QuoteNewForm
         customers={customers ?? []}
         preselectCustomerId={preselectCustomerId}
         initialTemplateId={initialTemplateId}
         templateOptions={templateOptions}
-        initialWizardStep={initialWizardStep}
       />
     </div>
   );

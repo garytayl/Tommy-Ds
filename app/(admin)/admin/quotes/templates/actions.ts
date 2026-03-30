@@ -70,6 +70,7 @@ export async function createQuoteTemplate(formData: FormData) {
   await setToastCookie("Template created");
   revalidatePath("/admin/quotes/templates");
   revalidatePath("/admin/quotes/new");
+  revalidatePath("/admin/quotes/new/form");
   revalidatePath("/admin/quotes/new/wizard");
   redirect("/admin/quotes/templates");
 }
@@ -114,6 +115,7 @@ export async function updateQuoteTemplate(formData: FormData) {
   await setToastCookie("Template saved");
   revalidatePath("/admin/quotes/templates");
   revalidatePath("/admin/quotes/new");
+  revalidatePath("/admin/quotes/new/form");
   revalidatePath("/admin/quotes/new/wizard");
   redirect("/admin/quotes/templates");
 }
@@ -138,6 +140,7 @@ export async function deleteQuoteTemplate(formData: FormData) {
   await setToastCookie("Template deleted");
   revalidatePath("/admin/quotes/templates");
   revalidatePath("/admin/quotes/new");
+  revalidatePath("/admin/quotes/new/form");
   revalidatePath("/admin/quotes/new/wizard");
   redirect("/admin/quotes/templates");
 }

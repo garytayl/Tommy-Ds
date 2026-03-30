@@ -116,7 +116,7 @@ export function normalizeTemplateIdInList(
 
 export const BLANK_QUOTE_TEMPLATE_ID = "blank";
 
-/** Deep link: `/admin/quotes/new?template=${VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID}` */
+/** Deep link: `/admin/quotes/new?template=${VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID}` (guided); `/admin/quotes/new/form?template=…` for single-page form */
 export const VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID = "vw_stone_worx_countertop";
 
 /**

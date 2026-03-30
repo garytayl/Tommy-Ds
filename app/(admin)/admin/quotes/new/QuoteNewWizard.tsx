@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { QuoteNotesSectionFields } from "@/components/QuoteNotesSectionFields";
 import { SubmitButton } from "@/components/SubmitButton";
+import { formatCustomerInformationForQuoteNotes } from "@/lib/customer-quote-notes";
 import { quoteNotesToSections } from "@/lib/quote-notes-sections";
 import {
   BLANK_QUOTE_TEMPLATE_ID,
@@ -21,6 +22,8 @@ const STORAGE_KEY = "tommy_quote_wizard_v1";
 type CustomerOption = {
   id: string;
   name: string;
+  phone: string | null;
+  email: string | null;
   address_line1: string | null;
   address_line2: string | null;
   city: string | null;
@@ -130,9 +133,14 @@ export function QuoteNewWizard({
   const template = findQuoteTemplateInList(templateId, templateOptions)!;
   const sectionDefaults = useMemo(() => {
     const t = findQuoteTemplateInList(templateId, templateOptions)!;
-    if (templateId === BLANK_QUOTE_TEMPLATE_ID) return quoteNotesToSections("");
-    return quoteNotesToSections(t.defaultNotes);
-  }, [templateId, templateOptions]);
+    const base =
+      templateId === BLANK_QUOTE_TEMPLATE_ID ? quoteNotesToSections("") : quoteNotesToSections(t.defaultNotes);
+    const c = customers.find((x) => x.id === customerId);
+    if (!c) return base;
+    const customerBlock = formatCustomerInformationForQuoteNotes(c);
+    if (!customerBlock.trim()) return base;
+    return { ...base, customer_information: customerBlock };
+  }, [templateId, templateOptions, customerId, customers]);
 
   const persist = useCallback(() => {
     saveDraft({
@@ -196,7 +204,7 @@ export function QuoteNewWizard({
     if (customerId) p.set("customer_id", customerId);
     if (templateId) p.set("template", templateId);
     const q = p.toString();
-    return q ? `/admin/quotes/new?${q}` : "/admin/quotes/new";
+    return q ? `/admin/quotes/new/form?${q}` : "/admin/quotes/new/form";
   }, [customerId, templateId]);
 
   return (
@@ -235,7 +243,7 @@ export function QuoteNewWizard({
         </ol>
         <div className="flex flex-wrap items-center gap-2">
           <Link href={standardFormHref} className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
-            Standard form
+            Single-page form
           </Link>
           <button type="button" className="text-sm text-muted-foreground hover:text-foreground" onClick={clearWizard}>
             Start over
@@ -287,7 +295,6 @@ export function QuoteNewWizard({
               </p>
               <form action={quickAddCustomer} className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
                 <input type="hidden" name="template_id" value={templateId} />
-                <input type="hidden" name="return_to" value="wizard" />
                 <input
                   name="name"
                   type="text"
@@ -501,7 +508,11 @@ export function QuoteNewWizard({
                 {address_line2 ? `, ${address_line2}` : ""}, {city} {state} {zip}
               </div>
 
-              <QuoteNotesSectionFields key={templateId} defaults={sectionDefaults} variant="new" />
+              <QuoteNotesSectionFields
+                key={`${templateId}-${customerId}`}
+                defaults={sectionDefaults}
+                variant="new"
+              />
 
               <div className="flex flex-wrap gap-2 pt-2">
                 <button type="button" className="btn-secondary" onClick={() => setStep(3)}>
