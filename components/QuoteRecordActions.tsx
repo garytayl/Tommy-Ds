@@ -57,6 +57,16 @@ export function QuoteRecordActions({
         <div
           className={`flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-2 ${hasWorkflowCta ? "border-t border-border pt-3" : ""}`}
         >
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Export">
+            <span className="text-xs font-medium text-muted-foreground">Export</span>
+            <a
+              href={`/admin/quotes/${quoteId}/export`}
+              className="btn-secondary whitespace-nowrap"
+              download
+            >
+              Ponderosa XML
+            </a>
+          </div>
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="PDF">
             <span className="text-xs font-medium text-muted-foreground">PDF</span>
             <Link href={printEditHref} className="btn-primary whitespace-nowrap">
