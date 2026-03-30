@@ -119,6 +119,9 @@ export const BLANK_QUOTE_TEMPLATE_ID = "blank";
 /** Deep link: `/admin/quotes/new?template=${VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID}` (guided); `/admin/quotes/new/form?template=…` for single-page form */
 export const VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID = "vw_stone_worx_countertop";
 
+/** Deep link: `/admin/quotes/new?template=${TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID}` */
+export const TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID = "tommy_ds_cabinetry";
+
 /**
  * VW / Stone Worx–style kitchen countertop scope + terms (Indiana).
  * Empty-field placeholders in the estimate UI mirror this (`QUOTE_NOTES_SECTION_PLACEHOLDERS` in `@/lib/quote-notes-sections`).
@@ -162,12 +165,66 @@ KEY TERMS / CONDITIONS
 • 50% deposit required to proceed`;
 }
 
-/** Same copy as the VW / Stone Worx starter line — use as placeholder on template line-item description fields. */
+/**
+ * Tommy D's kitchen cabinetry scope + terms (Indiana).
+ * Dollar amounts live on line items / quote totals; notes reference drawing date and standard conditions.
+ */
+export function buildCabinetryEstimateNotes(asOf: Date = new Date()): string {
+  const dateStr = asOf.toLocaleDateString("en-US", {
+    month: "numeric",
+    day: "numeric",
+    year: "2-digit",
+  });
+
+  return `CABINETRY ESTIMATE
+Date: ${dateStr}
+
+Client: (customer name)
+
+Tommy D's Custom Cabinetry Specifications
+Includes ½" all plywood construction, soft close hinges and drawer guides, full extension wood dovetail drawers with concealed guides, flush and finished ends, fillers, stand base moulding and panel, scribe moulding, matching toe board, and a touch-up kit.
+
+Kitchen Cabinetry
+Door Style: Shaker (Standard Door)
+Wood Species: Maple
+Painted: TBD (non-custom color)
+Rollout trays included in selected cabinets
+Includes standard overlay and solid slab drawer fronts
+
+Pricing Summary
+Subtotal, tax, and total: from quote line items and tax settings below.
+
+Notes
+Quote corresponds with drawing dated (drawing date)
+Estimate valid for 30 days
+Cabinetry measure and delivery included; installation excluded
+Cabinetry lead time is approximately 12–14 weeks from deposit/signed proposal to delivery
+Removal and haul away of existing cabinetry and countertops excluded
+Countertop final price based on digital template
+Thank you for your inquiry; we look forward to working with you!`;
+}
+
+/** Same copy as the VW / Stone Worx starter line — default text for that template's line item. */
 export const VW_STONE_WORX_LINE_ITEM_DESCRIPTION_PLACEHOLDER =
   'Kitchen granite — Black Pearl (Suede); standard edge; 4" backsplash; negative reveal (3 cm); undermount sink install included (sink not included). Enter unit price when known.';
 
+/** Default text for the cabinetry template's starter line item. */
+export const CABINETRY_ESTIMATE_LINE_ITEM_DESCRIPTION_PLACEHOLDER =
+  "Kitchen cabinetry — Shaker (Standard Door), Maple, painted TBD (non-custom color); rollout trays in selected cabinets; standard overlay and solid slab drawer fronts. Enter unit price when known.";
+
+/** Neutral hint for custom template line-item fields (avoids countertop-only wording). */
+export const QUOTE_TEMPLATE_LINE_ITEM_EDITOR_PLACEHOLDER =
+  "Describe scope (materials, finish, inclusions). Enter unit price when known.";
+
 const vwStoneWorxLineItem: QuoteTemplateLineItem = {
   description: VW_STONE_WORX_LINE_ITEM_DESCRIPTION_PLACEHOLDER,
+  qty: 1,
+  unit_price_cents: 0,
+  line_total_cents: 0,
+};
+
+const cabinetryEstimateLineItem: QuoteTemplateLineItem = {
+  description: CABINETRY_ESTIMATE_LINE_ITEM_DESCRIPTION_PLACEHOLDER,
   qty: 1,
   unit_price_cents: 0,
   line_total_cents: 0,
@@ -190,6 +247,15 @@ export const QUOTE_TEMPLATES: QuoteTemplateDefinition[] = [
     defaultTitle: "Kitchen – Granite Countertop",
     buildNotes: buildVwStoneWorxCountertopNotes,
     lineItems: [vwStoneWorxLineItem],
+  },
+  {
+    id: TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID,
+    name: "Cabinetry estimate",
+    description:
+      "Tommy D's specs, terms, and a starter kitchen cabinetry line (pricing starts at $0 — adjust on the quote).",
+    defaultTitle: "Kitchen Cabinetry",
+    buildNotes: buildCabinetryEstimateNotes,
+    lineItems: [cabinetryEstimateLineItem],
   },
 ];
 

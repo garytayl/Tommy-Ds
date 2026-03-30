@@ -5,6 +5,7 @@ import {
   mergeQuoteTemplateDefinitions,
   normalizeTemplateIdInList,
   toQuoteTemplateClientOptions,
+  TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID,
   VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID,
   type QuoteTemplateDbRow,
 } from "./quote-templates";
@@ -25,7 +26,8 @@ describe("mergeQuoteTemplateDefinitions", () => {
     const merged = mergeQuoteTemplateDefinitions(db);
     expect(merged[0]?.id).toBe(BLANK_QUOTE_TEMPLATE_ID);
     expect(merged[1]?.id).toBe(VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID);
-    expect(merged[2]?.id).toBe("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    expect(merged[2]?.id).toBe(TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID);
+    expect(merged[3]?.id).toBe("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
   });
 });
 
@@ -39,6 +41,9 @@ describe("normalizeTemplateIdInList", () => {
   it("keeps valid built-in ids", () => {
     expect(normalizeTemplateIdInList(VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID, defs)).toBe(
       VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID,
+    );
+    expect(normalizeTemplateIdInList(TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID, defs)).toBe(
+      TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID,
     );
   });
 });

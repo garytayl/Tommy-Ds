@@ -8,7 +8,7 @@ import { formatCents } from "@/lib/money";
 import { workflowStageLabel } from "@/lib/quote-workflow";
 import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
 import { setToastCookie } from "@/lib/toast";
-import { VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID } from "@/lib/quote-templates";
+import { TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID, VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID } from "@/lib/quote-templates";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 async function deleteQuoteFromList(formData: FormData) {
@@ -142,6 +142,12 @@ export default async function QuotesListPage({
             className="btn-secondary"
           >
             VW / Stone Worx countertop
+          </Link>
+          <Link
+            href={`/admin/quotes/new?template=${TOMMY_DS_CABINETRY_ESTIMATE_TEMPLATE_ID}`}
+            className="btn-secondary"
+          >
+            Cabinetry estimate
           </Link>
         </div>
       </div>
