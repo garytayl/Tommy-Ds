@@ -130,9 +130,14 @@ export default async function CustomerDetailPage({
               Estimate → formal quote → job. Open a row to promote or convert.
             </p>
           </div>
-          <Link href={`/admin/quotes/new?customer_id=${id}`} className="btn-secondary text-sm">
-            New estimate
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/admin/quotes/new?customer_id=${id}`} className="btn-secondary text-sm">
+              New estimate
+            </Link>
+            <Link href={`/admin/quotes/new/wizard?customer_id=${id}`} className="btn-secondary text-sm">
+              Guided setup
+            </Link>
+          </div>
         </div>
         <div className="table-wrap overflow-x-auto">
           <table className="min-w-full text-sm">

@@ -28,6 +28,7 @@ export async function quickAddCustomer(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
+  const returnTo = String(formData.get("return_to") ?? "").trim();
   const merged = await fetchMergedQuoteTemplateDefinitions(supabase);
   const templateId = normalizeTemplateIdInList(String(formData.get("template_id") ?? ""), merged);
 
@@ -53,11 +54,16 @@ export async function quickAddCustomer(formData: FormData) {
 
   await setToastCookie("Customer added");
   revalidatePath("/admin/quotes/new");
+  revalidatePath("/admin/quotes/new/wizard");
   revalidatePath("/admin/customers");
 
   const params = new URLSearchParams();
   params.set("customer_id", String(row.id));
   params.set("template", templateId);
+  if (returnTo === "wizard") {
+    params.set("wstep", "2");
+    redirect(`/admin/quotes/new/wizard?${params.toString()}`);
+  }
   redirect(`/admin/quotes/new?${params.toString()}`);
 }
 

@@ -27,7 +27,7 @@ export function QuotesSubNav() {
   const pathname = usePathname() ?? "";
 
   const isList = pathname === "/admin/quotes";
-  const isNew = pathname === "/admin/quotes/new";
+  const isNew = pathname === "/admin/quotes/new" || pathname.startsWith("/admin/quotes/new/");
   const isTemplates = pathname.startsWith("/admin/quotes/templates");
 
   return (

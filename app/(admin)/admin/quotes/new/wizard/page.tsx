@@ -1,15 +1,15 @@
+import Link from "next/link";
+
 import { normalizeTemplateIdInList, toQuoteTemplateClientOptions } from "@/lib/quote-templates";
 import { fetchMergedQuoteTemplateDefinitions } from "@/lib/quote-templates-load";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-import Link from "next/link";
+import { QuoteNewWizard } from "../QuoteNewWizard";
 
-import { QuoteNewForm } from "./QuoteNewForm";
-
-export default async function NewQuotePage({
+export default async function NewQuoteWizardPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ customer_id?: string; template?: string }>;
+  searchParams?: Promise<{ customer_id?: string; template?: string; wstep?: string }>;
 }) {
   const resolvedSearch = (await searchParams) ?? {};
   const preselectCustomerId = resolvedSearch.customer_id?.trim() ?? "";
@@ -26,39 +26,32 @@ export default async function NewQuotePage({
   const initialTemplateId = normalizeTemplateIdInList(resolvedSearch.template, templateDefinitions);
   const templateOptions = toQuoteTemplateClientOptions(templateDefinitions);
 
-  const wizardHref = (() => {
-    const p = new URLSearchParams();
-    if (preselectCustomerId) p.set("customer_id", preselectCustomerId);
-    if (initialTemplateId) p.set("template", initialTemplateId);
-    const q = p.toString();
-    return q ? `/admin/quotes/new/wizard?${q}` : "/admin/quotes/new/wizard";
-  })();
+  const wstepRaw = resolvedSearch.wstep?.trim() ?? "";
+  const initialWizardStep =
+    wstepRaw && /^[1-4]$/.test(wstepRaw) ? Number.parseInt(wstepRaw, 10) : null;
 
   return (
     <div className="space-y-8">
       <div>
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Admin</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">New estimate</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Choose a template to pre-fill line items, or start blank—then promote to a formal quote and convert to a job when
-          ready.
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">New estimate — guided</h1>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          Walk through customer, template, job site, and scope in a few focused screens. Prefer the full form? Switch
+          anytime—both flows create the same estimate.
         </p>
         <p className="mt-3">
-          <Link
-            href={wizardHref}
-            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-          >
-            Guided setup
+          <Link href="/admin/quotes/new" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
+            Use standard form instead
           </Link>
-          <span className="text-sm text-muted-foreground"> — step-by-step, same result as this form.</span>
         </p>
       </div>
 
-      <QuoteNewForm
+      <QuoteNewWizard
         customers={customers ?? []}
         preselectCustomerId={preselectCustomerId}
         initialTemplateId={initialTemplateId}
         templateOptions={templateOptions}
+        initialWizardStep={initialWizardStep}
       />
     </div>
   );
