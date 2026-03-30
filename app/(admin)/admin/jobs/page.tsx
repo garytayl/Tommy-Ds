@@ -132,14 +132,22 @@ export default async function JobsPage({
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/30 px-4 py-3 sm:px-6">
           <h2 className="text-base font-semibold text-foreground">All jobs</h2>
           <div className="w-full sm:w-auto">
-            <form method="get" className="grid gap-2 sm:hidden">
-              <div className="grid grid-cols-2 gap-2">
-                <select name="kind" defaultValue={kindFilter ?? ""} className="field">
+            <form method="get" className="grid gap-3 sm:hidden">
+              <div>
+                <label htmlFor="jobs-filter-kind" className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Kind
+                </label>
+                <select id="jobs-filter-kind" name="kind" defaultValue={kindFilter ?? ""} className="field">
                   <option value="">All kinds</option>
                   <option value="installation">Installation</option>
                   <option value="service">Service</option>
                 </select>
-                <select name="crew_id" defaultValue={filterCrewId ?? ""} className="field">
+              </div>
+              <div>
+                <label htmlFor="jobs-filter-crew" className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Crew
+                </label>
+                <select id="jobs-filter-crew" name="crew_id" defaultValue={filterCrewId ?? ""} className="field">
                   <option value="">All crews</option>
                   {crews.map((crew) => (
                     <option key={crew.id} value={crew.id}>
@@ -158,9 +166,11 @@ export default async function JobsPage({
               </div>
             </form>
 
-            <div className="hidden flex-col items-end gap-2 sm:flex sm:flex-row sm:items-center sm:gap-3">
-              <div className="flex flex-wrap items-center justify-end gap-1">
-                <span className="mr-1 text-xs font-medium text-muted-foreground">Kind</span>
+            <div className="hidden w-full flex-col items-end gap-3 sm:flex">
+              <div className="flex w-full max-w-full flex-wrap items-center justify-end gap-1">
+                <span className="mr-1 shrink-0 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Kind
+                </span>
                 <Link
                   href={jobsListHref(filterCrewId, null)}
                   className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${!kindFilter ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
@@ -180,8 +190,10 @@ export default async function JobsPage({
                   Service
                 </Link>
               </div>
-              <div className="flex flex-wrap items-center gap-1">
-                <span className="mr-1 text-xs font-medium text-muted-foreground">Crew</span>
+              <div className="flex w-full max-w-full flex-wrap items-center justify-end gap-1 border-t border-border/50 pt-3">
+                <span className="mr-1 shrink-0 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Crew
+                </span>
                 <Link
                   href={jobsListHref(undefined, kindFilter)}
                   className={`rounded-xl px-2.5 py-1.5 text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${!filterCrewId ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
