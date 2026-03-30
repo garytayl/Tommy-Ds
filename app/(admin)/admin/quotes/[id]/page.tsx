@@ -12,6 +12,7 @@ import { deleteQuoteAndOptionalJob } from "@/lib/job-destruct";
 import { centsToDollars, formatCents, dollarsToCents } from "@/lib/money";
 import { getPrintVsLiveDriftMessages } from "@/lib/quote-print-drift";
 import type { ItemLike } from "@/lib/quote-print-overrides";
+import { autoRecordQuoteRevisionIfChanged, recordQuoteRevisionForced } from "@/lib/quote-revision-auto";
 import type { QuoteRevisionSnapshot } from "@/lib/quote-revisions";
 import { setToastCookie } from "@/lib/toast";
 import { workflowStageLabel } from "@/lib/quote-workflow";
@@ -176,6 +177,7 @@ export default async function QuoteDetailPage({
     await supabase.rpc("recompute_quote_totals", { p_quote_id: id });
 
     await setToastCookie("Tax updated");
+    await autoRecordQuoteRevisionIfChanged(id, "Tax updated");
     revalidatePath(`/admin/quotes/${id}`);
   }
 
@@ -208,6 +210,7 @@ export default async function QuoteDetailPage({
     }
 
     await setToastCookie("Quote updated");
+    await autoRecordQuoteRevisionIfChanged(id, "Sales status updated");
     revalidatePath(`/admin/quotes/${id}`);
     revalidatePath(`/jobs/${current?.job_id ?? ""}`);
   }
@@ -293,10 +296,9 @@ export default async function QuoteDetailPage({
     const hadDeposit = Boolean((quoteRow as { deposit_received?: boolean }).deposit_received);
     const depositReceived = depositConfirmation === "received" ? true : hadDeposit;
 
-    await supabase
-      .from("quotes")
-      .update({ job_id: newJob.id, status: "accepted", deposit_received: depositReceived })
-      .eq("id", quoteId);
+    await supabase.from("quotes").update({ deposit_received: depositReceived }).eq("id", quoteId);
+    await recordQuoteRevisionForced(quoteId, "Auto — Converted to job");
+    await supabase.from("quotes").update({ job_id: newJob.id, status: "accepted" }).eq("id", quoteId);
     await supabase.from("jobs").update({ status: "approved" }).eq("id", newJob.id);
     await supabase.from("activities").insert({
       job_id: newJob.id,
@@ -322,6 +324,7 @@ export default async function QuoteDetailPage({
     if ((row as { workflow_stage?: string }).workflow_stage === "quote") return;
     await supabase.from("quotes").update({ workflow_stage: "quote" }).eq("id", id);
     await setToastCookie("Promoted to formal quote — you can convert to a job when ready");
+    await autoRecordQuoteRevisionIfChanged(id, "Promoted to formal quote");
     revalidatePath(`/admin/quotes/${id}`);
     revalidatePath("/admin/quotes");
   }
@@ -334,6 +337,7 @@ export default async function QuoteDetailPage({
     const checked = formData.get("deposit_received") === "true";
     await supabase.from("quotes").update({ deposit_received: checked }).eq("id", id);
     await setToastCookie(checked ? "Deposit marked as received" : "Deposit not marked");
+    await autoRecordQuoteRevisionIfChanged(id, "Deposit flag updated");
     revalidatePath(`/admin/quotes/${id}`);
     revalidatePath("/admin/quotes");
   }
@@ -1025,26 +1029,28 @@ export default async function QuoteDetailPage({
         >
           <h2 className="text-sm font-semibold text-foreground">Revision history</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Point-in-time snapshots of this quote (title, address, notes, line items, totals, and print overrides).
-            Use after meaningful changes with the customer.
+            Revisions are saved automatically when you edit details, line items, tax, status, print overrides, and
+            other quote fields (same data as PDF: title, address, notes, totals, line items, overrides). Use Restore on
+            any revision to roll the live quote back
+            to that point (not available after the quote is linked to a job).
           </p>
           <form action={recordQuoteRevisionAction} className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
             <input type="hidden" name="quote_id" value={id} />
             <label className="flex min-w-0 flex-1 flex-col gap-1 sm:max-w-lg">
-              <span className="text-xs font-medium text-muted-foreground">Revision message (optional)</span>
+              <span className="text-xs font-medium text-muted-foreground">Extra labeled snapshot (optional)</span>
               <textarea
                 name="message"
                 rows={3}
-                placeholder="e.g. After site visit — adjusted sink model and edge per customer request"
+                placeholder="Add a milestone note (e.g. customer signed off on edge profile) — saved as its own revision"
                 className="field min-h-[4.5rem] w-full resize-y text-sm"
               />
             </label>
             <SubmitButton variant="secondary" pendingLabel="Saving…" className="shrink-0 sm:self-end">
-              Save snapshot
+              Save labeled revision
             </SubmitButton>
           </form>
           {revisions.length === 0 ? (
-            <p className="mt-3 text-xs text-muted-foreground">No snapshots yet.</p>
+            <p className="mt-3 text-xs text-muted-foreground">No revisions yet — they appear when you save changes to this quote.</p>
           ) : (
             <ol className="mt-4 space-y-4 border-l border-border pl-4">
               {revisions.map((r) => {

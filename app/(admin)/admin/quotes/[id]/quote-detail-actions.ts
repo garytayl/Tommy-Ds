@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { autoRecordQuoteRevisionIfChanged } from "@/lib/quote-revision-auto";
 import { dollarsToCents } from "@/lib/money";
 import { computeTaxCents } from "@/lib/tax";
 import { setToastCookie } from "@/lib/toast";
@@ -64,6 +65,7 @@ export async function updateQuoteDetails(quoteId: string, formData: FormData) {
   }
 
   await setToastCookie("Quote details saved");
+  await autoRecordQuoteRevisionIfChanged(quoteId, "Quote details updated");
   revalidatePath(`/admin/quotes/${quoteId}`);
   revalidatePath("/admin/quotes");
 }
@@ -126,6 +128,7 @@ export async function addQuoteLineItem(quoteId: string, formData: FormData) {
   await applyDefaultTaxAfterItemsChange(supabase, quoteId);
 
   await setToastCookie("Line item added");
+  await autoRecordQuoteRevisionIfChanged(quoteId, "Line item added");
   revalidatePath(`/admin/quotes/${quoteId}`);
   revalidatePath("/admin/quotes");
 }
@@ -181,6 +184,7 @@ export async function updateQuoteLineItem(quoteId: string, formData: FormData) {
   await applyDefaultTaxAfterItemsChange(supabase, quoteId);
 
   await setToastCookie("Line item updated");
+  await autoRecordQuoteRevisionIfChanged(quoteId, "Line item updated");
   revalidatePath(`/admin/quotes/${quoteId}`);
   revalidatePath("/admin/quotes");
 }
@@ -207,6 +211,7 @@ export async function deleteQuoteLineItem(quoteId: string, formData: FormData) {
   await applyDefaultTaxAfterItemsChange(supabase, quoteId);
 
   await setToastCookie("Line item removed");
+  await autoRecordQuoteRevisionIfChanged(quoteId, "Line item removed");
   revalidatePath(`/admin/quotes/${quoteId}`);
   revalidatePath("/admin/quotes");
 }
@@ -249,6 +254,7 @@ export async function moveQuoteLineItem(quoteId: string, formData: FormData) {
   await supabase.from("quote_items").update({ sort_order: sa }).eq("id", b.id);
 
   await setToastCookie("Line order updated");
+  await autoRecordQuoteRevisionIfChanged(quoteId, "Line items reordered");
   revalidatePath(`/admin/quotes/${quoteId}`);
 }
 

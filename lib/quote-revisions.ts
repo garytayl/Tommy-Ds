@@ -14,6 +14,8 @@ export type QuoteRevisionSnapshot = {
   subtotal_cents: number;
   tax_cents: number;
   total_cents: number;
+  /** Present on snapshots created after deposit tracking was added. */
+  deposit_received?: boolean;
   print_overrides: QuotePrintOverrides | null;
   items: Array<{
     description: string;
@@ -37,6 +39,7 @@ export function buildRevisionSnapshot(params: {
     tax_cents: number;
     total_cents: number;
     workflow_stage?: string | null;
+    deposit_received?: boolean | null;
     print_overrides?: unknown | null;
   };
   items: Array<{
@@ -59,6 +62,7 @@ export function buildRevisionSnapshot(params: {
     subtotal_cents: params.quote.subtotal_cents,
     tax_cents: params.quote.tax_cents,
     total_cents: params.quote.total_cents,
+    deposit_received: Boolean((params.quote as { deposit_received?: boolean | null }).deposit_received),
     print_overrides: (params.quote.print_overrides ?? null) as QuotePrintOverrides | null,
     items: params.items.map((i) => ({
       description: i.description,

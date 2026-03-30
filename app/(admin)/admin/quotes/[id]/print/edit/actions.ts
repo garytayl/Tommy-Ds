@@ -2,14 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 
-import { buildRevisionSnapshot } from "@/lib/quote-revisions";
+import { autoRecordQuoteRevisionIfChanged } from "@/lib/quote-revision-auto";
 import type { QuotePrintOverrides } from "@/lib/quote-print-overrides";
+import { insertQuoteRevisionRecord } from "@/lib/quote-revision-record";
 import { createSupabaseServerClient, createSupabaseServerClientForData } from "@/lib/supabase/server";
 
 export async function saveQuotePrintOverrides(quoteId: string, overrides: QuotePrintOverrides | null) {
   const supabase = await createSupabaseServerClientForData();
   const { error } = await supabase.from("quotes").update({ print_overrides: overrides }).eq("id", quoteId);
   if (error) return { ok: false as const, message: error.message };
+  await autoRecordQuoteRevisionIfChanged(quoteId, "Print overrides updated");
   revalidatePath(`/admin/quotes/${quoteId}`);
   revalidatePath(`/admin/quotes/${quoteId}/print`);
   revalidatePath(`/admin/quotes/${quoteId}/print/edit`);
@@ -27,39 +29,10 @@ export async function recordQuoteRevision(quoteId: string, label: string | null)
     data: { user },
   } = await authClient.auth.getUser();
 
-  const { data: q, error: qErr } = await supabaseData.from("quotes").select("*").eq("id", quoteId).single();
-  if (qErr || !q) return { ok: false as const, message: "Quote not found" };
-
-  const { data: items } = await supabaseData
-    .from("quote_items")
-    .select("*")
-    .eq("quote_id", quoteId)
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
-
-  const { data: maxRow } = await supabaseData
-    .from("quote_revisions")
-    .select("revision_number")
-    .eq("quote_id", quoteId)
-    .order("revision_number", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const next = (maxRow?.revision_number ?? 0) + 1;
-  const snapshot = buildRevisionSnapshot({
-    quote: q as never,
-    items: items ?? [],
+  const res = await insertQuoteRevisionRecord(supabaseData, quoteId, label, user?.id ?? null, {
+    skipIfUnchanged: false,
   });
-
-  const { error } = await supabaseData.from("quote_revisions").insert({
-    quote_id: quoteId,
-    revision_number: next,
-    label: label?.trim() || null,
-    snapshot: snapshot as unknown as Record<string, unknown>,
-    created_by: user?.id ?? null,
-  });
-
-  if (error) return { ok: false as const, message: error.message };
+  if (!res.ok) return { ok: false as const, message: res.message };
   revalidatePath(`/admin/quotes/${quoteId}`);
   return { ok: true as const };
 }
