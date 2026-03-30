@@ -72,4 +72,34 @@ KEY TERMS / CONDITIONS
     const r = resolveQuoteNotesSections(notes, {});
     expect(r.cover).toContain("Date:");
   });
+
+  it("splits cabinetry-style template notes into structured fields (not misc-only)", () => {
+    const notes = `CABINETRY ESTIMATE
+Date: 3/11/26
+
+CUSTOMER INFORMATION
+(customer name)
+
+PROJECT DETAILS
+Tommy D's Custom Cabinetry Specifications
+Door Style: Shaker
+
+PRICING (reference — line items control totals in the system)
+Subtotal from line items.
+
+SCOPE NOTES
+Estimate valid for 30 days.
+
+KEY TERMS / CONDITIONS
+Thank you.`;
+
+    const s = quoteNotesToSections(notes);
+    expect(s.misc.trim()).toBe("");
+    expect(s.cover).toContain("CABINETRY ESTIMATE");
+    expect(s.customer_information).toContain("customer name");
+    expect(s.project_details).toContain("Shaker");
+    expect(s.pricing).toContain("Subtotal");
+    expect(s.scope_notes).toContain("30 days");
+    expect(s.key_terms).toContain("Thank you");
+  });
 });

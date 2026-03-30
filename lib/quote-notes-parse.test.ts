@@ -70,4 +70,19 @@ KEY TERMS / CONDITIONS
     expect(parseStructuredQuoteNotes("Just some free text without headers.")).toBeNull();
     expect(structuredQuoteNoteTitles("Just some free text without headers.")).toBeNull();
   });
+
+  it("parses CABINETRY ESTIMATE hero and section headers", () => {
+    const notes = `CABINETRY ESTIMATE
+Date: 3/11/26
+
+CUSTOMER INFORMATION
+Jane
+
+PROJECT DETAILS
+Specs here`;
+
+    const parsed = parseStructuredQuoteNotes(notes);
+    expect(parsed).not.toBeNull();
+    expect(blockTitles(parsed!)).toEqual(["CABINETRY ESTIMATE", "CUSTOMER INFORMATION", "PROJECT DETAILS"]);
+  });
 });

@@ -120,11 +120,13 @@ function joinHeader(header: string, body: string): string | null {
   return `${header}\n${b}`;
 }
 
-/** COUNTERTOP block: allow full first line inside the field. */
+/** Cover field may store body-only (legacy COUNTERTOP) or full hero+body for other estimate types. */
 function composeCover(cover: string): string | null {
   const c = cover.trim();
   if (!c) return null;
   if (/^COUNTERTOP ESTIMATE/i.test(c)) return c;
+  if (/^CABINETRY ESTIMATE/i.test(c)) return c;
+  if (/^KITCHEN COUNTERTOP/i.test(c)) return c;
   return `COUNTERTOP ESTIMATE\n${c}`;
 }
 
@@ -191,6 +193,10 @@ export function quoteNotesToSections(notes: string | null | undefined): QuoteNot
 
     if (block.kind === "hero" && /^COUNTERTOP ESTIMATE/i.test(title)) {
       out.cover = body;
+    } else if (block.kind === "hero" && /^CABINETRY ESTIMATE/i.test(title)) {
+      out.cover = body ? `CABINETRY ESTIMATE\n${body}` : "CABINETRY ESTIMATE";
+    } else if (block.kind === "hero" && /^KITCHEN COUNTERTOP/i.test(title)) {
+      out.cover = body ? `${title}\n${body}` : title;
     } else if (block.kind === "hero" && /^QUOTE$/i.test(title)) {
       miscParts.push(body ? `${title}\n${body}` : title);
     } else if (/^CUSTOMER INFORMATION$/i.test(title)) {

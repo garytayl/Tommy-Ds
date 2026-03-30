@@ -182,8 +182,10 @@ export function buildCabinetryEstimateNotes(asOf: Date = new Date()): string {
   return `CABINETRY ESTIMATE
 Date: ${dateStr}
 
-Client: (customer name)
+CUSTOMER INFORMATION
+(customer name)
 
+PROJECT DETAILS
 Tommy D's Custom Cabinetry Specifications
 Includes ½" all plywood construction, soft close hinges and drawer guides, full extension wood dovetail drawers with concealed guides, flush and finished ends, fillers, stand base moulding and panel, scribe moulding, matching toe board, and a touch-up kit.
 
@@ -194,16 +196,18 @@ Painted: TBD (non-custom color)
 Rollout trays included in selected cabinets
 Includes standard overlay and solid slab drawer fronts
 
-Pricing Summary
+PRICING (reference — line items control totals in the system)
 Subtotal, tax, and total: from quote line items and tax settings below.
 
-Notes
+SCOPE NOTES
 Quote corresponds with drawing dated (drawing date)
 Estimate valid for 30 days
 Cabinetry measure and delivery included; installation excluded
 Cabinetry lead time is approximately 12–14 weeks from deposit/signed proposal to delivery
 Removal and haul away of existing cabinetry and countertops excluded
 Countertop final price based on digital template
+
+KEY TERMS / CONDITIONS
 Thank you for your inquiry; we look forward to working with you!`;
 }
 
@@ -221,14 +225,25 @@ export function buildKitchenQuartzExtendedFlushCountertopNotes(asOf: Date = new 
   return `KITCHEN COUNTERTOP (W/ EXTENDED FLUSH SECTION)
 Date: ${dateStr}
 
-Customer: (customer name)
+CUSTOMER INFORMATION
+(customer name)
 
+PROJECT DETAILS
 Quartz Countertop with Flush Section
 Color: TBD
 Edge: TBD
 Splash: None
 “Simply Better” Quartz Line – 70 SF – 3CM
 
+Additions
+Brackets — $324.00
+Includes four and installed by fabricator.
+They will determine at time of measure if brackets will work for this application.
+Stainless Steel Sink — $105.00
+Karran Sink Options (PU51, PU53, PU55)
+Application of Paintable Latex Caulk at Drywall — $70.00
+
+PRICING (reference — line items control totals in the system)
 Countertop Pricing (by Group)
 Group 0 Countertops: $5,568.75
 Group 1 Countertops: $6,513.75
@@ -239,14 +254,7 @@ Group 5 Countertops: $9,065.25
 Group 6 Countertops: $10,955.25
 Group 7 Countertops: $12,372.75
 
-Additions
-Brackets — $324.00
-Includes four and installed by fabricator.
-They will determine at time of measure if brackets will work for this application.
-Stainless Steel Sink — $105.00
-Karran Sink Options (PU51, PU53, PU55)
-Application of Paintable Latex Caulk at Drywall — $70.00
-
+SCOPE NOTES
 Handwritten Notes (from image)
 “Quartz” (written near top)
 “Flush” (top right)

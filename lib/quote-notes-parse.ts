@@ -16,6 +16,8 @@ export function classifySectionTitle(line: string): SectionKind | null {
   if (!t) return null;
 
   if (/^COUNTERTOP ESTIMATE/i.test(t)) return "hero";
+  if (/^CABINETRY ESTIMATE/i.test(t)) return "hero";
+  if (/^KITCHEN COUNTERTOP/i.test(t)) return "hero";
   if (/^QUOTE$/i.test(t)) return "hero";
 
   if (/^CUSTOMER INFORMATION$/i.test(t)) return "section";
