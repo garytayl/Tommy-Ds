@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { composeNotesFromSections, formDataToNotesSections } from "@/lib/quote-notes-sections";
 import type { QuoteTemplateLineItem } from "@/lib/quote-templates";
 import { setToastCookie } from "@/lib/toast";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
@@ -37,7 +38,7 @@ export async function createQuoteTemplate(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const defaultTitle = String(formData.get("default_title") ?? "").trim();
-  const notesText = String(formData.get("notes_text") ?? "").trim() || null;
+  const notesText = composeNotesFromSections(formDataToNotesSections(formData));
   const sortOrder = Math.round(Number.parseFloat(String(formData.get("sort_order") ?? "0")) || 0);
   const lineItems = parseLineItemsJson(String(formData.get("line_items_json") ?? "[]"));
 
@@ -72,7 +73,7 @@ export async function updateQuoteTemplate(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const defaultTitle = String(formData.get("default_title") ?? "").trim();
-  const notesText = String(formData.get("notes_text") ?? "").trim() || null;
+  const notesText = composeNotesFromSections(formDataToNotesSections(formData));
   const sortOrder = Math.round(Number.parseFloat(String(formData.get("sort_order") ?? "0")) || 0);
   const lineItems = parseLineItemsJson(String(formData.get("line_items_json") ?? "[]"));
 

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { QuoteNotesSectionFields } from "@/components/QuoteNotesSectionFields";
 import { SubmitButton } from "@/components/SubmitButton";
+import { quoteNotesToSections } from "@/lib/quote-notes-sections";
 import { coerceQuoteTemplateLineItems } from "@/lib/quote-templates";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
@@ -21,6 +23,7 @@ export default async function EditQuoteTemplatePage({ params }: { params: Promis
   if (error || !row) notFound();
 
   const lineItems = coerceQuoteTemplateLineItems(row.line_items);
+  const notesSectionDefaults = quoteNotesToSections(row.notes_text ?? "");
 
   return (
     <div className="space-y-8">
@@ -35,61 +38,53 @@ export default async function EditQuoteTemplatePage({ params }: { params: Promis
       </div>
 
       <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <form action={updateQuoteTemplate} className="space-y-4">
+        <form action={updateQuoteTemplate} className="grid gap-3 sm:grid-cols-2">
           <input type="hidden" name="id" value={row.id} />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Name</label>
-              <input
-                name="name"
-                type="text"
-                required
-                defaultValue={row.name}
-                className="field w-full"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Short description</label>
-              <input
-                name="description"
-                type="text"
-                defaultValue={row.description ?? ""}
-                className="field w-full"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Default title</label>
-              <input
-                name="default_title"
-                type="text"
-                defaultValue={row.default_title ?? ""}
-                className="field w-full"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Sort order</label>
-              <input
-                name="sort_order"
-                type="number"
-                defaultValue={row.sort_order ?? 0}
-                className="field w-full"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Scope / notes (plain text)</label>
-              <textarea
-                name="notes_text"
-                rows={10}
-                defaultValue={row.notes_text ?? ""}
-                className="field min-h-[12rem] w-full font-mono text-sm"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Starter line items</p>
-              <QuoteTemplateLineItemsEditor initialLineItems={lineItems} />
-            </div>
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Name</label>
+            <input
+              name="name"
+              type="text"
+              required
+              defaultValue={row.name}
+              className="field w-full"
+            />
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Short description</label>
+            <input
+              name="description"
+              type="text"
+              defaultValue={row.description ?? ""}
+              className="field w-full"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Default title</label>
+            <input
+              name="default_title"
+              type="text"
+              defaultValue={row.default_title ?? ""}
+              className="field w-full"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Sort order</label>
+            <input
+              name="sort_order"
+              type="number"
+              defaultValue={row.sort_order ?? 0}
+              className="field w-full"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <QuoteNotesSectionFields defaults={notesSectionDefaults} variant="new" />
+          </div>
+          <div className="sm:col-span-2">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">Starter line items</p>
+            <QuoteTemplateLineItemsEditor initialLineItems={lineItems} />
+          </div>
+          <div className="flex flex-wrap gap-2 sm:col-span-2">
             <SubmitButton pendingLabel="Saving…">Save changes</SubmitButton>
             <Link href="/admin/quotes/templates" className="btn-secondary">
               Cancel

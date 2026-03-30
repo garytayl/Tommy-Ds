@@ -1,6 +1,8 @@
 import Link from "next/link";
 
+import { QuoteNotesSectionFields } from "@/components/QuoteNotesSectionFields";
 import { SubmitButton } from "@/components/SubmitButton";
+import { quoteNotesToSections } from "@/lib/quote-notes-sections";
 import { coerceQuoteTemplateLineItems } from "@/lib/quote-templates";
 import { createSupabaseServerClientForData } from "@/lib/supabase/server";
 
@@ -30,49 +32,42 @@ export default async function QuoteTemplatesPage() {
       </div>
 
       <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-        <span className="block h-1 w-12 rounded-full bg-primary/80" />
-        <h2 className="mt-3 text-base font-semibold text-foreground">Add template</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Pre-fill title, scope notes, and optional line items. Staff can still edit everything on the estimate.
+        <p className="text-sm text-muted-foreground">
+          Pre-fill title, the same scope sections as a new estimate, and optional line items. Staff can still edit
+          everything on the estimate.
         </p>
-        <form action={createQuoteTemplate} className="mt-4 space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Name</label>
-              <input name="name" type="text" required placeholder="e.g. Bathroom vanity" className="field w-full" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Short description</label>
-              <input
-                name="description"
-                type="text"
-                placeholder="Shown under the name when picking a template"
-                className="field w-full"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Default title</label>
-              <input name="default_title" type="text" placeholder="Pre-filled estimate title" className="field w-full" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Sort order</label>
-              <input name="sort_order" type="number" defaultValue={0} className="field w-full" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">Scope / notes (plain text)</label>
-              <textarea
-                name="notes_text"
-                rows={10}
-                placeholder="Pre-filled estimate notes (same structure you would type on an estimate)"
-                className="field min-h-[12rem] w-full font-mono text-sm"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">Starter line items (optional)</p>
-              <QuoteTemplateLineItemsEditor initialLineItems={[]} />
-            </div>
+        <form action={createQuoteTemplate} className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Name</label>
+            <input name="name" type="text" required placeholder="e.g. Bathroom vanity" className="field w-full" />
           </div>
-          <SubmitButton pendingLabel="Creating…">Create template</SubmitButton>
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Short description</label>
+            <input
+              name="description"
+              type="text"
+              placeholder="Shown under the name when picking a template"
+              className="field w-full"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Default title</label>
+            <input name="default_title" type="text" placeholder="Pre-filled estimate title" className="field w-full" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Sort order</label>
+            <input name="sort_order" type="number" defaultValue={0} className="field w-full" />
+          </div>
+          <div className="sm:col-span-2">
+            <QuoteNotesSectionFields defaults={quoteNotesToSections("")} variant="new" />
+          </div>
+          <div className="sm:col-span-2">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">Starter line items (optional)</p>
+            <QuoteTemplateLineItemsEditor initialLineItems={[]} />
+          </div>
+          <div className="flex flex-wrap gap-2 sm:col-span-2">
+            <SubmitButton pendingLabel="Creating…">Create template</SubmitButton>
+          </div>
         </form>
       </section>
 
