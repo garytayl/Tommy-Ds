@@ -14,6 +14,7 @@ import { centsToDollars, formatCents, dollarsToCents } from "@/lib/money";
 import { getPrintVsLiveDriftMessages } from "@/lib/quote-print-drift";
 import type { ItemLike } from "@/lib/quote-print-overrides";
 import { autoRecordQuoteRevisionIfChanged, recordQuoteRevisionForced } from "@/lib/quote-revision-auto";
+import { describeQuoteSnapshotChanges } from "@/lib/quote-revision-diff";
 import type { QuoteRevisionSnapshot } from "@/lib/quote-revisions";
 import { setToastCookie } from "@/lib/toast";
 import { workflowStageLabel } from "@/lib/quote-workflow";
@@ -1092,8 +1093,16 @@ export default async function QuoteDetailPage({
             <p className="mt-3 text-xs text-muted-foreground">No revisions yet — they appear when you save changes to this quote.</p>
           ) : (
             <ol className="mt-4 space-y-4 border-l border-border pl-4">
-              {revisions.map((r) => {
+              {revisions.map((r, revIndex) => {
                 const snap = r.snapshot as QuoteRevisionSnapshot | null | undefined;
+                const older = revisions[revIndex + 1];
+                const beforeSnap = older?.snapshot as QuoteRevisionSnapshot | null | undefined;
+                const changeLines =
+                  snap != null ? describeQuoteSnapshotChanges(beforeSnap ?? null, snap) : [];
+                const changesHeading =
+                  changeLines.length === 1 && changeLines[0].startsWith("First revision")
+                    ? "About this revision"
+                    : "Changes from previous revision";
                 return (
                   <li key={r.id} className="relative text-sm">
                     <span className="absolute -left-[1.15rem] top-1.5 h-2 w-2 rounded-full bg-primary" aria-hidden />
@@ -1105,6 +1114,22 @@ export default async function QuoteDetailPage({
                       {new Date(r.created_at).toLocaleString()}
                       {r.created_by ? <> · {authorNames.get(r.created_by) ?? "Staff"}</> : null}
                     </p>
+                    {changeLines.length > 0 && (
+                      <div className="mt-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                        <p className="text-xs font-medium text-foreground">{changesHeading}</p>
+                        <ul className="mt-1.5 list-disc space-y-1 pl-4 text-xs text-muted-foreground">
+                          {changeLines.map((line, li) => (
+                            <li key={li} className={line.startsWith("  ") ? "list-none pl-0 text-[0.8rem] leading-snug" : "leading-snug"}>
+                              {line.startsWith("  ") ? (
+                                <span className="block border-l border-border pl-2 text-muted-foreground/95">{line.trim()}</span>
+                              ) : (
+                                line
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     {snap && (
                       <details className="mt-2 rounded-lg border border-border bg-muted/15 px-3 py-2">
                         <summary className="cursor-pointer text-xs font-medium text-foreground">
