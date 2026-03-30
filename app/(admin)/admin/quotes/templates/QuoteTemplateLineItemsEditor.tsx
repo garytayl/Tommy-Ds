@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { centsToDollars } from "@/lib/money";
-import type { QuoteTemplateLineItem } from "@/lib/quote-templates";
+import { type QuoteTemplateLineItem, VW_STONE_WORX_LINE_ITEM_DESCRIPTION_PLACEHOLDER } from "@/lib/quote-templates";
 
 function dollarsInput(cents: number): string {
   if (cents === 0) return "";
@@ -86,8 +86,8 @@ export function QuoteTemplateLineItemsEditor({
                     return copy;
                   })
                 }
-                placeholder="Line item description"
-                className="field w-full"
+                placeholder={VW_STONE_WORX_LINE_ITEM_DESCRIPTION_PLACEHOLDER}
+                className="field w-full placeholder:text-muted-foreground/70"
                 autoComplete="off"
               />
             </div>

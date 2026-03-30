@@ -7,6 +7,11 @@ import { useMemo, useState, useTransition } from "react";
 
 import type { ItemLike, MergedQuotePrint, QuotePrintLineOverride, QuotePrintOverrides } from "@/lib/quote-print-overrides";
 import { centsToDollars } from "@/lib/money";
+import {
+  QUOTE_PRINT_EDITOR_FOOTER_PLACEHOLDER,
+  QUOTE_PRINT_EDITOR_NOTES_BLOCK_PLACEHOLDER,
+  QUOTE_PRINT_EDITOR_PROJECT_ADDRESS_PLACEHOLDER,
+} from "@/lib/quote-notes-sections";
 
 import { clearQuotePrintOverrides, saveQuotePrintOverrides } from "./actions";
 
@@ -207,7 +212,12 @@ export function QuotePrintEditorForm({ quoteId, merged, hasSavedOverrides }: Pro
 
       <label className="block">
         <span className="text-xs font-medium text-muted-foreground">Project address</span>
-        <textarea className="field mt-1 min-h-[4rem] w-full" value={projectAddress} onChange={(e) => setProjectAddress(e.target.value)} />
+        <textarea
+          className="field mt-1 min-h-[4rem] w-full placeholder:text-muted-foreground/70"
+          value={projectAddress}
+          onChange={(e) => setProjectAddress(e.target.value)}
+          placeholder={QUOTE_PRINT_EDITOR_PROJECT_ADDRESS_PLACEHOLDER}
+        />
       </label>
 
       <div className="rounded-xl border border-border bg-muted/20 p-4">
@@ -412,16 +422,21 @@ export function QuotePrintEditorForm({ quoteId, merged, hasSavedOverrides }: Pro
       <label className="block">
         <span className="text-xs font-medium text-muted-foreground">Notes / details block</span>
         <textarea
-          className="field mt-1 min-h-[12rem] w-full font-mono text-sm leading-relaxed"
+          className="field mt-1 min-h-[12rem] w-full font-mono text-sm leading-relaxed placeholder:text-muted-foreground/70"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Shown in the estimate details section on the PDF"
+          placeholder={QUOTE_PRINT_EDITOR_NOTES_BLOCK_PLACEHOLDER}
         />
       </label>
 
       <label className="block">
         <span className="text-xs font-medium text-muted-foreground">Extra footer note (optional)</span>
-        <textarea className="field mt-1 min-h-[3rem] w-full text-sm" value={footerNote} onChange={(e) => setFooterNote(e.target.value)} />
+        <textarea
+          className="field mt-1 min-h-[3rem] w-full text-sm placeholder:text-muted-foreground/70"
+          value={footerNote}
+          onChange={(e) => setFooterNote(e.target.value)}
+          placeholder={QUOTE_PRINT_EDITOR_FOOTER_PLACEHOLDER}
+        />
       </label>
 
       <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">

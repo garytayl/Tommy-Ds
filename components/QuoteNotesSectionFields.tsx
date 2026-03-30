@@ -1,8 +1,15 @@
 import type { QuoteNotesSections } from "@/lib/quote-notes-sections";
-import { FORM_PREFIX } from "@/lib/quote-notes-sections";
+import { FORM_PREFIX, QUOTE_NOTES_SECTION_PLACEHOLDERS } from "@/lib/quote-notes-sections";
 import { cn } from "@/lib/utils";
 
-const field = (name: keyof QuoteNotesSections, label: string, hint: string, rows: number, defaults: QuoteNotesSections) => (
+const field = (
+  name: keyof QuoteNotesSections,
+  label: string,
+  hint: string,
+  rows: number,
+  defaults: QuoteNotesSections,
+  placeholder: string,
+) => (
   <div className="rounded-lg border border-border bg-card px-3 py-3 shadow-sm">
     <label className="mb-1 block text-xs font-medium text-muted-foreground" htmlFor={`${FORM_PREFIX}${name}`}>
       {label}
@@ -13,7 +20,8 @@ const field = (name: keyof QuoteNotesSections, label: string, hint: string, rows
       name={`${FORM_PREFIX}${name}`}
       rows={rows}
       defaultValue={defaults[name]}
-      className="field min-h-[4.5rem] w-full resize-y font-mono text-sm leading-relaxed"
+      placeholder={placeholder}
+      className="field min-h-[4.5rem] w-full resize-y font-mono text-sm leading-relaxed placeholder:text-muted-foreground/70"
       spellCheck={false}
     />
   </div>
@@ -49,6 +57,7 @@ export function QuoteNotesSectionFields({
             : "First lines after COUNTERTOP ESTIMATE — e.g. date and quote number. You can start with COUNTERTOP ESTIMATE (Quote #1) or leave that to the system.",
           tight ? 5 : 6,
           defaults,
+          QUOTE_NOTES_SECTION_PLACEHOLDERS.cover,
         )}
         {field(
           "customer_information",
@@ -56,6 +65,7 @@ export function QuoteNotesSectionFields({
           "Name, address, phone — lines under CUSTOMER INFORMATION.",
           tight ? 4 : 5,
           defaults,
+          QUOTE_NOTES_SECTION_PLACEHOLDERS.customer_information,
         )}
         {field(
           "project_details",
@@ -63,6 +73,7 @@ export function QuoteNotesSectionFields({
           "Materials, edge, backsplash, sink, installation notes under PROJECT DETAILS.",
           tight ? 5 : 6,
           defaults,
+          QUOTE_NOTES_SECTION_PLACEHOLDERS.project_details,
         )}
         {field(
           "pricing",
@@ -70,6 +81,7 @@ export function QuoteNotesSectionFields({
           "Reference subtotal/tax/total; line items still control system totals.",
           tight ? 4 : 5,
           defaults,
+          QUOTE_NOTES_SECTION_PLACEHOLDERS.pricing,
         )}
       </div>
 
@@ -80,6 +92,7 @@ export function QuoteNotesSectionFields({
           "Fabricator limits, measurement caveats, what is included or excluded.",
           tight ? 5 : 6,
           defaults,
+          QUOTE_NOTES_SECTION_PLACEHOLDERS.scope_notes,
         )}
         {field(
           "key_terms",
@@ -87,6 +100,7 @@ export function QuoteNotesSectionFields({
           "Validity, deposit, exclusions, plumbing, template rules.",
           tight ? 6 : 8,
           defaults,
+          QUOTE_NOTES_SECTION_PLACEHOLDERS.key_terms,
         )}
       </div>
 
@@ -102,7 +116,8 @@ export function QuoteNotesSectionFields({
           name={`${FORM_PREFIX}misc`}
           rows={tight ? 3 : 4}
           defaultValue={defaults.misc}
-          className="field min-h-[3rem] w-full resize-y font-mono text-sm leading-relaxed"
+          placeholder={QUOTE_NOTES_SECTION_PLACEHOLDERS.misc}
+          className="field min-h-[3rem] w-full resize-y font-mono text-sm leading-relaxed placeholder:text-muted-foreground/70"
           spellCheck={false}
         />
       </div>

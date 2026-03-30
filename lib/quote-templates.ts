@@ -94,7 +94,10 @@ export const BLANK_QUOTE_TEMPLATE_ID = "blank";
 /** Deep link: `/admin/quotes/new?template=${VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID}` */
 export const VW_STONE_WORX_COUNTERTOP_TEMPLATE_ID = "vw_stone_worx_countertop";
 
-/** VW / Stone Worx–style kitchen countertop scope + terms (Indiana). */
+/**
+ * VW / Stone Worx–style kitchen countertop scope + terms (Indiana).
+ * Empty-field placeholders in the estimate UI mirror this (`QUOTE_NOTES_SECTION_PLACEHOLDERS` in `@/lib/quote-notes-sections`).
+ */
 export function buildVwStoneWorxCountertopNotes(asOf: Date = new Date()): string {
   const dateStr = asOf.toLocaleDateString("en-US", {
     year: "numeric",
@@ -134,9 +137,12 @@ KEY TERMS / CONDITIONS
 • 50% deposit required to proceed`;
 }
 
+/** Same copy as the VW / Stone Worx starter line — use as placeholder on template line-item description fields. */
+export const VW_STONE_WORX_LINE_ITEM_DESCRIPTION_PLACEHOLDER =
+  'Kitchen granite — Black Pearl (Suede); standard edge; 4" backsplash; negative reveal (3 cm); undermount sink install included (sink not included). Enter unit price when known.';
+
 const vwStoneWorxLineItem: QuoteTemplateLineItem = {
-  description:
-    'Kitchen granite — Black Pearl (Suede); standard edge; 4" backsplash; negative reveal (3 cm); undermount sink install included (sink not included). Enter unit price when known.',
+  description: VW_STONE_WORX_LINE_ITEM_DESCRIPTION_PLACEHOLDER,
   qty: 1,
   unit_price_cents: 0,
   line_total_cents: 0,

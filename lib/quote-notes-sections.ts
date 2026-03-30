@@ -45,6 +45,54 @@ export function emptyQuoteNotesSections(): QuoteNotesSections {
   };
 }
 
+/**
+ * Grey placeholder copy for empty section fields — same style as `buildVwStoneWorxCountertopNotes` in
+ * `@/lib/quote-templates`. Update both when the built-in VW / Stone Worx template changes.
+ */
+export const QUOTE_NOTES_SECTION_PLACEHOLDERS: Record<keyof QuoteNotesSections, string> = {
+  cover: "Date: March 15, 2026",
+  customer_information: `Jane Smith
+123 Oak St
+Indianapolis, IN 46204
+(317) 555-0199`,
+  project_details: `Project: Kitchen – Granite Countertop
+Color: Black Pearl (Suede Finish)
+Edge Profile: Standard edge (Bevel not available with this fabricator)
+Backsplash: 4"
+Reveal: Negative reveal (3 cm)
+Thickness: 3 cm
+Sink: Not provided by customer — customer to supply
+Installation: Undermount sink installation included`,
+  pricing: `Subtotal: $4,200.00
+Tax: $297.50
+Total: $4,497.50
+(Reference only — line items control system totals.)`,
+  scope_notes: `• Fabricator does not offer bevel edge for this material/finish
+• Final measurements may affect final pricing`,
+  key_terms: `• Estimate valid for 30 days
+• Based on rough sketch
+• Includes digital template, delivery, and installation
+• Final pricing depends on template measurements
+• Tear-out/removal NOT included
+• Plumbing, electrical, gas, carpentry NOT included
+• Plumbing must be disconnected before install
+• 50% deposit required to proceed`,
+  misc: `DETAILS & NOTES
+Call before arrival. Customer prefers Saturday morning.`,
+};
+
+/** Print PDF editor — project address (example site). */
+export const QUOTE_PRINT_EDITOR_PROJECT_ADDRESS_PLACEHOLDER = `456 Elm Street
+Greenwood, IN 46143`;
+
+/** Print PDF editor — scope / notes block (VW-style excerpt). */
+export const QUOTE_PRINT_EDITOR_NOTES_BLOCK_PLACEHOLDER = `Kitchen – Granite Countertop
+Color: Black Pearl (Suede Finish); standard edge; 4" backsplash; negative reveal (3 cm).
+Undermount sink installation included (sink not included). See KEY TERMS for exclusions.`;
+
+/** Print PDF editor — footer line. */
+export const QUOTE_PRINT_EDITOR_FOOTER_PLACEHOLDER = "Thank you for choosing Tommy D's";
+
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
