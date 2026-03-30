@@ -11,41 +11,50 @@ const Aurora = dynamic(() => import("@/components/Aurora").then((m) => m.default
 
 type Mode = "admin" | "field";
 
+/** Launchpad “Core” — same order as top nav: run the business. */
 const ADMIN_PRIMARY: GlassNavLink[] = [
-  { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/jobs", label: "Jobs" },
+  { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/quotes", label: "Estimates" },
-  { href: "/admin/analytics", label: "Analytics" },
-  { href: "/admin/reports/gas", label: "Gas" },
-  { href: "/admin/customers", label: "Customers" },
-  { href: "/admin/invoices", label: "Invoices" },
 ];
 
 const FIELD_PRIMARY: GlassNavLink[] = [{ href: "/m", label: "My jobs" }];
 
-const ADMIN_MORE_ADMIN: GlassNavSection = {
-  title: "More",
+const ADMIN_LOOKUP: GlassNavSection = {
+  title: "Look up",
   links: [
-    { href: "/admin", label: "Dashboard" },
-    { href: "/admin/crews", label: "Crews" },
-    { href: "/admin/reports", label: "Reports" },
-    { href: "/admin/team", label: "Team" },
+    { href: "/admin/customers", label: "Customers" },
+    { href: "/admin/invoices", label: "Invoices" },
   ],
 };
 
-const ADMIN_MORE_MANAGER: GlassNavSection = {
-  title: "More",
-  links: [
-    { href: "/admin", label: "Dashboard" },
-    { href: "/admin/crews", label: "Crews" },
-    { href: "/admin/reports", label: "Reports" },
-  ],
+const ADMIN_TOOLS_BASE: GlassNavLink[] = [
+  { href: "/admin", label: "Dashboard" },
+  { href: "/admin/analytics", label: "Analytics" },
+  { href: "/admin/reports", label: "Reports" },
+  { href: "/admin/reports/gas", label: "Gas" },
+  { href: "/admin/crews", label: "Crews" },
+  { href: "/admin/locations", label: "Locations" },
+  { href: "/admin/lots", label: "Lots" },
+  { href: "/admin/materials", label: "Materials" },
+  { href: "/admin/scan", label: "Scan" },
+  { href: "/admin/future-features", label: "Future features" },
+];
+
+const ADMIN_TOOLS_ADMIN: GlassNavSection = {
+  title: "Tools & back office",
+  links: [...ADMIN_TOOLS_BASE, { href: "/admin/team", label: "Team" }],
+};
+
+const ADMIN_TOOLS_MANAGER: GlassNavSection = {
+  title: "Tools & back office",
+  links: [...ADMIN_TOOLS_BASE],
 };
 
 function sectionsFor(mode: Mode, role?: ProfileRole): GlassNavSection[] {
   if (mode === "field") return [];
-  if (role === "manager") return [ADMIN_MORE_MANAGER];
-  return [ADMIN_MORE_ADMIN];
+  if (role === "manager") return [ADMIN_LOOKUP, ADMIN_TOOLS_MANAGER];
+  return [ADMIN_LOOKUP, ADMIN_TOOLS_ADMIN];
 }
 
 function primaryLinksFor(mode: Mode): GlassNavLink[] {

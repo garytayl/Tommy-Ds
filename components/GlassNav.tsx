@@ -4,14 +4,20 @@ import { createElement, type ReactNode } from "react";
 
 import { FormSubmitButton } from "@/components/forms/FormSubmitButton";
 import {
+  Boxes,
   BriefcaseBusiness,
   CalendarDays,
-  Circle,
   ChartNoAxesCombined,
+  Circle,
+  ClipboardList,
   Fuel,
   FileCheck2,
   FileText,
+  Lightbulb,
   LayoutDashboard,
+  MapPin,
+  Package,
+  ScanLine,
   Sparkles,
   UserCog,
   Users,
@@ -44,11 +50,15 @@ type GlassNavProps = {
   menuSections?: GlassNavSection[];
 };
 
-function isActive(pathname: string, href: string): boolean {
+function isLinkActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   // `/admin` is a prefix of every office route; only the dashboard root should match exactly.
   if (href === "/admin") {
     return pathname === "/admin" || pathname === "/admin/";
+  }
+  // Reports index only — not /admin/reports/gas
+  if (href === "/admin/reports") {
+    return pathname === "/admin/reports" || pathname === "/admin/reports/";
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -65,17 +75,6 @@ function workspaceHome(mode: "admin" | "field"): string {
   return mode === "field" ? "/m" : "/admin";
 }
 
-function dedupeLinks(links: GlassNavLink[]): GlassNavLink[] {
-  const seen = new Set<string>();
-  const unique: GlassNavLink[] = [];
-  for (const link of links) {
-    if (seen.has(link.href)) continue;
-    seen.add(link.href);
-    unique.push(link);
-  }
-  return unique;
-}
-
 const LINK_ICONS: Record<string, LucideIcon> = {
   "/admin": LayoutDashboard,
   "/admin/schedule": CalendarDays,
@@ -84,9 +83,15 @@ const LINK_ICONS: Record<string, LucideIcon> = {
   "/admin/invoices": FileText,
   "/admin/quotes": FileCheck2,
   "/admin/analytics": ChartNoAxesCombined,
+  "/admin/reports": ClipboardList,
   "/admin/reports/gas": Fuel,
   "/admin/crews": Users2,
   "/admin/team": UserCog,
+  "/admin/locations": MapPin,
+  "/admin/lots": Boxes,
+  "/admin/materials": Package,
+  "/admin/scan": ScanLine,
+  "/admin/future-features": Lightbulb,
   "/m": Wrench,
 };
 
@@ -295,20 +300,6 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
 
   const allSections = useMemo(() => menuSections ?? [], [menuSections]);
   const compactPrimary = useMemo(() => primaryLinks ?? [], [primaryLinks]);
-  const allNavLinks = useMemo(
-    () =>
-      dedupeLinks([
-        ...compactPrimary,
-        ...allSections.flatMap((section) =>
-          section.links.map((link) => ({ href: link.href, label: link.label })),
-        ),
-      ]),
-    [allSections, compactPrimary],
-  );
-  const secondaryLinks = useMemo(() => {
-    const primarySet = new Set(compactPrimary.map((link) => link.href));
-    return allNavLinks.filter((link) => !primarySet.has(link.href));
-  }, [allNavLinks, compactPrimary]);
   const closeMenu = () => setIsOpen(false);
 
   if (!isApp || !mode) {
@@ -407,7 +398,9 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
                   </span>
                   <div>
                     <p className="text-sm font-semibold text-white">Launchpad</p>
-                    <p className="text-xs text-white/60">Tools beyond the core workflow</p>
+                    <p className="text-xs text-white/60">
+                      Start with Jobs, Schedule, or Estimates — then look up or open tools.
+                    </p>
                   </div>
                 </div>
                 <button
@@ -424,7 +417,7 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
                 {compactPrimary.length > 0 ? (
                   <div>
                     <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
-                      Core
+                      Today
                     </p>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {compactPrimary.map((link) => (
@@ -432,7 +425,7 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
                           key={`core-${link.href}`}
                           href={link.href}
                           label={link.label}
-                          active={isActive(pathname, link.href)}
+                          active={isLinkActive(pathname, link.href)}
                           onNavigate={closeMenu}
                           compact
                         />
@@ -441,27 +434,25 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
                   </div>
                 ) : null}
 
-                {secondaryLinks.length > 0 ? (
-                  <div>
+                {allSections.map((section) => (
+                  <div key={section.title}>
                     <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-white/55">
-                      More
+                      {section.title}
                     </p>
                     <div className="grid gap-2 sm:grid-cols-2">
-                      {secondaryLinks.map((link) => (
+                      {section.links.map((link) => (
                         <DockLink
-                          key={`launchpad-${link.href}`}
+                          key={`${section.title}-${link.href}`}
                           href={link.href}
                           label={link.label}
-                          active={isActive(pathname, link.href)}
+                          active={isLinkActive(pathname, link.href)}
                           onNavigate={closeMenu}
                           compact
                         />
                       ))}
                     </div>
                   </div>
-                ) : (
-                  <p className="text-sm text-white/70">No extra tools for this role.</p>
-                )}
+                ))}
 
                 <div className="grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-2">
                   <Link
