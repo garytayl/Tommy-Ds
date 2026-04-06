@@ -25,6 +25,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 # optional but recommended for invite + auth callback links
 NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
+# Optional: enable Stripe pay links in Admin → Billings / Jobs → Billings
+STRIPE_SECRET_KEY=
+# Optional but recommended when using webhook sync at /api/stripe/webhook
+STRIPE_WEBHOOK_SECRET=
 ```
 
 ## Key File Tree

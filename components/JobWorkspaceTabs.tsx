@@ -9,6 +9,7 @@ const TABS = [
   { key: "work", label: "Work", hint: "Field notes, job photos, mark complete. job_photos + jobs.notes." },
   { key: "supplies", label: "Supplies", hint: "Parts per job via job_materials; copy reflects job_kind (warehouse pull vs service/truck)." },
   { key: "invoice", label: "Invoice", hint: "Line items, tax. invoices + invoice_items; recompute_invoice_totals." },
+  { key: "billings", label: "Billings", hint: "Isolated Stripe payment links tied to this job/invoice. isolated_payments table." },
 ] as const;
 
 export function JobWorkspaceTabs() {

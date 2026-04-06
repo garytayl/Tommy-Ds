@@ -17,6 +17,7 @@ const NAV_PRIMARY = [
 const NAV_SECONDARY = [
   { href: "/admin/customers", label: "Customers" },
   { href: "/admin/invoices", label: "Invoices" },
+  { href: "/admin/billings", label: "Billings" },
 ] as const;
 
 /** Look at later / admin / inventory — not daily “what do I do now?” */

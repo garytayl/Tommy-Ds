@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { InvoiceSummary } from "@/components/InvoiceSummary";
+import { CopyToClipboardButton } from "@/components/CopyToClipboardButton";
 import { JobKindBadge, type JobKind } from "@/components/JobKindBadge";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { JobStickyActions } from "@/components/JobStickyActions";
@@ -11,6 +12,7 @@ import { JobWorkspaceTabs } from "@/components/JobWorkspaceTabs";
 import { SubmitButton } from "@/components/SubmitButton";
 import { getCrewDisplayName } from "@/lib/crews";
 import { formatCents, dollarsToCents } from "@/lib/money";
+import { getAppUrl, getStripeServerClient, isStripeConfigured } from "@/lib/stripe";
 import { computeTaxCents } from "@/lib/tax";
 import { jobHasRecordedPayments } from "@/lib/job-destruct";
 import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
@@ -59,12 +61,36 @@ function toLocalInputDate(value: string | null): string {
   return localDate.toISOString().slice(0, 16);
 }
 
+function firstOf<T>(value: T | T[] | null | undefined): T | null {
+  if (!value) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+function normalizePhone(phone: string): string {
+  return phone.replace(/\D/g, "");
+}
+
 type JobPhotoWithUrl = {
   id: string;
   storage_path: string;
   caption: string | null;
   created_at: string;
   signed_url: string | null;
+};
+
+type IsolatedPaymentRow = {
+  id: string;
+  created_at: string;
+  amount_cents: number;
+  description: string;
+  note: string | null;
+  status: string;
+  stripe_checkout_url: string | null;
+  invoice_id: string | null;
+  customers:
+    | { name: string | null; email: string | null; phone: string | null }
+    | { name: string | null; email: string | null; phone: string | null }[]
+    | null;
 };
 
 export default async function JobWorkspacePage({
@@ -84,7 +110,7 @@ export default async function JobWorkspacePage({
   const jobResult = await supabase
     .from("jobs")
     .select(
-      "id,title,status,notes,job_kind,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone)",
+      "id,title,status,notes,job_kind,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,assigned_installer_id,assigned_crew_id,customers(id,name,phone,email)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -100,6 +126,7 @@ export default async function JobWorkspacePage({
     activitiesResult,
     jobNotesResult,
     quoteResult,
+    isolatedPaymentsResult,
   ] = await Promise.all([
       supabase
         .from("invoices")
@@ -148,6 +175,13 @@ export default async function JobWorkspacePage({
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from("isolated_payments")
+        .select(
+          "id,created_at,amount_cents,description,note,status,stripe_checkout_url,invoice_id,customers(name,email,phone)",
+        )
+        .eq("job_id", id)
+        .order("created_at", { ascending: false }),
     ]);
 
   const invoiceId = invoiceResult.data?.id ?? null;
@@ -175,8 +209,8 @@ export default async function JobWorkspacePage({
     assigned_installer_id: string | null;
     assigned_crew_id: string | null;
     customers:
-      | { id: string; name: string; phone: string | null }
-      | { id: string; name: string; phone: string | null }[]
+      | { id: string; name: string; phone: string | null; email: string | null }
+      | { id: string; name: string; phone: string | null; email: string | null }[]
       | null;
   };
 
@@ -197,6 +231,7 @@ export default async function JobWorkspacePage({
   const items = itemsResult.data ?? [];
   const allMaterials = materialsResult.data ?? [];
   const allLocations = locationsResult.data ?? [];
+  const isolatedPayments = (isolatedPaymentsResult.data ?? []) as IsolatedPaymentRow[];
 
   if (!jobRecord) {
     return (
@@ -245,6 +280,7 @@ export default async function JobWorkspacePage({
   const mapQuery = encodeURIComponent(fullAddress);
   const mapsUrl = `https://maps.google.com/?q=${mapQuery}`;
   const balanceDueCents = invoice?.balance_due_cents ?? 0;
+  const stripeEnabled = isStripeConfigured();
 
   let photosWithUrls: JobPhotoWithUrl[] = photos.map((p) => ({
     ...p,
@@ -418,6 +454,86 @@ export default async function JobWorkspacePage({
     await setToastCookie("Tax updated");
     revalidatePath(`/jobs/${id}`);
     revalidatePath(`/admin/invoices/${invoice.id}`);
+  }
+
+  async function createIsolatedPayment(formData: FormData) {
+    "use server";
+    const session = await getOfficeSessionOrNull();
+    if (!session) {
+      await setToastCookie(UNAUTHORIZED_TOAST);
+      return;
+    }
+    if (!isStripeConfigured()) {
+      await setToastCookie("Stripe is not configured. Add STRIPE_SECRET_KEY.");
+      return;
+    }
+
+    const description = String(formData.get("description") ?? "").trim();
+    const amountCents = dollarsToCents(String(formData.get("amount") ?? "0"));
+    const note = String(formData.get("note") ?? "").trim() || null;
+    if (!description || amountCents <= 0) {
+      await setToastCookie("Enter a description and amount greater than $0.");
+      return;
+    }
+
+    const { supabase, profile } = session;
+    const { data: jobForBilling } = await supabase
+      .from("jobs")
+      .select("customer_id,customers(email)")
+      .eq("id", id)
+      .maybeSingle();
+
+    const customerEmail = firstOf(
+      (jobForBilling?.customers ?? null) as
+        | { email: string | null }
+        | { email: string | null }[]
+        | null,
+    )?.email;
+
+    const stripe = getStripeServerClient();
+    const appUrl = getAppUrl();
+    const stripeSession = await stripe.checkout.sessions.create({
+      mode: "payment",
+      success_url: `${appUrl}/pay/success`,
+      cancel_url: `${appUrl}/pay/cancel`,
+      customer_email: customerEmail ?? undefined,
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: "usd",
+            unit_amount: amountCents,
+            product_data: {
+              name: description,
+              description: note ?? undefined,
+            },
+          },
+        },
+      ],
+      metadata: {
+        source: "isolated_payment",
+        invoice_id: invoice?.id ?? "",
+        job_id: id,
+      },
+    });
+
+    await supabase.from("isolated_payments").insert({
+      amount_cents: amountCents,
+      description,
+      note,
+      status: "open",
+      invoice_id: invoice?.id ?? null,
+      job_id: id,
+      customer_id: jobForBilling?.customer_id ?? null,
+      stripe_checkout_session_id: stripeSession.id,
+      stripe_checkout_url: stripeSession.url,
+      created_by: profile.user_id,
+    });
+
+    await setToastCookie("Payment link created");
+    revalidatePath(`/jobs/${id}`);
+    revalidatePath("/admin/billings");
+    if (invoice?.id) revalidatePath(`/admin/invoices/${invoice.id}`);
   }
 
   async function addJobMaterial(formData: FormData) {
@@ -1073,6 +1189,162 @@ export default async function JobWorkspacePage({
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {tab === "billings" && (
+        <div className="mt-6 space-y-6">
+          {!stripeEnabled && (
+            <div className="rounded-xl border border-amber-400/60 bg-amber-100/40 p-4 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-900/20 dark:text-amber-100">
+              Stripe is not configured yet. Add <code>STRIPE_SECRET_KEY</code> to
+              enable pay-link creation.
+            </div>
+          )}
+
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-foreground">Create payment link</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Create an isolated Stripe payment request and send the link to the
+              customer.
+            </p>
+            <form action={createIsolatedPayment} className="mt-4 grid gap-2 sm:grid-cols-3">
+              <input
+                type="text"
+                name="description"
+                required
+                defaultValue={invoice ? `Invoice #${invoice.invoice_number} payment` : `Payment for ${job.title}`}
+                placeholder="Description"
+                className="field sm:col-span-2"
+              />
+              <input
+                type="number"
+                name="amount"
+                required
+                min="0.50"
+                step="0.01"
+                defaultValue={invoice ? (invoice.balance_due_cents / 100).toFixed(2) : undefined}
+                placeholder="Amount ($)"
+                className="field"
+              />
+              <input
+                type="text"
+                name="note"
+                placeholder="Optional internal note"
+                className="field sm:col-span-2"
+              />
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={!stripeEnabled}
+              >
+                Create pay link
+              </button>
+            </form>
+            {invoice ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                This payment link will be tied to invoice{" "}
+                <Link href={`/admin/invoices/${invoice.id}`} className="link">
+                  #{invoice.invoice_number}
+                </Link>{" "}
+                and will record a payment when Stripe confirms checkout.
+              </p>
+            ) : null}
+          </div>
+
+          <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+            <div className="border-b border-border bg-muted/50 px-4 py-3">
+              <h2 className="text-base font-semibold text-foreground">Payment links</h2>
+            </div>
+            <div className="table-wrap overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="table-header py-3 pl-5 pr-4">Created</th>
+                    <th className="table-header py-3 pr-4">Description</th>
+                    <th className="table-header py-3 pr-4">Amount</th>
+                    <th className="table-header py-3 pr-4">Status</th>
+                    <th className="table-header py-3 pr-5">Send</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isolatedPayments.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                        No payment links for this job yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    isolatedPayments.map((payment) => {
+                      const paymentCustomer = firstOf(payment.customers) ?? customer;
+                      const phoneRaw = paymentCustomer?.phone ?? "";
+                      const phone = phoneRaw ? normalizePhone(phoneRaw) : "";
+                      const email = paymentCustomer?.email?.trim() ?? "";
+                      const amount = formatCents(payment.amount_cents);
+                      const payLink = payment.stripe_checkout_url ?? "";
+                      const smsBody = encodeURIComponent(`Payment link for ${amount}: ${payLink}`);
+                      const mailSubject = encodeURIComponent(`Payment link: ${payment.description}`);
+                      const mailBody = encodeURIComponent(
+                        `Hi,\n\nHere is your payment link for ${amount}.\n${payLink}\n\nThank you.`,
+                      );
+
+                      return (
+                        <tr key={payment.id} className="border-b border-border">
+                          <td className="py-3 pl-5 pr-4 text-muted-foreground">
+                            {new Date(payment.created_at).toLocaleString()}
+                          </td>
+                          <td className="py-3 pr-4">
+                            <p className="font-medium text-foreground">{payment.description}</p>
+                            {payment.note ? (
+                              <p className="text-xs text-muted-foreground">{payment.note}</p>
+                            ) : null}
+                          </td>
+                          <td className="py-3 pr-4 tabular-nums">{amount}</td>
+                          <td className="py-3 pr-4">
+                            <span className="inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium capitalize text-muted-foreground">
+                              {payment.status}
+                            </span>
+                          </td>
+                          <td className="py-3 pr-5">
+                            {payLink ? (
+                              <div className="flex flex-wrap gap-2">
+                                <a
+                                  href={payLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn-secondary py-1.5 text-xs"
+                                >
+                                  Open
+                                </a>
+                                <CopyToClipboardButton value={payLink} />
+                                {phone ? (
+                                  <a
+                                    href={`sms:${phone}?body=${smsBody}`}
+                                    className="btn-secondary py-1.5 text-xs"
+                                  >
+                                    Text
+                                  </a>
+                                ) : null}
+                                {email ? (
+                                  <a
+                                    href={`mailto:${encodeURIComponent(email)}?subject=${mailSubject}&body=${mailBody}`}
+                                    className="btn-secondary py-1.5 text-xs"
+                                  >
+                                    Email
+                                  </a>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">No checkout link</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
