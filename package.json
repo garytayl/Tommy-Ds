@@ -12,6 +12,7 @@
     "storage:clear": "node --env-file=.env.local scripts/clear-storage-buckets.mjs"
   },
   "dependencies": {
+    "@stripe/terminal-js": "^0.26.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.98.0",
     "clsx": "^2.1.1",

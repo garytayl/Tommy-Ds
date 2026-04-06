@@ -29,6 +29,8 @@ NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
 STRIPE_SECRET_KEY=
 # Optional but recommended when using webhook sync at /api/stripe/webhook
 STRIPE_WEBHOOK_SECRET=
+# Optional: enable Stripe Terminal reader-based in-person checkout
+STRIPE_TERMINAL_LOCATION_ID=tml_...
 ```
 
 ## Key File Tree
