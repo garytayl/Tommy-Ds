@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { CopyToClipboardButton } from "@/components/CopyToClipboardButton";
 import { PaymentTemplateAutofill } from "@/components/PaymentTemplateAutofill";
@@ -96,6 +97,8 @@ export default async function BillingsPage() {
     const note = String(formData.get("note") ?? "").trim() || null;
     const invoiceId = String(formData.get("invoice_id") ?? "").trim() || null;
     const submittedJobId = String(formData.get("job_id") ?? "").trim() || null;
+    const collectionMode = String(formData.get("collection_mode") ?? "link").trim();
+    const collectNow = collectionMode === "collect_now";
 
     if (!description || amountCents <= 0) {
       await setToastCookie("Enter a description and amount greater than $0.");
@@ -174,10 +177,15 @@ export default async function BillingsPage() {
       created_by: profile.user_id,
     });
 
-    await setToastCookie("Payment link created");
     revalidatePath("/admin/billings");
     if (resolvedJobId) revalidatePath(`/jobs/${resolvedJobId}`);
     if (invoiceId) revalidatePath(`/admin/invoices/${invoiceId}`);
+
+    if (collectNow && stripeSession.url) {
+      redirect(stripeSession.url);
+    }
+
+    await setToastCookie("Payment link created");
   }
 
   return (
@@ -188,7 +196,8 @@ export default async function BillingsPage() {
         </p>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Billings</h1>
         <p className="text-sm text-muted-foreground">
-          Create isolated Stripe payment links and send them to customers.
+          Create isolated Stripe payments: send a link or collect now on this
+          phone.
         </p>
       </header>
 
@@ -274,13 +283,26 @@ export default async function BillingsPage() {
               );
             })}
           </select>
-          <button
-            type="submit"
-            className="btn-primary py-3 sm:col-span-2"
-            disabled={!stripeEnabled}
-          >
-            Create pay link
-          </button>
+          <div className="grid gap-2 sm:col-span-2 sm:grid-cols-2">
+            <button
+              type="submit"
+              name="collection_mode"
+              value="link"
+              className="btn-primary py-3"
+              disabled={!stripeEnabled}
+            >
+              Create pay link
+            </button>
+            <button
+              type="submit"
+              name="collection_mode"
+              value="collect_now"
+              className="btn-secondary py-3"
+              disabled={!stripeEnabled}
+            >
+              Collect now on phone
+            </button>
+          </div>
         </form>
       </section>
 

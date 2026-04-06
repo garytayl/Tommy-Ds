@@ -472,6 +472,8 @@ export default async function JobWorkspacePage({
     const description = String(formData.get("description") ?? "").trim();
     const amountCents = dollarsToCents(String(formData.get("amount") ?? "0"));
     const note = String(formData.get("note") ?? "").trim() || null;
+    const collectionMode = String(formData.get("collection_mode") ?? "link").trim();
+    const collectNow = collectionMode === "collect_now";
     if (!description || amountCents <= 0) {
       await setToastCookie("Enter a description and amount greater than $0.");
       return;
@@ -531,10 +533,15 @@ export default async function JobWorkspacePage({
       created_by: profile.user_id,
     });
 
-    await setToastCookie("Payment link created");
     revalidatePath(`/jobs/${id}`);
     revalidatePath("/admin/billings");
     if (invoice?.id) revalidatePath(`/admin/invoices/${invoice.id}`);
+
+    if (collectNow && stripeSession.url) {
+      redirect(stripeSession.url);
+    }
+
+    await setToastCookie("Payment link created");
   }
 
   async function addJobMaterial(formData: FormData) {
@@ -1205,8 +1212,8 @@ export default async function JobWorkspacePage({
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
             <h2 className="text-base font-semibold text-foreground">Create payment link</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Create an isolated Stripe payment request and send the link to the
-              customer.
+              Create an isolated Stripe payment request, then either send a link
+              or collect on this phone.
             </p>
             <form action={createIsolatedPayment} className="mt-4 grid gap-3 sm:grid-cols-3">
               <PaymentTemplateAutofill
@@ -1247,13 +1254,26 @@ export default async function JobWorkspacePage({
                 placeholder="Optional internal note"
                 className="field min-h-10 sm:col-span-2"
               />
-              <button
-                type="submit"
-                className="btn-primary min-h-10"
-                disabled={!stripeEnabled}
-              >
-                Create pay link
-              </button>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button
+                  type="submit"
+                  name="collection_mode"
+                  value="link"
+                  className="btn-primary min-h-10"
+                  disabled={!stripeEnabled}
+                >
+                  Create pay link
+                </button>
+                <button
+                  type="submit"
+                  name="collection_mode"
+                  value="collect_now"
+                  className="btn-secondary min-h-10"
+                  disabled={!stripeEnabled}
+                >
+                  Collect now on phone
+                </button>
+              </div>
             </form>
             {invoice ? (
               <p className="mt-2 text-xs text-muted-foreground">

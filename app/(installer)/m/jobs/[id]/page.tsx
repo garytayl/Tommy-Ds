@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { CopyToClipboardButton } from "@/components/CopyToClipboardButton";
 import { type JobKind } from "@/components/JobKindBadge";
@@ -197,6 +197,8 @@ export default async function InstallerJobPage({
     const amountCents = dollarsToCents(String(formData.get("amount") ?? "0"));
     const descriptionInput = String(formData.get("description") ?? "").trim();
     const note = String(formData.get("note") ?? "").trim() || null;
+    const collectionMode = String(formData.get("collection_mode") ?? "link").trim();
+    const collectNow = collectionMode === "collect_now";
     const description =
       descriptionInput || `${jobTitle} — payment request`;
 
@@ -244,11 +246,16 @@ export default async function InstallerJobPage({
       created_by: profile.user_id,
     });
 
-    await setToastCookie("Payment link created");
     revalidatePath("/m");
     revalidatePath(`/m/jobs/${id}`);
     revalidatePath(`/jobs/${id}`);
     if (invoice?.id) revalidatePath(`/admin/invoices/${invoice.id}`);
+
+    if (collectNow && stripeSession.url) {
+      redirect(stripeSession.url);
+    }
+
+    await setToastCookie("Payment link created");
   }
 
   return (
@@ -376,7 +383,8 @@ export default async function InstallerJobPage({
       <div id="billing" className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <h2 className="text-base font-semibold text-foreground">Billing</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Create a payment link while on site and send it by text.
+          Create a payment link while on site, or collect payment now on this
+          phone.
         </p>
         {!stripeEnabled && (
           <p className="mt-3 rounded-lg border border-amber-400/60 bg-amber-100/40 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-900/20 dark:text-amber-100">
@@ -419,9 +427,26 @@ export default async function InstallerJobPage({
             placeholder="Optional note"
             className="field min-h-11 sm:col-span-3"
           />
-          <button type="submit" className="btn-primary min-h-11 sm:col-span-3" disabled={!stripeEnabled}>
-            Create pay link
-          </button>
+          <div className="grid gap-2 sm:col-span-3 sm:grid-cols-2">
+            <button
+              type="submit"
+              name="collection_mode"
+              value="link"
+              className="btn-primary min-h-11"
+              disabled={!stripeEnabled}
+            >
+              Create pay link
+            </button>
+            <button
+              type="submit"
+              name="collection_mode"
+              value="collect_now"
+              className="btn-secondary min-h-11"
+              disabled={!stripeEnabled}
+            >
+              Collect now on phone
+            </button>
+          </div>
         </form>
 
         <div className="mt-4 space-y-2">
