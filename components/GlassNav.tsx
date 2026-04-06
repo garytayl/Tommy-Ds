@@ -398,10 +398,10 @@ export function GlassNav({ mode, primaryLinks, menuSections }: GlassNavProps) {
             onClick={closeMenu}
             className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[2px] print:hidden"
           />
-          <div className="fixed inset-0 z-50 flex items-start justify-center p-3 pt-20 print:hidden sm:p-6 sm:pt-24">
+          <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain p-3 pt-20 print:hidden [-webkit-overflow-scrolling:touch] sm:p-6 sm:pt-24">
             <div
               id="glass-app-pages-panel"
-              className="pointer-events-auto w-full max-w-xl rounded-3xl border border-white/20 bg-black/70 p-4 shadow-2xl backdrop-blur-2xl"
+              className="pointer-events-auto my-1 w-full max-w-xl max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-3xl border border-white/20 bg-black/70 p-4 shadow-2xl backdrop-blur-2xl [-webkit-overflow-scrolling:touch] sm:max-h-[calc(100dvh-7rem)]"
             >
               <div className="flex items-start justify-between gap-2 border-b border-white/10 pb-3">
                 <Link
