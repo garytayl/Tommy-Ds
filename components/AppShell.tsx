@@ -25,6 +25,7 @@ const ADMIN_LOOKUP: GlassNavSection = {
   links: [
     { href: "/admin/customers", label: "Customers" },
     { href: "/admin/invoices", label: "Invoices" },
+    { href: "/admin/billings", label: "Billings" },
   ],
 };
 

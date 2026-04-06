@@ -6,6 +6,7 @@ import { FormSubmitButton } from "@/components/forms/FormSubmitButton";
 import {
   Boxes,
   BriefcaseBusiness,
+  CreditCard,
   CalendarDays,
   ChartNoAxesCombined,
   ChevronDown,
@@ -91,6 +92,7 @@ const LINK_ICONS: Record<string, LucideIcon> = {
   "/admin/jobs": BriefcaseBusiness,
   "/admin/customers": Users,
   "/admin/invoices": FileText,
+  "/admin/billings": CreditCard,
   "/admin/quotes": FileCheck2,
   "/admin/analytics": ChartNoAxesCombined,
   "/admin/reports": ClipboardList,

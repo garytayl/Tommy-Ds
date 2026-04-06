@@ -295,6 +295,12 @@ export default async function InstallerJobPage({
               >
                 Navigate
               </a>
+              <a
+                href="#billing-section"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+              >
+                Billing
+              </a>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -308,7 +314,7 @@ export default async function InstallerJobPage({
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div id="billing-section" className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <h2 className="text-base font-semibold text-foreground">Notes</h2>
         <form action={updateFieldNotes} className="mt-3 space-y-3">
           <textarea
@@ -363,7 +369,7 @@ export default async function InstallerJobPage({
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div id="billing" className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <h2 className="text-base font-semibold text-foreground">Billing</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Create a payment link while on site and send it by text.

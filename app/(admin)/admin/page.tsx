@@ -160,6 +160,12 @@ export default async function TodayCommandCenterPage() {
         >
           All jobs
         </Link>
+        <Link
+          href="/admin/billings"
+          className="inline-flex items-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-all duration-200 hover:scale-105 hover:bg-muted hover:shadow-sm active:scale-95"
+        >
+          Billings
+        </Link>
       </div>
 
       {/* Schedule strip: Today / Tomorrow / This week */}

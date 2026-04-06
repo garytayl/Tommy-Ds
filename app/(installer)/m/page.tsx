@@ -73,6 +73,24 @@ export default async function InstallerTodayPage() {
         </p>
       </div>
 
+      <div className="animate-fade-in-section schedule-delay-75 rounded-xl border border-border bg-card p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-foreground">Billing</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Open any job and use the Billing section to create and send a pay link.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {nextJob ? (
+            <Link href={`/m/jobs/${nextJob.id}`} className="btn-primary">
+              Open billing on next job
+            </Link>
+          ) : (
+            <Link href="/m" className="btn-secondary">
+              No assigned jobs yet
+            </Link>
+          )}
+        </div>
+      </div>
+
       {nextJob && (
         <div className="animate-card-in schedule-delay-75 rounded-2xl border-2 border-primary/30 bg-card p-5 shadow-lg shadow-black/5 transition-shadow duration-300 hover:shadow-xl">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Next</p>
