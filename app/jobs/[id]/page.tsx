@@ -1238,13 +1238,13 @@ export default async function JobWorkspacePage({
               />
               <input
                 id="job-billing-amount"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 name="amount"
                 required
-                min="0.50"
-                step="0.01"
                 defaultValue={invoice ? (invoice.balance_due_cents / 100).toFixed(2) : undefined}
-                placeholder="Amount ($)"
+                placeholder="Amount (cents)"
                 className="field min-h-10"
               />
               <input

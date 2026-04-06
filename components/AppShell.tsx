@@ -18,7 +18,10 @@ const ADMIN_PRIMARY: GlassNavLink[] = [
   { href: "/admin/quotes", label: "Estimates" },
 ];
 
-const FIELD_PRIMARY: GlassNavLink[] = [{ href: "/m", label: "My jobs" }];
+const FIELD_PRIMARY: GlassNavLink[] = [
+  { href: "/m", label: "My jobs" },
+  { href: "/m/billings", label: "Billings" },
+];
 
 const ADMIN_LOOKUP: GlassNavSection = {
   title: "Look up",

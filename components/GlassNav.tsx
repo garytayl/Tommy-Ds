@@ -67,6 +67,10 @@ function isLinkActive(pathname: string, href: string): boolean {
   if (href === "/admin") {
     return pathname === "/admin" || pathname === "/admin/";
   }
+  // Field home should not stay active for /m/billings.
+  if (href === "/m") {
+    return pathname === "/m" || pathname === "/m/";
+  }
   // Reports index only — not /admin/reports/gas
   if (href === "/admin/reports") {
     return pathname === "/admin/reports" || pathname === "/admin/reports/";
@@ -105,6 +109,7 @@ const LINK_ICONS: Record<string, LucideIcon> = {
   "/admin/scan": ScanLine,
   "/admin/future-features": Lightbulb,
   "/m": Wrench,
+  "/m/billings": CreditCard,
 };
 
 function PublicNavBar() {

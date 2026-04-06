@@ -412,11 +412,11 @@ export default async function InstallerJobPage({
           />
           <input
             id="installer-billing-amount"
-            type="number"
+            type="text"
             name="amount"
             required
-            min="0.50"
-            step="0.01"
+            inputMode="numeric"
+            pattern="[0-9]*"
             placeholder="Amount ($)"
             className="field min-h-11"
           />
