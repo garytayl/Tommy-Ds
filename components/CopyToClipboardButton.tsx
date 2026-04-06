@@ -22,7 +22,7 @@ export function CopyToClipboardButton({
   return (
     <button
       type="button"
-      className={cn("btn-secondary py-1.5 text-xs", className)}
+      className={cn("btn-secondary py-2 text-xs sm:py-1.5", className)}
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(value);

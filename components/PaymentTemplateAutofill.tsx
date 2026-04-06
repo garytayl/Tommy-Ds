@@ -233,31 +233,41 @@ export function PaymentTemplateAutofill({
           Auto-fill payment template
         </p>
         <div className="mt-2 grid gap-2 sm:grid-cols-3">
-          <select
-            id={paymentTypeSelectId}
-            name="payment_template"
-            defaultValue="final_balance"
-            className="field"
-            onChange={() => applyTemplate(false)}
+          <label className="block text-xs font-medium text-muted-foreground">
+            Payment type
+            <select
+              id={paymentTypeSelectId}
+              name="payment_template"
+              defaultValue="final_balance"
+              className="field mt-1 min-h-11"
+              onChange={() => applyTemplate(false)}
+            >
+              <option value="deposit">Deposit</option>
+              <option value="progress_payment">Progress payment</option>
+              <option value="final_balance">Final balance</option>
+              <option value="service_call">Service call</option>
+              <option value="parts_materials">Parts / materials</option>
+              <option value="custom">Custom</option>
+            </select>
+          </label>
+          <label className="block text-xs font-medium text-muted-foreground">
+            Work type
+            <select
+              id={workTypeSelectId}
+              name="work_type_template"
+              defaultValue={defaultJobKind ?? "installation"}
+              className="field mt-1 min-h-11"
+              onChange={() => applyTemplate(false)}
+            >
+              <option value="installation">Installation</option>
+              <option value="service">Service</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            className="btn-secondary min-h-11 w-full sm:mt-5"
+            onClick={() => applyTemplate(false)}
           >
-            <option value="deposit">Deposit</option>
-            <option value="progress_payment">Progress payment</option>
-            <option value="final_balance">Final balance</option>
-            <option value="service_call">Service call</option>
-            <option value="parts_materials">Parts / materials</option>
-            <option value="custom">Custom</option>
-          </select>
-          <select
-            id={workTypeSelectId}
-            name="work_type_template"
-            defaultValue={defaultJobKind ?? "installation"}
-            className="field"
-            onChange={() => applyTemplate(false)}
-          >
-            <option value="installation">Installation</option>
-            <option value="service">Service</option>
-          </select>
-          <button type="button" className="btn-secondary" onClick={() => applyTemplate(false)}>
             Use template
           </button>
         </div>

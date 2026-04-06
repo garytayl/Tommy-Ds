@@ -373,7 +373,7 @@ export default async function InstallerJobPage({
         </div>
       </div>
 
-      <div id="billing" className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div id="billing" className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <h2 className="text-base font-semibold text-foreground">Billing</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Create a payment link while on site and send it by text.
@@ -383,7 +383,7 @@ export default async function InstallerJobPage({
             Stripe is not configured yet.
           </p>
         )}
-        <form action={createIsolatedPayment} className="mt-3 grid gap-2 sm:grid-cols-3">
+        <form action={createIsolatedPayment} className="mt-3 grid gap-3 sm:grid-cols-3">
           <PaymentTemplateAutofill
             className="sm:col-span-3"
             descriptionInputId="installer-billing-description"
@@ -400,7 +400,7 @@ export default async function InstallerJobPage({
             type="text"
             name="description"
             placeholder={`${job.title} — payment request`}
-            className="field sm:col-span-2"
+            className="field min-h-11 sm:col-span-2"
           />
           <input
             id="installer-billing-amount"
@@ -410,16 +410,16 @@ export default async function InstallerJobPage({
             min="0.50"
             step="0.01"
             placeholder="Amount ($)"
-            className="field"
+            className="field min-h-11"
           />
           <input
             id="installer-billing-note"
             type="text"
             name="note"
             placeholder="Optional note"
-            className="field sm:col-span-3"
+            className="field min-h-11 sm:col-span-3"
           />
-          <button type="submit" className="btn-primary sm:col-span-3" disabled={!stripeEnabled}>
+          <button type="submit" className="btn-primary min-h-11 sm:col-span-3" disabled={!stripeEnabled}>
             Create pay link
           </button>
         </form>
@@ -452,20 +452,25 @@ export default async function InstallerJobPage({
                     <p className="mt-1 text-xs text-muted-foreground">{payment.note}</p>
                   ) : null}
                   {payLink ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-3 grid grid-cols-2 gap-2">
                       <a
                         href={payLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn-secondary py-1.5 text-xs"
+                        className="btn-secondary min-h-10 py-2 text-center text-xs"
                       >
                         Open link
                       </a>
-                      <CopyToClipboardButton value={payLink} />
+                      <CopyToClipboardButton
+                        value={payLink}
+                        className="w-full min-h-10 py-2"
+                        label="Copy link"
+                        copiedLabel="Copied"
+                      />
                       {normalizedPhone ? (
                         <a
                           href={`sms:${normalizedPhone}?body=${smsBody}`}
-                          className="btn-secondary py-1.5 text-xs"
+                          className="btn-secondary min-h-10 py-2 text-center text-xs"
                         >
                           Text customer
                         </a>

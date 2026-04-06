@@ -199,7 +199,7 @@ export default async function BillingsPage() {
         </div>
       )}
 
-      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <h2 className="text-base font-semibold text-foreground">New isolated payment</h2>
         <form action={createIsolatedPayment} className="mt-4 grid gap-3 sm:grid-cols-2">
           <PaymentTemplateAutofill
@@ -276,7 +276,7 @@ export default async function BillingsPage() {
           </select>
           <button
             type="submit"
-            className="btn-primary sm:col-span-2"
+            className="btn-primary py-3 sm:col-span-2"
             disabled={!stripeEnabled}
           >
             Create pay link
@@ -288,7 +288,102 @@ export default async function BillingsPage() {
         <div className="border-b border-border bg-muted/50 px-4 py-3">
           <h2 className="text-base font-semibold text-foreground">Recent pay links</h2>
         </div>
-        <div className="table-wrap overflow-x-auto">
+        <div className="space-y-3 p-3 sm:hidden">
+          {payments.length === 0 ? (
+            <p className="rounded-lg border border-border bg-muted/20 px-3 py-5 text-center text-sm text-muted-foreground">
+              No isolated payment links yet.
+            </p>
+          ) : (
+            payments.map((row) => {
+              const customer = firstOf(row.customers);
+              const phone = customer?.phone ? normalizePhone(customer.phone) : "";
+              const email = customer?.email?.trim() ?? "";
+              const amount = formatCents(row.amount_cents);
+              const payLink = row.stripe_checkout_url ?? "";
+              const smsBody = encodeURIComponent(`Payment link for ${amount}: ${payLink}`);
+              const mailSubject = encodeURIComponent(`Payment link: ${row.description}`);
+              const mailBody = encodeURIComponent(
+                `Hi,\n\nHere is your payment link for ${amount}.\n${payLink}\n\nThank you.`,
+              );
+              const linkedInvoice = firstOf(row.invoices);
+              const linkedJob = firstOf(row.jobs);
+
+              return (
+                <article key={row.id} className="rounded-lg border border-border bg-muted/20 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{row.description}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {new Date(row.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <span className="inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium capitalize text-muted-foreground">
+                      {row.status}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm font-medium tabular-nums text-foreground">{amount}</p>
+                  {row.note ? <p className="mt-1 text-xs text-muted-foreground">{row.note}</p> : null}
+                  {customer?.name ? (
+                    <p className="mt-1 text-xs text-muted-foreground">Customer: {customer.name}</p>
+                  ) : null}
+                  <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                    {row.invoice_id && linkedInvoice?.invoice_number ? (
+                      <p>
+                        Invoice{" "}
+                        <Link href={`/admin/invoices/${row.invoice_id}`} className="link">
+                          #{linkedInvoice.invoice_number}
+                        </Link>
+                      </p>
+                    ) : null}
+                    {row.job_id ? (
+                      <p>
+                        Job{" "}
+                        <Link href={`/jobs/${row.job_id}`} className="link">
+                          {linkedJob?.title ?? row.job_id.slice(0, 8)}
+                        </Link>
+                      </p>
+                    ) : null}
+                    {!row.invoice_id && !row.job_id ? <p>Standalone</p> : null}
+                  </div>
+                  {payLink ? (
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <a
+                        href={payLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-secondary py-2 text-center text-xs"
+                      >
+                        Open
+                      </a>
+                      <CopyToClipboardButton
+                        value={payLink}
+                        className="w-full py-2"
+                        label="Copy"
+                        copiedLabel="Copied"
+                      />
+                      {phone ? (
+                        <a href={`sms:${phone}?body=${smsBody}`} className="btn-secondary py-2 text-center text-xs">
+                          Text
+                        </a>
+                      ) : null}
+                      {email ? (
+                        <a
+                          href={`mailto:${encodeURIComponent(email)}?subject=${mailSubject}&body=${mailBody}`}
+                          className="btn-secondary py-2 text-center text-xs"
+                        >
+                          Email
+                        </a>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted-foreground">No checkout link</p>
+                  )}
+                </article>
+              );
+            })
+          )}
+        </div>
+        <div className="table-wrap hidden overflow-x-auto sm:block">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/50">

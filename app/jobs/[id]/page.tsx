@@ -1208,7 +1208,7 @@ export default async function JobWorkspacePage({
               Create an isolated Stripe payment request and send the link to the
               customer.
             </p>
-            <form action={createIsolatedPayment} className="mt-4 grid gap-2 sm:grid-cols-3">
+            <form action={createIsolatedPayment} className="mt-4 grid gap-3 sm:grid-cols-3">
               <PaymentTemplateAutofill
                 className="sm:col-span-3"
                 descriptionInputId="job-billing-description"
@@ -1227,7 +1227,7 @@ export default async function JobWorkspacePage({
                 required
                 defaultValue={invoice ? `Invoice #${invoice.invoice_number} payment` : `Payment for ${job.title}`}
                 placeholder="Description"
-                className="field sm:col-span-2"
+                className="field min-h-10 sm:col-span-2"
               />
               <input
                 id="job-billing-amount"
@@ -1238,18 +1238,18 @@ export default async function JobWorkspacePage({
                 step="0.01"
                 defaultValue={invoice ? (invoice.balance_due_cents / 100).toFixed(2) : undefined}
                 placeholder="Amount ($)"
-                className="field"
+                className="field min-h-10"
               />
               <input
                 id="job-billing-note"
                 type="text"
                 name="note"
                 placeholder="Optional internal note"
-                className="field sm:col-span-2"
+                className="field min-h-10 sm:col-span-2"
               />
               <button
                 type="submit"
-                className="btn-primary"
+                className="btn-primary min-h-10"
                 disabled={!stripeEnabled}
               >
                 Create pay link
@@ -1270,7 +1270,84 @@ export default async function JobWorkspacePage({
             <div className="border-b border-border bg-muted/50 px-4 py-3">
               <h2 className="text-base font-semibold text-foreground">Payment links</h2>
             </div>
-            <div className="table-wrap overflow-x-auto">
+            <div className="space-y-3 p-3 sm:hidden">
+              {isolatedPayments.length === 0 ? (
+                <p className="rounded-lg border border-border bg-muted/20 px-3 py-5 text-center text-sm text-muted-foreground">
+                  No payment links for this job yet.
+                </p>
+              ) : (
+                isolatedPayments.map((payment) => {
+                  const paymentCustomer = firstOf(payment.customers) ?? customer;
+                  const phoneRaw = paymentCustomer?.phone ?? "";
+                  const phone = phoneRaw ? normalizePhone(phoneRaw) : "";
+                  const email = paymentCustomer?.email?.trim() ?? "";
+                  const amount = formatCents(payment.amount_cents);
+                  const payLink = payment.stripe_checkout_url ?? "";
+                  const smsBody = encodeURIComponent(`Payment link for ${amount}: ${payLink}`);
+                  const mailSubject = encodeURIComponent(`Payment link: ${payment.description}`);
+                  const mailBody = encodeURIComponent(
+                    `Hi,\n\nHere is your payment link for ${amount}.\n${payLink}\n\nThank you.`,
+                  );
+
+                  return (
+                    <article key={payment.id} className="rounded-lg border border-border bg-muted/20 p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{payment.description}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {new Date(payment.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                        <span className="inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium capitalize text-muted-foreground">
+                          {payment.status}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm font-medium tabular-nums text-foreground">{amount}</p>
+                      {payment.note ? (
+                        <p className="mt-1 text-xs text-muted-foreground">{payment.note}</p>
+                      ) : null}
+                      {payLink ? (
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <a
+                            href={payLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-secondary py-2 text-center text-xs"
+                          >
+                            Open
+                          </a>
+                          <CopyToClipboardButton
+                            value={payLink}
+                            className="w-full py-2"
+                            label="Copy"
+                            copiedLabel="Copied"
+                          />
+                          {phone ? (
+                            <a
+                              href={`sms:${phone}?body=${smsBody}`}
+                              className="btn-secondary py-2 text-center text-xs"
+                            >
+                              Text
+                            </a>
+                          ) : null}
+                          {email ? (
+                            <a
+                              href={`mailto:${encodeURIComponent(email)}?subject=${mailSubject}&body=${mailBody}`}
+                              className="btn-secondary py-2 text-center text-xs"
+                            >
+                              Email
+                            </a>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-xs text-muted-foreground">No checkout link</p>
+                      )}
+                    </article>
+                  );
+                })
+              )}
+            </div>
+            <div className="table-wrap hidden overflow-x-auto sm:block">
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
