@@ -2,13 +2,14 @@ import { redirect } from "next/navigation";
 
 import { FormSubmitButton } from "@/components/forms/FormSubmitButton";
 import { getCurrentUserAndProfile, type ProfileRole } from "@/lib/auth";
+import { isFieldRole } from "@/lib/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { setToastCookie } from "@/lib/toast";
 
 export const dynamic = "force-dynamic";
 
 function defaultRouteFor(role: ProfileRole): string {
-  return role === "installer" ? "/m" : "/admin";
+  return isFieldRole(role) ? "/m" : "/admin";
 }
 
 function normalizeNextPath(rawNext: string | null, role: ProfileRole): string {
@@ -16,7 +17,7 @@ function normalizeNextPath(rawNext: string | null, role: ProfileRole): string {
   const next = rawNext.trim();
   if (!next.startsWith("/") || next.startsWith("//")) return defaultRouteFor(role);
   if (next.startsWith("/auth/")) return defaultRouteFor(role);
-  if (role === "installer") {
+  if (isFieldRole(role)) {
     return next.startsWith("/m") ? next : "/m";
   }
   if (next.startsWith("/admin") || next.startsWith("/jobs/")) return next;

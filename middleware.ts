@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isFieldRole } from "@/lib/roles";
 
 const PROTECTED_PREFIXES = ["/admin", "/m", "/jobs"];
 
@@ -52,7 +53,7 @@ export async function middleware(request: NextRequest) {
     if (!profile?.onboarding_completed_at) {
       return NextResponse.redirect(new URL("/auth/onboarding", request.url));
     }
-    if (profile.role === "installer") {
+    if (isFieldRole(profile.role)) {
       return NextResponse.redirect(new URL("/m", request.url));
     }
     return NextResponse.redirect(new URL("/admin", request.url));

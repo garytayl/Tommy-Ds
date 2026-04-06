@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/AppShell";
 import { getCurrentUserAndProfile } from "@/lib/auth";
 import { features } from "@/lib/config";
+import { isFieldRole } from "@/lib/roles";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -43,8 +44,13 @@ export default async function InstallerLayout({
   if (!auth.profile.onboarding_completed_at) {
     redirect("/auth/onboarding?next=/m");
   }
-  // Allow office roles to open field workspace for QA/troubleshooting.
-  if (!["installer", "admin", "manager"].includes(auth.profile.role)) redirect("/admin");
+  // Allow field + office roles to open field workspace for QA/troubleshooting.
+  if (
+    !isFieldRole(auth.profile.role) &&
+    !["admin", "manager"].includes(auth.profile.role)
+  ) {
+    redirect("/admin");
+  }
 
   return (
     <AppShell mode="field" role={auth.profile.role}>

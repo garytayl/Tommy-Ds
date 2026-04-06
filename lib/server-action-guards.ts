@@ -1,5 +1,6 @@
 import { getCurrentUserAndProfile } from "@/lib/auth";
 import type { Profile } from "@/lib/auth";
+import { isFieldRole } from "@/lib/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -25,7 +26,9 @@ export async function getOfficeSessionOrNull(): Promise<OfficeSession | null> {
 export async function getInstallerOrOfficeSessionOrNull(): Promise<OfficeSession | null> {
   const auth = await getCurrentUserAndProfile();
   if (!auth?.profile?.onboarding_completed_at) return null;
-  if (!["admin", "manager", "installer"].includes(auth.profile.role)) return null;
+  if (!["admin", "manager"].includes(auth.profile.role) && !isFieldRole(auth.profile.role)) {
+    return null;
+  }
   const supabase = await createSupabaseServerClient();
   return { supabase, profile: auth.profile };
 }

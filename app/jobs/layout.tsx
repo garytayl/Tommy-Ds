@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/AppShell";
 import { getCurrentUserAndProfile } from "@/lib/auth";
 import { features } from "@/lib/config";
+import { isFieldRole } from "@/lib/roles";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +44,7 @@ export default async function JobWorkspaceLayout({
   if (!auth.profile.onboarding_completed_at) {
     redirect("/auth/onboarding?next=/admin/jobs");
   }
-  if (auth.profile.role === "installer") redirect("/m");
+  if (isFieldRole(auth.profile.role)) redirect("/m");
 
   return (
     <AppShell mode="admin" role={auth.profile.role}>
