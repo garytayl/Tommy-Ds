@@ -1,12 +1,16 @@
-import { getStripeServerClient, getStripeTerminalLocationId, isStripeTerminalConfigured } from "@/lib/stripe";
-import { getInstallerOrOfficeSessionOrNull } from "@/lib/server-action-guards";
+import { getInstallerOrOfficeApiSessionOrNull } from "@/lib/api-auth";
+import {
+  getStripeServerClient,
+  getStripeTerminalLocationId,
+  isStripeTerminalConfigured,
+} from "@/lib/stripe";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST() {
-  const session = await getInstallerOrOfficeSessionOrNull();
+export async function POST(request: Request) {
+  const session = await getInstallerOrOfficeApiSessionOrNull(request);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

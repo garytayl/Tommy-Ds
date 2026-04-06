@@ -1,5 +1,5 @@
 import { getStripeServerClient, isStripeTerminalConfigured } from "@/lib/stripe";
-import { getInstallerOrOfficeSessionOrNull } from "@/lib/server-action-guards";
+import { getInstallerOrOfficeApiSessionOrNull } from "@/lib/api-auth";
 import { NextResponse } from "next/server";
 
 type CreateTerminalIntentBody = {
@@ -20,7 +20,7 @@ function cleanId(value: unknown): string | null {
 }
 
 export async function POST(request: Request) {
-  const session = await getInstallerOrOfficeSessionOrNull();
+  const session = await getInstallerOrOfficeApiSessionOrNull(request);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

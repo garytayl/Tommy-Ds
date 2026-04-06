@@ -1,5 +1,5 @@
+import { getInstallerOrOfficeApiSessionOrNull } from "@/lib/api-auth";
 import { getStripeServerClient, isStripeTerminalConfigured } from "@/lib/stripe";
-import { getInstallerOrOfficeSessionOrNull } from "@/lib/server-action-guards";
 import { NextResponse } from "next/server";
 
 type CancelTerminalIntentBody = {
@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const session = await getInstallerOrOfficeSessionOrNull();
+  const session = await getInstallerOrOfficeApiSessionOrNull(request);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
