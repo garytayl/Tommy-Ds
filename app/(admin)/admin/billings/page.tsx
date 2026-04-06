@@ -196,8 +196,8 @@ export default async function BillingsPage() {
         </p>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Billings</h1>
         <p className="text-sm text-muted-foreground">
-          Create isolated Stripe payments: send a link or collect now on this
-          phone.
+          Create isolated Stripe payments: send a link, or open checkout now on
+          this phone.
         </p>
       </header>
 
@@ -301,7 +301,7 @@ export default async function BillingsPage() {
               className="btn-secondary py-3"
               disabled={!stripeEnabled}
             >
-              Collect now on phone
+              Open checkout now
             </button>
           </div>
         </form>

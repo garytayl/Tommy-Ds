@@ -383,7 +383,7 @@ export default async function InstallerJobPage({
       <div id="billing" className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <h2 className="text-base font-semibold text-foreground">Billing</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Create a payment link while on site, or collect payment now on this
+          Create a payment link while on site, or open checkout now on this
           phone.
         </p>
         {!stripeEnabled && (
@@ -417,7 +417,7 @@ export default async function InstallerJobPage({
             required
             inputMode="numeric"
             pattern="[0-9]*"
-            placeholder="Amount ($)"
+            placeholder="Amount (cents)"
             className="field min-h-11"
           />
           <input
@@ -444,7 +444,7 @@ export default async function InstallerJobPage({
               className="btn-secondary min-h-11"
               disabled={!stripeEnabled}
             >
-              Collect now on phone
+              Open checkout now
             </button>
           </div>
         </form>

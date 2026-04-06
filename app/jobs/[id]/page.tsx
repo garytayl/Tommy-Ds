@@ -1210,10 +1210,10 @@ export default async function JobWorkspacePage({
           )}
 
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="text-base font-semibold text-foreground">Create payment link</h2>
+            <h2 className="text-base font-semibold text-foreground">Create payment request</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Create an isolated Stripe payment request, then either send a link
-              or collect on this phone.
+              Create an isolated Stripe checkout request, then either send a link
+              or open checkout now on this phone.
             </p>
             <form action={createIsolatedPayment} className="mt-4 grid gap-3 sm:grid-cols-3">
               <PaymentTemplateAutofill
@@ -1271,7 +1271,7 @@ export default async function JobWorkspacePage({
                   className="btn-secondary min-h-10"
                   disabled={!stripeEnabled}
                 >
-                  Collect now on phone
+                  Open checkout now
                 </button>
               </div>
             </form>

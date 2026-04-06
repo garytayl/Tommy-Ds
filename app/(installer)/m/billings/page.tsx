@@ -95,7 +95,7 @@ export default async function InstallerBillingsPage() {
     }
 
     const { supabase, profile } = session;
-    const collectionMode = String(formData.get("collection_mode") ?? "send_link");
+    const collectionMode = String(formData.get("collection_mode") ?? "link");
     const amountCents = dollarsToCents(String(formData.get("amount") ?? "0"));
     const description = String(formData.get("description") ?? "").trim();
     const note = String(formData.get("note") ?? "").trim() || null;
@@ -239,7 +239,7 @@ export default async function InstallerBillingsPage() {
             pattern="[0-9]*"
             name="amount"
             required
-            placeholder="Amount (cents)"
+            placeholder="Amount (numbers only)"
             className="field min-h-11"
           />
           <input
@@ -301,7 +301,7 @@ export default async function InstallerBillingsPage() {
               className="btn-secondary min-h-11"
               disabled={!stripeEnabled}
             >
-              Collect now
+              Open checkout now
             </button>
           </div>
         </form>
