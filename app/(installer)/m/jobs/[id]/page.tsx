@@ -3,7 +3,9 @@ import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { CopyToClipboardButton } from "@/components/CopyToClipboardButton";
+import { type JobKind } from "@/components/JobKindBadge";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
+import { PaymentTemplateAutofill } from "@/components/PaymentTemplateAutofill";
 import { SubmitButton } from "@/components/SubmitButton";
 import { dollarsToCents, formatCents } from "@/lib/money";
 import { getAppUrl, getStripeServerClient, isStripeConfigured } from "@/lib/stripe";
@@ -15,6 +17,7 @@ type JobRow = {
   id: string;
   title: string;
   status: string;
+  job_kind: JobKind;
   notes: string | null;
   address_line1: string;
   address_line2: string | null;
@@ -58,7 +61,7 @@ export default async function InstallerJobPage({
     supabase
       .from("jobs")
       .select(
-        "id,title,status,notes,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,customers(id,name,phone)",
+        "id,title,status,job_kind,notes,address_line1,address_line2,city,state,zip,scheduled_start,scheduled_end,customers(id,name,phone)",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -95,6 +98,7 @@ export default async function InstallerJobPage({
   const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`;
   const balanceDueCents = invoice?.balance_due_cents ?? 0;
   const jobTitle = job.title;
+  const jobKind: JobKind = job.job_kind === "service" ? "service" : "installation";
   const stripeEnabled = isStripeConfigured();
 
   let photosWithUrls: (PhotoRow & { signed_url: string | null })[] = photos.map((p) => ({
@@ -380,13 +384,26 @@ export default async function InstallerJobPage({
           </p>
         )}
         <form action={createIsolatedPayment} className="mt-3 grid gap-2 sm:grid-cols-3">
+          <PaymentTemplateAutofill
+            className="sm:col-span-3"
+            descriptionInputId="installer-billing-description"
+            amountInputId="installer-billing-amount"
+            noteInputId="installer-billing-note"
+            paymentTypeSelectId="installer-billing-payment-template"
+            workTypeSelectId="installer-billing-work-type"
+            defaultJobKind={jobKind}
+            defaultJobTitle={job.title}
+            defaultBalanceDueCents={invoice?.balance_due_cents ?? null}
+          />
           <input
+            id="installer-billing-description"
             type="text"
             name="description"
             placeholder={`${job.title} — payment request`}
             className="field sm:col-span-2"
           />
           <input
+            id="installer-billing-amount"
             type="number"
             name="amount"
             required
@@ -396,6 +413,7 @@ export default async function InstallerJobPage({
             className="field"
           />
           <input
+            id="installer-billing-note"
             type="text"
             name="note"
             placeholder="Optional note"

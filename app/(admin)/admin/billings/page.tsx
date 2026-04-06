@@ -2,6 +2,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
 import { CopyToClipboardButton } from "@/components/CopyToClipboardButton";
+import { PaymentTemplateAutofill } from "@/components/PaymentTemplateAutofill";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { getAppUrl, getStripeServerClient, isStripeConfigured } from "@/lib/stripe";
 import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
@@ -30,19 +31,24 @@ export default async function BillingsPage() {
     supabase
       .from("invoices")
       .select(
-        "id,invoice_number,balance_due_cents,jobs(id,title,customers(name))",
+        "id,invoice_number,balance_due_cents,jobs(id,title,job_kind,customers(name))",
       )
       .order("created_at", { ascending: false })
       .limit(200),
     supabase
       .from("jobs")
-      .select("id,title,customers(name)")
+      .select("id,title,job_kind,customers(name)")
       .order("created_at", { ascending: false })
       .limit(200),
   ]);
 
   type CustomerLite = { name: string | null; email: string | null; phone: string | null };
-  type JobLite = { id: string; title: string | null; customers: { name: string | null } | { name: string | null }[] | null };
+  type JobLite = {
+    id: string;
+    title: string | null;
+    job_kind: "installation" | "service";
+    customers: { name: string | null } | { name: string | null }[] | null;
+  };
   type InvoiceLite = {
     id: string;
     invoice_number: number;
@@ -196,7 +202,20 @@ export default async function BillingsPage() {
       <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <h2 className="text-base font-semibold text-foreground">New isolated payment</h2>
         <form action={createIsolatedPayment} className="mt-4 grid gap-3 sm:grid-cols-2">
+          <PaymentTemplateAutofill
+            className="sm:col-span-2"
+            descriptionInputId="admin-billing-description"
+            amountInputId="admin-billing-amount"
+            noteInputId="admin-billing-note"
+            paymentTypeSelectId="admin-billing-payment-template"
+            workTypeSelectId="admin-billing-work-type"
+            defaultJobTitle="General payment"
+            defaultBalanceDueCents={null}
+            jobSelectId="admin-billing-job-id"
+            invoiceSelectId="admin-billing-invoice-id"
+          />
           <input
+            id="admin-billing-description"
             type="text"
             name="description"
             required
@@ -204,6 +223,7 @@ export default async function BillingsPage() {
             className="field sm:col-span-2"
           />
           <input
+            id="admin-billing-amount"
             type="number"
             name="amount"
             required
@@ -213,30 +233,42 @@ export default async function BillingsPage() {
             className="field"
           />
           <input
+            id="admin-billing-note"
             type="text"
             name="note"
             placeholder="Optional internal note"
             className="field"
           />
-          <select name="invoice_id" className="field">
+          <select id="admin-billing-invoice-id" name="invoice_id" className="field">
             <option value="">No invoice linked</option>
             {invoiceOptions.map((invoice) => {
               const job = firstOf(invoice.jobs);
               const customer = firstOf(job?.customers);
               return (
-                <option key={invoice.id} value={invoice.id}>
+                <option
+                  key={invoice.id}
+                  value={invoice.id}
+                  data-job-title={job?.title ?? ""}
+                  data-job-kind={job?.job_kind ?? ""}
+                  data-balance-due-cents={invoice.balance_due_cents}
+                >
                   Invoice #{invoice.invoice_number} — {customer?.name ?? "Unknown customer"} —{" "}
                   {formatCents(invoice.balance_due_cents)} due
                 </option>
               );
             })}
           </select>
-          <select name="job_id" className="field">
+          <select id="admin-billing-job-id" name="job_id" className="field">
             <option value="">No job linked</option>
             {jobOptions.map((job) => {
               const customer = firstOf(job.customers);
               return (
-                <option key={job.id} value={job.id}>
+                <option
+                  key={job.id}
+                  value={job.id}
+                  data-job-title={job.title ?? ""}
+                  data-job-kind={job.job_kind}
+                >
                   {job.title ?? "Untitled job"} — {customer?.name ?? "Unknown customer"}
                 </option>
               );

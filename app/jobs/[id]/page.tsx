@@ -8,6 +8,7 @@ import { CopyToClipboardButton } from "@/components/CopyToClipboardButton";
 import { JobKindBadge, type JobKind } from "@/components/JobKindBadge";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { JobStickyActions } from "@/components/JobStickyActions";
+import { PaymentTemplateAutofill } from "@/components/PaymentTemplateAutofill";
 import { JobWorkspaceTabs } from "@/components/JobWorkspaceTabs";
 import { SubmitButton } from "@/components/SubmitButton";
 import { getCrewDisplayName } from "@/lib/crews";
@@ -1208,7 +1209,19 @@ export default async function JobWorkspacePage({
               customer.
             </p>
             <form action={createIsolatedPayment} className="mt-4 grid gap-2 sm:grid-cols-3">
+              <PaymentTemplateAutofill
+                className="sm:col-span-3"
+                descriptionInputId="job-billing-description"
+                amountInputId="job-billing-amount"
+                noteInputId="job-billing-note"
+                paymentTypeSelectId="job-billing-payment-template"
+                workTypeSelectId="job-billing-work-type"
+                defaultJobKind={jobKind}
+                defaultJobTitle={job.title}
+                defaultBalanceDueCents={invoice?.balance_due_cents ?? null}
+              />
               <input
+                id="job-billing-description"
                 type="text"
                 name="description"
                 required
@@ -1217,6 +1230,7 @@ export default async function JobWorkspacePage({
                 className="field sm:col-span-2"
               />
               <input
+                id="job-billing-amount"
                 type="number"
                 name="amount"
                 required
@@ -1227,6 +1241,7 @@ export default async function JobWorkspacePage({
                 className="field"
               />
               <input
+                id="job-billing-note"
                 type="text"
                 name="note"
                 placeholder="Optional internal note"
