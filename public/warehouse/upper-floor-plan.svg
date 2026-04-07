@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="640" viewBox="0 0 1000 640">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#c4b8a8" stroke-width="0.5" opacity="0.35"/>
+    </pattern>
+    <linearGradient id="floor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2a2520"/>
+      <stop offset="100%" style="stop-color:#1a1714"/>
+    </linearGradient>
+  </defs>
+  <rect width="1000" height="640" fill="url(#floor)"/>
+  <rect width="1000" height="640" fill="url(#grid)"/>
+  <rect x="48" y="48" width="904" height="544" fill="none" stroke="#8b7355" stroke-width="3" rx="4" opacity="0.9"/>
+  <text x="500" y="42" text-anchor="middle" fill="#d4c4a8" font-family="system-ui,sans-serif" font-size="18" font-weight="600">
+    Upper warehouse  floor plan
+  </text>
+  <text x="500" y="612" text-anchor="middle" fill="#7a6f5c" font-family="system-ui,sans-serif" font-size="13">
+    Place windows (W) and doors (D) on the map  shared with the team
+  </text>
+</svg>

@@ -42,7 +42,19 @@ export default function Home() {
         <h2 className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Open a view
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Link href="/warehouse" className={cardBase}>
+            <span className="block h-1 w-10 rounded-full bg-primary/80 transition group-hover:bg-primary" />
+            <h3 className="mt-4 text-lg font-semibold tracking-tight text-foreground">
+              Warehouse map
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Upper warehouse floor plans — windows, doors, and inventory zones. Shared with the team.
+            </p>
+            <span className="mt-4 inline-block text-sm font-medium text-accent-gold">
+              Open map →
+            </span>
+          </Link>
           <Link href="/admin" className={cardBase}>
             <span className="block h-1 w-10 rounded-full bg-primary/80 transition group-hover:bg-primary" />
             <h3 className="mt-4 text-lg font-semibold tracking-tight text-foreground">

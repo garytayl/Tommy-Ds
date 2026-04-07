@@ -19,6 +19,7 @@ import {
   LayoutDashboard,
   MapPin,
   Package,
+  Warehouse,
   ScanLine,
   Sparkles,
   UserCog,
@@ -110,6 +111,7 @@ const LINK_ICONS: Record<string, LucideIcon> = {
   "/admin/future-features": Lightbulb,
   "/m": Wrench,
   "/m/billings": CreditCard,
+  "/warehouse": Warehouse,
 };
 
 function PublicNavBar() {
@@ -152,6 +154,17 @@ function PublicNavBar() {
                 Home
               </Link>
               <Link
+                href="/warehouse"
+                className={cn(
+                  "touch-manipulation rounded-full px-3 py-1.5 text-sm font-medium transition duration-150 active:scale-95",
+                  pathname === "/warehouse" || pathname.startsWith("/warehouse/")
+                    ? "bg-white text-black"
+                    : "text-white/85 hover:bg-white/15 hover:text-white",
+                )}
+              >
+                Warehouse
+              </Link>
+              <Link
                 href="/auth/login?next=/admin"
                 className="touch-manipulation rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-sm font-semibold text-white transition duration-150 hover:bg-white/20 active:scale-95"
               >
@@ -191,6 +204,13 @@ function PublicNavBar() {
                 className="touch-manipulation rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
               >
                 Home
+              </Link>
+              <Link
+                href="/warehouse"
+                onClick={() => setSheetOpen(false)}
+                className="touch-manipulation rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
+              >
+                Warehouse map
               </Link>
               <Link
                 href="/auth/login?next=/admin"
