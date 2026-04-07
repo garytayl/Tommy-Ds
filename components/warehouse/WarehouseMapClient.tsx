@@ -75,7 +75,7 @@ export function WarehouseMapClient() {
   const [addNote, setAddNote] = useState("");
   const [saving, setSaving] = useState(false);
   const floorPlanRef = useRef<WarehouseFloorPlanHandle | null>(null);
-  const [workspaceView, setWorkspaceView] = useState<"table" | "floor">("table");
+  const [workspaceView, setWorkspaceView] = useState<"table" | "floor">("floor");
   const [kindFilter, setKindFilter] = useState<WarehousePlacementKind | "all">("all");
   const [columnFilter, setColumnFilter] = useState<WarehouseColumn | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -590,7 +590,11 @@ export function WarehouseMapClient() {
             )}
           </div>
         </div>
-        <div className="mt-2.5 flex flex-col gap-2.5 border-t border-white/5 pt-2.5">
+        <div
+          className={`mt-2.5 flex flex-col gap-2.5 border-t border-white/5 pt-2.5 ${
+            workspaceView === "floor" ? "hidden md:flex" : ""
+          }`}
+        >
           <div className="flex flex-wrap items-center gap-2">
             <label className="sr-only" htmlFor="warehouse-search-input">
               Search markers
@@ -665,7 +669,7 @@ export function WarehouseMapClient() {
         ) : null}
       </div>
 
-      <div className="relative min-h-0 flex-1">
+      <div className="relative min-h-[280px] flex-1 md:min-h-0">
         {workspaceView === "floor" ? (
           <div className="absolute inset-0 z-0 min-h-[240px]">
             <MapErrorBoundary fallback={mapFallback}>
