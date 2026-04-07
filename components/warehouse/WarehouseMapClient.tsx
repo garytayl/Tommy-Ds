@@ -614,6 +614,20 @@ export function WarehouseMapClient() {
               selectedPlacementId={selectedPlacementId}
               onSelectPlacement={setSelectedPlacementId}
               onMove={(id, target) => handleGridMove(id, target)}
+              onQuickAddCell={
+                canEdit
+                  ? (col, row) => {
+                      setAddMode("cell");
+                      setAddCol(col);
+                      setAddRow(row);
+                      setAddKind("window");
+                      setAddLabel("");
+                      setAddNote("");
+                      setAddNorm(null);
+                      setAddOpen(true);
+                    }
+                  : undefined
+              }
             />
           </div>
         )}

@@ -11,6 +11,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
+import { Plus } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 
 import type { WarehousePlacementRow } from "./warehouse-map-types";
@@ -112,6 +113,8 @@ type Props = {
   selectedPlacementId: string | null;
   onSelectPlacement: (id: string | null) => void;
   onMove: (placementId: string, target: WarehouseGridMoveTarget) => Promise<void>;
+  /** Opens the add-marker flow with this cell pre-selected (grid mode). */
+  onQuickAddCell?: (col: WarehouseColumn, row: number) => void;
 };
 
 export function WarehouseGridTable({
@@ -121,6 +124,7 @@ export function WarehouseGridTable({
   selectedPlacementId,
   onSelectPlacement,
   onMove,
+  onQuickAddCell,
 }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(
@@ -204,12 +208,31 @@ export function WarehouseGridTable({
                   {Array.from({ length: maxR }, (_, i) => i + 1).map((row) => {
                     const key = `${col}${row}`;
                     const items = cellMap.get(key) ?? [];
+                    const atCapacity = items.length >= 10;
                     return (
                       <div key={key} className="flex flex-col gap-0.5">
-                        <span className="text-[10px] font-medium text-muted-foreground">
-                          {col}
-                          {row}
-                        </span>
+                        <div className="flex items-center justify-between gap-1 pr-0.5">
+                          <span className="text-[10px] font-medium text-muted-foreground">
+                            {col}
+                            {row}
+                          </span>
+                          {canEdit && onQuickAddCell ? (
+                            <button
+                              type="button"
+                              disabled={atCapacity}
+                              title={atCapacity ? "Cell full (10 items max)" : `Add to cell ${col}${row}`}
+                              aria-label={atCapacity ? "Cell full" : `Add item to cell ${col}${row}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onQuickAddCell(col, row);
+                              }}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/[0.06] text-muted-foreground transition hover:border-primary/50 hover:bg-primary/15 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+                            </button>
+                          ) : null}
+                        </div>
                         <DroppableZone id={cellDropId(col, row)} className="min-h-[56px]">
                           {items.length === 0 ? (
                             <p className="py-1.5 text-center text-[10px] text-muted-foreground/80">Empty</p>
