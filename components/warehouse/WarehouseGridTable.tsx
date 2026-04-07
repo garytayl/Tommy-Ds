@@ -12,7 +12,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 
 import type { WarehousePlacementRow } from "./warehouse-map-types";
 import { maxRowForColumn, type WarehouseColumn } from "@/lib/warehouse-grid";
@@ -127,6 +127,10 @@ export function WarehouseGridTable({
   onQuickAddCell,
 }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const floorZoneRef = useRef<HTMLDivElement | null>(null);
+  const colARef = useRef<HTMLDivElement | null>(null);
+  const colBRef = useRef<HTMLDivElement | null>(null);
+  const colCRef = useRef<HTMLDivElement | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -142,6 +146,28 @@ export function WarehouseGridTable({
   }, [cellGroupList]);
 
   const columns: WarehouseColumn[] = ["A", "B", "C"];
+  const columnCounts = useMemo(() => {
+    const counts: Record<WarehouseColumn, number> = { A: 0, B: 0, C: 0 };
+    for (const [, items] of cellGroupList) {
+      const col = items[0]?.cell_column;
+      if (col === "A" || col === "B" || col === "C") counts[col] += items.length;
+    }
+    return counts;
+  }, [cellGroupList]);
+
+  function columnRefFor(col: WarehouseColumn) {
+    if (col === "A") return colARef;
+    if (col === "B") return colBRef;
+    return colCRef;
+  }
+
+  function scrollToColumn(col: WarehouseColumn) {
+    columnRefFor(col).current?.scrollIntoView({
+      behavior: "smooth",
+      inline: "start",
+      block: "nearest",
+    });
+  }
 
   function handleDragStart(e: DragStartEvent) {
     setActiveId(String(e.active.id));
@@ -177,7 +203,30 @@ export function WarehouseGridTable({
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={(e) => void handleDragEnd(e)}>
       <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-3 md:p-4">
-        <div>
+        <div className="md:hidden rounded-lg border border-white/10 bg-black/25 p-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Quick jump</p>
+          <div className="mt-1.5 flex gap-1.5 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]">
+            <button
+              type="button"
+              onClick={() => floorZoneRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })}
+              className="whitespace-nowrap rounded-full border border-white/15 bg-white/[0.05] px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-white/[0.1]"
+            >
+              Floor only ({freePlacements.length})
+            </button>
+            {columns.map((col) => (
+              <button
+                key={`jump-col-${col}`}
+                type="button"
+                onClick={() => scrollToColumn(col)}
+                className="whitespace-nowrap rounded-full border border-white/15 bg-white/[0.05] px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-white/[0.1]"
+              >
+                Column {col} ({columnCounts[col]})
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div ref={floorZoneRef}>
           <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             Floor only (not in a cell)
           </p>
@@ -198,11 +247,15 @@ export function WarehouseGridTable({
           </DroppableZone>
         </div>
 
-        <div className="grid min-h-0 grid-cols-3 gap-2 md:gap-3">
+        <div className="flex min-h-0 snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] md:grid md:grid-cols-3 md:gap-3 md:overflow-visible md:pb-0">
           {columns.map((col) => {
             const maxR = maxRowForColumn(col);
             return (
-              <div key={col} className="flex min-h-0 min-w-0 flex-col rounded-lg border border-white/10 bg-black/20 p-1.5 md:p-2">
+              <div
+                key={col}
+                ref={columnRefFor(col)}
+                className="flex min-h-0 w-[min(86vw,360px)] shrink-0 snap-start min-w-0 flex-col rounded-lg border border-white/10 bg-black/20 p-1.5 md:w-auto md:shrink md:p-2"
+              >
                 <div className="mb-1.5 text-center text-[11px] font-semibold text-foreground md:mb-2 md:text-xs">
                   Column {col}
                 </div>
