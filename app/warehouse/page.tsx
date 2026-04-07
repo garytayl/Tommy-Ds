@@ -35,8 +35,8 @@ export default function WarehousePage() {
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
             Three columns: A has ten rows; B and C have eight rows each. Each grid cell can hold up to ten stacked items
             (pins show a count). Use the toolbar (+/−) or pinch and scroll to zoom, and drag to pan. On mobile, use the map
-            mode toggle and quick marker chips to jump to any item. Mark windows and doors on the layout map, or use the
-            inventory map for stock and bay labels. Changes save for everyone in real time.
+            mode toggle and quick marker chips to jump to any item. Mark windows, doors, and screens on the layout map,
+            or use the inventory map for stock and bay labels. Changes save for everyone in real time.
           </p>
         </div>
         <WarehouseMapSection />

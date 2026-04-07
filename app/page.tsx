@@ -49,7 +49,7 @@ export default function Home() {
               Warehouse map
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              Upper warehouse floor plans — windows, doors, and inventory zones. Shared with the team.
+              Upper warehouse floor plans — windows, doors, screens, and inventory zones. Shared with the team.
             </p>
             <span className="mt-4 inline-block text-sm font-medium text-accent-gold">
               Open map →

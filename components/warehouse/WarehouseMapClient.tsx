@@ -36,10 +36,12 @@ type WarehouseMapRow = {
   sort_order: number;
 };
 
+export type WarehousePlacementKind = "window" | "door" | "screen";
+
 type WarehousePlacementRow = {
   id: string;
   map_id: string;
-  kind: "window" | "door";
+  kind: WarehousePlacementKind;
   label: string;
   pos_x: number;
   pos_y: number;
@@ -55,8 +57,35 @@ function num(v: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+function placementKindLetter(kind: WarehousePlacementKind): string {
+  if (kind === "window") return "W";
+  if (kind === "door") return "D";
+  return "S";
+}
+
+function placementKindTitle(kind: WarehousePlacementKind): string {
+  if (kind === "window") return "Window";
+  if (kind === "door") return "Door";
+  return "Screen";
+}
+
+function defaultLabelForKind(kind: WarehousePlacementKind): string {
+  return placementKindTitle(kind);
+}
+
+function normalizePlacementKind(k: string): WarehousePlacementKind {
+  if (k === "window" || k === "door" || k === "screen") return k;
+  return "window";
+}
+
+function labelPlaceholderForKind(kind: WarehousePlacementKind): string {
+  if (kind === "window") return "e.g. North wall row";
+  if (kind === "door") return "e.g. Loading bay";
+  return "e.g. Patio screen";
+}
+
 function placementIcon(
-  kind: "window" | "door",
+  kind: WarehousePlacementKind,
   opts?: {
     selected?: boolean;
     compact?: boolean;
@@ -64,8 +93,8 @@ function placementIcon(
 ) {
   const selected = Boolean(opts?.selected);
   const compact = Boolean(opts?.compact);
-  const letter = kind === "window" ? "W" : "D";
-  const bg = kind === "window" ? "#1d4ed8" : "#b45309";
+  const letter = placementKindLetter(kind);
+  const bg = kind === "window" ? "#1d4ed8" : kind === "door" ? "#b45309" : "#0d9488";
   const size = compact ? 30 : 34;
   const ring = selected ? "0 0 0 3px rgba(255,255,255,.95),0 0 0 6px rgba(29,78,216,.7)" : "0 2px 10px rgba(0,0,0,.5)";
   return L.divIcon({
@@ -147,7 +176,7 @@ function normToLatLng(pos_x: number, pos_y: number, width: number, height: numbe
 }
 
 function PlacementHoverDetails({ p }: { p: WarehousePlacementRow }) {
-  const title = p.kind === "window" ? "Window" : "Door";
+  const title = placementKindTitle(p.kind);
   const label = p.label?.trim() || "—";
   const note = p.note?.trim();
   return (
@@ -166,7 +195,7 @@ function CellHoverDetails({ cellLabel, items }: { cellLabel: string; items: Ware
       <ul className="mt-1 list-inside list-disc space-y-1 text-[11px] text-card-foreground">
         {items.map((p) => (
           <li key={p.id}>
-            <span className="font-semibold">{p.kind === "window" ? "W" : "D"}</span> — {p.label?.trim() || "—"}
+            <span className="font-semibold">{placementKindLetter(p.kind)}</span> — {p.label?.trim() || "—"}
             {p.note?.trim() ? <span className="text-muted-foreground"> ({p.note.trim()})</span> : null}
           </li>
         ))}
@@ -189,7 +218,7 @@ export function WarehouseMapClient() {
   const [addNorm, setAddNorm] = useState<{ pos_x: number; pos_y: number } | null>(null);
   const [addCol, setAddCol] = useState<WarehouseColumn>("A");
   const [addRow, setAddRow] = useState(1);
-  const [addKind, setAddKind] = useState<"window" | "door">("window");
+  const [addKind, setAddKind] = useState<WarehousePlacementKind>("window");
   const [addLabel, setAddLabel] = useState("");
   const [addNote, setAddNote] = useState("");
   const [saving, setSaving] = useState(false);
@@ -240,6 +269,7 @@ export function WarehouseMapClient() {
     setPlacements(
       (placeRows ?? []).map((r) => ({
         ...r,
+        kind: normalizePlacementKind(String(r.kind)),
         pos_x: num(r.pos_x),
         pos_y: num(r.pos_y),
         cell_row: r.cell_row == null ? null : Number(r.cell_row),
@@ -412,7 +442,7 @@ export function WarehouseMapClient() {
       const { error: insErr } = await supabase.from("warehouse_map_placements").insert({
         map_id: activeMap.id,
         kind: addKind,
-        label: addLabel.trim() || (addKind === "window" ? "Window" : "Door"),
+        label: addLabel.trim() || defaultLabelForKind(addKind),
         pos_x: addNorm.pos_x,
         pos_y: addNorm.pos_y,
         note: addNote.trim() || null,
@@ -450,7 +480,7 @@ export function WarehouseMapClient() {
       const { error: insErr } = await supabase.from("warehouse_map_placements").insert({
         map_id: activeMap.id,
         kind: addKind,
-        label: addLabel.trim() || (addKind === "window" ? "Window" : "Door"),
+        label: addLabel.trim() || defaultLabelForKind(addKind),
         pos_x,
         pos_y,
         note: addNote.trim() || null,
@@ -573,8 +603,8 @@ export function WarehouseMapClient() {
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <span>
               Signed in as <span className="font-medium text-foreground">{sessionEmail}</span> — click the floor for an
-              exact spot, or add up to ten items per grid cell (A has 10 rows; B and C have 8). Cell pins show a count;
-              hover for the list.
+              exact spot, or add up to ten items per grid cell (A has 10 rows; B and C have 8). Types: window, door, or
+              screen. Cell pins show a count; hover for the list.
             </span>
             <button
               type="button"
@@ -695,7 +725,7 @@ export function WarehouseMapClient() {
                     <Popup className="warehouse-popup">
                       <div className="min-w-[200px] space-y-2 p-1 text-foreground">
                         <div className="text-xs font-semibold uppercase text-muted-foreground">
-                          {p.kind === "window" ? "Window" : "Door"}
+                          {placementKindTitle(p.kind)}
                         </div>
                         {canEdit ? (
                           <MarkerEditForm
@@ -817,7 +847,7 @@ export function WarehouseMapClient() {
                   }`}
                 >
                   {cellPrefix}
-                  {p.kind === "window" ? "W" : "D"} · {p.label?.trim() || "Untitled"}
+                  {placementKindLetter(p.kind)} · {p.label?.trim() || "Untitled"}
                 </button>
               );
             })}
@@ -837,7 +867,8 @@ export function WarehouseMapClient() {
               Add marker
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Exact map position for walls and openings, or a grid cell for up to ten stacked lines per cell.
+              Choose window, door, or screen. Use map position for exact spots, or a grid cell for up to ten stacked
+              items per cell.
             </p>
             <div className="mt-4 flex gap-2 rounded-lg border border-border bg-muted/20 p-1">
               <button
@@ -897,11 +928,11 @@ export function WarehouseMapClient() {
                 </label>
               </div>
             ) : null}
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setAddKind("window")}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                className={`rounded-lg border px-2 py-2 text-sm font-medium ${
                   addKind === "window"
                     ? "border-primary bg-primary/15 text-foreground"
                     : "border-border bg-muted/30"
@@ -912,13 +943,24 @@ export function WarehouseMapClient() {
               <button
                 type="button"
                 onClick={() => setAddKind("door")}
-                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                className={`rounded-lg border px-2 py-2 text-sm font-medium ${
                   addKind === "door"
                     ? "border-primary bg-primary/15 text-foreground"
                     : "border-border bg-muted/30"
                 }`}
               >
                 Door
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddKind("screen")}
+                className={`rounded-lg border px-2 py-2 text-sm font-medium ${
+                  addKind === "screen"
+                    ? "border-primary bg-primary/15 text-foreground"
+                    : "border-border bg-muted/30"
+                }`}
+              >
+                Screen
               </button>
             </div>
             <label className="mt-4 block text-sm font-medium text-foreground">
@@ -927,7 +969,7 @@ export function WarehouseMapClient() {
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                 value={addLabel}
                 onChange={(e) => setAddLabel(e.target.value)}
-                placeholder={addKind === "window" ? "e.g. North wall row" : "e.g. Loading bay"}
+                placeholder={labelPlaceholderForKind(addKind)}
               />
             </label>
             <label className="mt-3 block text-sm font-medium text-foreground">
@@ -987,7 +1029,7 @@ function CellGroupPopupBody({
       {items.map((p) => (
         <div key={p.id} className="rounded-lg border border-border bg-muted/15 p-2">
           <div className="mb-1 text-[10px] text-muted-foreground">
-            {p.kind === "window" ? "Window" : "Door"} · slot {p.stack_index + 1} / 10
+            {placementKindTitle(p.kind)} · slot {p.stack_index + 1} / 10
           </div>
           {canEdit ? (
             <MarkerEditForm
