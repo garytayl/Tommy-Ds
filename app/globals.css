@@ -1165,3 +1165,49 @@
   background: var(--card);
   border: 1px solid var(--border);
 }
+
+/* Hover details on warehouse map markers */
+.leaflet-container .leaflet-tooltip.warehouse-tooltip {
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--shadow);
+  max-width: min(280px, 85vw);
+}
+
+.leaflet-container .leaflet-tooltip.warehouse-tooltip.leaflet-tooltip-top:before {
+  border-top-color: var(--card);
+}
+
+.leaflet-container .warehouse-tooltip-inner {
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  line-height: 1.35;
+}
+
+.leaflet-container .warehouse-tooltip-kind {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.leaflet-container .warehouse-tooltip-label {
+  margin-top: 0.2rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--card-foreground);
+  word-break: break-word;
+}
+
+.leaflet-container .warehouse-tooltip-note {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  word-break: break-word;
+}

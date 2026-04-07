@@ -10,6 +10,7 @@ import {
   MapContainer,
   Marker,
   Popup,
+  Tooltip,
   useMap,
   useMapEvents,
 } from "react-leaflet";
@@ -91,6 +92,19 @@ function normToLatLng(pos_x: number, pos_y: number, width: number, height: numbe
   const lat = (1 - pos_y) * height;
   const lng = pos_x * width;
   return [lat, lng];
+}
+
+function PlacementHoverDetails({ p }: { p: WarehousePlacementRow }) {
+  const title = p.kind === "window" ? "Window" : "Door";
+  const label = p.label?.trim() || "—";
+  const note = p.note?.trim();
+  return (
+    <div className="warehouse-tooltip-inner">
+      <div className="warehouse-tooltip-kind">{title}</div>
+      <div className="warehouse-tooltip-label">{label}</div>
+      {note ? <div className="warehouse-tooltip-note">{note}</div> : null}
+    </div>
+  );
 }
 
 export function WarehouseMapClient() {
@@ -402,6 +416,15 @@ export function WarehouseMapClient() {
                       },
                     }}
                   >
+                    <Tooltip
+                      direction="top"
+                      offset={L.point(0, -22)}
+                      opacity={1}
+                      sticky
+                      className="warehouse-tooltip"
+                    >
+                      <PlacementHoverDetails p={p} />
+                    </Tooltip>
                     <Popup className="warehouse-popup">
                       <div className="min-w-[200px] space-y-2 p-1 text-foreground">
                         <div className="text-xs font-semibold uppercase text-muted-foreground">
