@@ -17,6 +17,12 @@ import {
 } from "react-leaflet";
 
 import { MapErrorBoundary } from "@/components/MapErrorBoundary";
+import {
+  cellCenterNormalized,
+  cellKey,
+  maxRowForColumn,
+  type WarehouseColumn,
+} from "@/lib/warehouse-grid";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type WarehouseMapRow = {
@@ -38,6 +44,9 @@ type WarehousePlacementRow = {
   pos_x: number;
   pos_y: number;
   note: string | null;
+  cell_column: string | null;
+  cell_row: number | null;
+  stack_index: number;
 };
 
 function num(v: unknown): number {
@@ -64,6 +73,18 @@ function placementIcon(
     html: `<div style="width:${size}px;height:${size}px;border-radius:9999px;background:${bg};color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:${ring};border:2px solid rgba(255,255,255,.35);font-family:system-ui,sans-serif">${letter}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
+  });
+}
+
+function cellGroupIcon(cellLabel: string, count: number, selected?: boolean) {
+  const ring = selected
+    ? "0 0 0 3px rgba(255,255,255,.95),0 0 0 6px rgba(29,78,216,.7)"
+    : "0 2px 12px rgba(0,0,0,.55)";
+  return L.divIcon({
+    className: "warehouse-leaflet-icon",
+    html: `<div style="min-width:40px;min-height:40px;border-radius:10px;background:#0f172a;color:#fff;font-weight:700;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:${ring};border:2px solid rgba(255,255,255,.28);font-family:system-ui,sans-serif;padding:3px 6px;line-height:1.1"><span style="font-size:10px;font-weight:600;opacity:.88">${cellLabel}</span><span>${count}</span></div>`,
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
   });
 }
 
@@ -138,6 +159,22 @@ function PlacementHoverDetails({ p }: { p: WarehousePlacementRow }) {
   );
 }
 
+function CellHoverDetails({ cellLabel, items }: { cellLabel: string; items: WarehousePlacementRow[] }) {
+  return (
+    <div className="warehouse-tooltip-inner max-h-48 overflow-y-auto pr-1 text-left">
+      <div className="warehouse-tooltip-kind">Cell {cellLabel}</div>
+      <ul className="mt-1 list-inside list-disc space-y-1 text-[11px] text-card-foreground">
+        {items.map((p) => (
+          <li key={p.id}>
+            <span className="font-semibold">{p.kind === "window" ? "W" : "D"}</span> — {p.label?.trim() || "—"}
+            {p.note?.trim() ? <span className="text-muted-foreground"> ({p.note.trim()})</span> : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function WarehouseMapClient() {
   const [maps, setMaps] = useState<WarehouseMapRow[]>([]);
   const [placements, setPlacements] = useState<WarehousePlacementRow[]>([]);
@@ -147,7 +184,11 @@ export function WarehouseMapClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  /** `map` = exact coordinates from a map click; `cell` = stacked in a grid cell (up to 10). */
+  const [addMode, setAddMode] = useState<"map" | "cell">("map");
   const [addNorm, setAddNorm] = useState<{ pos_x: number; pos_y: number } | null>(null);
+  const [addCol, setAddCol] = useState<WarehouseColumn>("A");
+  const [addRow, setAddRow] = useState(1);
   const [addKind, setAddKind] = useState<"window" | "door">("window");
   const [addLabel, setAddLabel] = useState("");
   const [addNote, setAddNote] = useState("");
@@ -190,7 +231,7 @@ export function WarehouseMapClient() {
     }
     const { data: placeRows, error: pErr } = await supabase
       .from("warehouse_map_placements")
-      .select("id, map_id, kind, label, pos_x, pos_y, note")
+      .select("id, map_id, kind, label, pos_x, pos_y, note, cell_column, cell_row, stack_index")
       .in("map_id", ids);
     if (pErr) {
       setError(pErr.message);
@@ -201,6 +242,8 @@ export function WarehouseMapClient() {
         ...r,
         pos_x: num(r.pos_x),
         pos_y: num(r.pos_y),
+        cell_row: r.cell_row == null ? null : Number(r.cell_row),
+        stack_index: Number.isFinite(Number(r.stack_index)) ? Number(r.stack_index) : 0,
       })) as WarehousePlacementRow[],
     );
   }, [supabase]);
@@ -246,6 +289,11 @@ export function WarehouseMapClient() {
   }, [supabase]);
 
   useEffect(() => {
+    const max = maxRowForColumn(addCol);
+    setAddRow((r) => Math.min(max, Math.max(1, r)));
+  }, [addCol]);
+
+  useEffect(() => {
     const ch = supabase
       .channel("warehouse_map_placements_changes")
       .on(
@@ -266,20 +314,52 @@ export function WarehouseMapClient() {
     [placements, activeMapId],
   );
 
+  const { freePlacements, cellGroupList } = useMemo(() => {
+    const free: WarehousePlacementRow[] = [];
+    const cellMap = new Map<string, WarehousePlacementRow[]>();
+    for (const p of placementsForActive) {
+      if (p.cell_column && p.cell_row != null) {
+        const k = cellKey(p.cell_column as WarehouseColumn, p.cell_row);
+        const arr = cellMap.get(k) ?? [];
+        arr.push(p);
+        cellMap.set(k, arr);
+      } else {
+        free.push(p);
+      }
+    }
+    for (const arr of cellMap.values()) {
+      arr.sort((a, b) => a.stack_index - b.stack_index);
+    }
+    const cellGroupList = Array.from(cellMap.entries()).sort(([a], [b]) => a.localeCompare(b));
+    return { freePlacements: free, cellGroupList };
+  }, [placementsForActive]);
+
+  /** All items for “Jump to marker” chips (free + every cell stack entry). */
+  const jumpPlacementTargets = useMemo(() => {
+    const out = [...freePlacements];
+    for (const [, items] of cellGroupList) out.push(...items);
+    return out.sort((a, b) => {
+      const ca = `${a.cell_column ?? ""}${a.cell_row ?? ""}`;
+      const cb = `${b.cell_column ?? ""}${b.cell_row ?? ""}`;
+      if (ca !== cb) return ca.localeCompare(cb);
+      return a.stack_index - b.stack_index;
+    });
+  }, [freePlacements, cellGroupList]);
+
   const bounds: L.LatLngBoundsExpression | null = useMemo(() => {
     if (!activeMap) return null;
     return [
       [0, 0],
       [activeMap.height_px, activeMap.width_px],
     ];
-  }, [activeMap]);
+  }, [activeMap?.height_px, activeMap?.width_px]);
 
   /** Stable while the same map is selected — avoids remount/fit when Supabase returns a new object for the same row. */
   const mapFitKey = activeMap ? `${activeMap.id}-${activeMap.width_px}-${activeMap.height_px}` : "";
 
   const mapCenter = useMemo<L.LatLngTuple>(
     () => (activeMap ? [activeMap.height_px / 2, activeMap.width_px / 2] : [0, 0]),
-    [activeMap],
+    [activeMap?.height_px, activeMap?.width_px],
   );
 
   const fitToMap = useCallback(() => {
@@ -310,6 +390,7 @@ export function WarehouseMapClient() {
   async function onMapClick(latlng: L.LatLng) {
     if (!activeMap || !canEdit) return;
     const { pos_x, pos_y } = latLngToNorm(latlng, activeMap.width_px, activeMap.height_px);
+    setAddMode("map");
     setAddNorm({ pos_x, pos_y });
     setAddKind("window");
     setAddLabel("");
@@ -318,22 +399,72 @@ export function WarehouseMapClient() {
   }
 
   async function saveNewPlacement() {
-    if (!activeMap || !addNorm) return;
+    if (!activeMap) return;
     setSaving(true);
     setError(null);
-    const { error: insErr } = await supabase.from("warehouse_map_placements").insert({
-      map_id: activeMap.id,
-      kind: addKind,
-      label: addLabel.trim() || (addKind === "window" ? "Window" : "Door"),
-      pos_x: addNorm.pos_x,
-      pos_y: addNorm.pos_y,
-      note: addNote.trim() || null,
-    });
-    setSaving(false);
-    if (insErr) {
-      setError(insErr.message);
-      return;
+
+    if (addMode === "map") {
+      if (!addNorm) {
+        setSaving(false);
+        setError("Click the map to choose a position, or switch to grid cell.");
+        return;
+      }
+      const { error: insErr } = await supabase.from("warehouse_map_placements").insert({
+        map_id: activeMap.id,
+        kind: addKind,
+        label: addLabel.trim() || (addKind === "window" ? "Window" : "Door"),
+        pos_x: addNorm.pos_x,
+        pos_y: addNorm.pos_y,
+        note: addNote.trim() || null,
+        cell_column: null,
+        cell_row: null,
+        stack_index: 0,
+      });
+      setSaving(false);
+      if (insErr) {
+        setError(insErr.message);
+        return;
+      }
+    } else {
+      const maxR = maxRowForColumn(addCol);
+      const row = Math.min(maxR, Math.max(1, addRow));
+      const { data: existing, error: exErr } = await supabase
+        .from("warehouse_map_placements")
+        .select("stack_index")
+        .eq("map_id", activeMap.id)
+        .eq("cell_column", addCol)
+        .eq("cell_row", row);
+      if (exErr) {
+        setSaving(false);
+        setError(exErr.message);
+        return;
+      }
+      const stacks = (existing ?? []).map((r) => Number(r.stack_index)).filter(Number.isFinite);
+      const next = stacks.length ? Math.max(...stacks) + 1 : 0;
+      if (next > 9) {
+        setSaving(false);
+        setError("That cell already has 10 items. Remove one before adding another.");
+        return;
+      }
+      const { pos_x, pos_y } = cellCenterNormalized(addCol, row);
+      const { error: insErr } = await supabase.from("warehouse_map_placements").insert({
+        map_id: activeMap.id,
+        kind: addKind,
+        label: addLabel.trim() || (addKind === "window" ? "Window" : "Door"),
+        pos_x,
+        pos_y,
+        note: addNote.trim() || null,
+        cell_column: addCol,
+        cell_row: row,
+        stack_index: next,
+      });
+      setSaving(false);
+      if (insErr) {
+        setError(insErr.message);
+        return;
+      }
     }
+
     setAddOpen(false);
     setAddNorm(null);
     await loadAll();
@@ -366,8 +497,8 @@ export function WarehouseMapClient() {
     await loadAll();
   }
 
-  async function onMarkerDragEnd(id: string, latlng: L.LatLng) {
-    if (!activeMap) return;
+  async function onMarkerDragEnd(id: string, latlng: L.LatLng, isCell: boolean) {
+    if (!activeMap || isCell) return;
     const { pos_x, pos_y } = latLngToNorm(latlng, activeMap.width_px, activeMap.height_px);
     const { error: uErr } = await supabase
       .from("warehouse_map_placements")
@@ -437,12 +568,31 @@ export function WarehouseMapClient() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
         {canEdit ? (
-          <span>
-            Signed in as <span className="font-medium text-foreground">{sessionEmail}</span> — click
-            the floor to add a window or door. Drag markers to move them.
-          </span>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <span>
+              Signed in as <span className="font-medium text-foreground">{sessionEmail}</span> — click the floor for an
+              exact spot, or add up to ten items per grid cell (A has 10 rows; B and C have 8). Cell pins show a count;
+              hover for the list.
+            </span>
+            <button
+              type="button"
+              className="shrink-0 rounded-lg border border-border bg-muted/40 px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted/60"
+              onClick={() => {
+                setAddMode("cell");
+                setAddCol("A");
+                setAddRow(1);
+                setAddKind("window");
+                setAddLabel("");
+                setAddNote("");
+                setAddNorm(null);
+                setAddOpen(true);
+              }}
+            >
+              Add to grid cell…
+            </button>
+          </div>
         ) : (
           <span>
             <Link href="/auth/login?next=/warehouse" className="font-medium text-accent-gold underline-offset-4 hover:underline">
@@ -501,7 +651,7 @@ export function WarehouseMapClient() {
               <FitBoundsWhenMapChanges bounds={bounds} mapFitKey={mapFitKey} />
               <ImageOverlay url={imageUrl} bounds={bounds} />
               <MapClickHandler enabled={canEdit && !addOpen} onClick={onMapClick} />
-              {placementsForActive.map((p) => {
+              {freePlacements.map((p) => {
                 const position = normToLatLng(
                   p.pos_x,
                   p.pos_y,
@@ -527,7 +677,7 @@ export function WarehouseMapClient() {
                       dragend: (e) => {
                         const m = e.target;
                         if (!m || typeof (m as L.Marker).getLatLng !== "function") return;
-                        void onMarkerDragEnd(p.id, (m as L.Marker).getLatLng());
+                        void onMarkerDragEnd(p.id, (m as L.Marker).getLatLng(), false);
                       },
                     }}
                   >
@@ -567,6 +717,55 @@ export function WarehouseMapClient() {
                   </Marker>
                 );
               })}
+              {cellGroupList.map(([label, items]) => {
+                const head = items[0];
+                const position = normToLatLng(
+                  head.pos_x,
+                  head.pos_y,
+                  activeMap.width_px,
+                  activeMap.height_px,
+                );
+                const cellSelected = items.some((it) => it.id === selectedPlacementId);
+                return (
+                  <Marker
+                    key={`cell-${label}`}
+                    ref={(marker) => {
+                      for (const pl of items) {
+                        if (marker) markerRefs.current[pl.id] = marker;
+                        else delete markerRefs.current[pl.id];
+                      }
+                    }}
+                    position={position}
+                    icon={cellGroupIcon(label, items.length, cellSelected)}
+                    draggable={false}
+                    eventHandlers={{
+                      click: () => {
+                        setSelectedPlacementId(items[0]?.id ?? null);
+                      },
+                    }}
+                  >
+                    <Tooltip
+                      direction="top"
+                      offset={L.point(0, -26)}
+                      opacity={1}
+                      sticky
+                      className="warehouse-tooltip"
+                    >
+                      <CellHoverDetails cellLabel={label} items={items} />
+                    </Tooltip>
+                    <Popup className="warehouse-popup">
+                      <CellGroupPopupBody
+                        cellLabel={label}
+                        items={items}
+                        canEdit={canEdit}
+                        saving={saving}
+                        onSave={(id, lbl, note) => updatePlacementLabel(id, lbl, note)}
+                        onDelete={(id) => deletePlacement(id)}
+                      />
+                    </Popup>
+                  </Marker>
+                );
+              })}
             </MapContainer>
           </MapErrorBoundary>
         </div>
@@ -599,29 +798,34 @@ export function WarehouseMapClient() {
         ) : null}
       </div>
 
-      {placementsForActive.length > 0 ? (
+      {jumpPlacementTargets.length > 0 ? (
         <div className="space-y-2 rounded-xl border border-border bg-card/40 p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Jump to marker</p>
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {placementsForActive.map((p) => (
-              <button
-                key={`${p.id}-jump`}
-                type="button"
-                onClick={() => focusPlacement(p)}
-                className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                  p.id === selectedPlacementId
-                    ? "border-primary bg-primary/15 text-foreground"
-                    : "border-border bg-background text-muted-foreground"
-                }`}
-              >
-                {p.kind === "window" ? "W" : "D"} · {p.label?.trim() || "Untitled"}
-              </button>
-            ))}
+            {jumpPlacementTargets.map((p) => {
+              const cellPrefix =
+                p.cell_column && p.cell_row != null ? `${p.cell_column}${p.cell_row} · ` : "";
+              return (
+                <button
+                  key={`${p.id}-jump`}
+                  type="button"
+                  onClick={() => focusPlacement(p)}
+                  className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    p.id === selectedPlacementId
+                      ? "border-primary bg-primary/15 text-foreground"
+                      : "border-border bg-background text-muted-foreground"
+                  }`}
+                >
+                  {cellPrefix}
+                  {p.kind === "window" ? "W" : "D"} · {p.label?.trim() || "Untitled"}
+                </button>
+              );
+            })}
           </div>
         </div>
       ) : null}
 
-      {addOpen && addNorm ? (
+      {addOpen ? (
         <div
           className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/50 p-4 sm:items-center"
           role="dialog"
@@ -632,7 +836,67 @@ export function WarehouseMapClient() {
             <h2 id="warehouse-add-title" className="text-lg font-semibold text-foreground">
               Add marker
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">Choose type and label for this spot.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Exact map position for walls and openings, or a grid cell for up to ten stacked lines per cell.
+            </p>
+            <div className="mt-4 flex gap-2 rounded-lg border border-border bg-muted/20 p-1">
+              <button
+                type="button"
+                onClick={() => setAddMode("map")}
+                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${
+                  addMode === "map" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted/50"
+                }`}
+              >
+                Map position
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAddMode("cell");
+                  setAddNorm(null);
+                }}
+                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${
+                  addMode === "cell" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted/50"
+                }`}
+              >
+                Grid cell
+              </button>
+            </div>
+            {addMode === "map" && addNorm ? (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Using click at ({addNorm.pos_x.toFixed(3)}, {addNorm.pos_y.toFixed(3)}) normalized.
+              </p>
+            ) : null}
+            {addMode === "cell" ? (
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <label className="text-sm font-medium text-foreground">
+                  Column
+                  <select
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    value={addCol}
+                    onChange={(e) => setAddCol(e.target.value as WarehouseColumn)}
+                  >
+                    <option value="A">A (10 rows)</option>
+                    <option value="B">B (8 rows)</option>
+                    <option value="C">C (8 rows)</option>
+                  </select>
+                </label>
+                <label className="text-sm font-medium text-foreground">
+                  Row
+                  <select
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    value={addRow}
+                    onChange={(e) => setAddRow(Number(e.target.value))}
+                  >
+                    {Array.from({ length: maxRowForColumn(addCol) }, (_, i) => i + 1).map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ) : null}
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
@@ -689,7 +953,7 @@ export function WarehouseMapClient() {
               <button
                 type="button"
                 className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
-                disabled={saving}
+                disabled={saving || (addMode === "map" && !addNorm)}
                 onClick={() => void saveNewPlacement()}
               >
                 {saving ? "Saving…" : "Save"}
@@ -698,6 +962,49 @@ export function WarehouseMapClient() {
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function CellGroupPopupBody({
+  cellLabel,
+  items,
+  canEdit,
+  saving,
+  onSave,
+  onDelete,
+}: {
+  cellLabel: string;
+  items: WarehousePlacementRow[];
+  canEdit: boolean;
+  saving: boolean;
+  onSave: (id: string, label: string, note: string | null) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div className="max-h-72 min-w-[220px] overflow-y-auto space-y-3 p-1 text-foreground">
+      <div className="text-xs font-semibold uppercase text-muted-foreground">Cell {cellLabel}</div>
+      {items.map((p) => (
+        <div key={p.id} className="rounded-lg border border-border bg-muted/15 p-2">
+          <div className="mb-1 text-[10px] text-muted-foreground">
+            {p.kind === "window" ? "Window" : "Door"} · slot {p.stack_index + 1} / 10
+          </div>
+          {canEdit ? (
+            <MarkerEditForm
+              initialLabel={p.label}
+              initialNote={p.note ?? ""}
+              saving={saving}
+              onSave={(label, note) => onSave(p.id, label, note)}
+              onDelete={() => onDelete(p.id)}
+            />
+          ) : (
+            <>
+              <p className="text-sm font-medium">{p.label || "—"}</p>
+              {p.note ? <p className="text-xs text-muted-foreground">{p.note}</p> : null}
+            </>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
