@@ -7,7 +7,7 @@ const WarehouseMapClient = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-border bg-card/40 p-8 text-muted-foreground">
+      <div className="flex min-h-[min(72dvh,640px)] flex-1 items-center justify-center bg-[#050508] text-sm text-muted-foreground">
         Loading map…
       </div>
     ),
@@ -15,5 +15,9 @@ const WarehouseMapClient = dynamic(
 );
 
 export function WarehouseMapSection() {
-  return <WarehouseMapClient />;
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <WarehouseMapClient />
+    </div>
+  );
 }

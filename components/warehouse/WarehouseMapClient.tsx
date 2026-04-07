@@ -539,14 +539,14 @@ export function WarehouseMapClient() {
   }
 
   const mapFallback = (
-    <div className="flex min-h-[320px] items-center justify-center rounded-xl border border-border bg-muted/30 p-6 text-sm text-muted-foreground">
+    <div className="flex h-full min-h-[200px] items-center justify-center bg-[#08080c] p-6 text-sm text-muted-foreground">
       Map could not be loaded.
     </div>
   );
 
   if (loading && maps.length === 0) {
     return (
-      <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-border bg-card/40 p-8 text-muted-foreground">
+      <div className="flex min-h-[min(40dvh,360px)] flex-1 items-center justify-center bg-[#050508] text-muted-foreground">
         Loading warehouse maps…
       </div>
     );
@@ -554,109 +554,110 @@ export function WarehouseMapClient() {
 
   if (!activeMap || !bounds) {
     return (
-      <div className="rounded-xl border border-border bg-card/40 p-6 text-sm text-muted-foreground">
+      <div className="flex min-h-[min(40dvh,240px)] flex-1 items-center justify-center bg-[#050508] px-4 text-center text-sm text-muted-foreground">
         No floor maps are configured yet.
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex min-h-0 flex-1 flex-col">
       {error ? (
         <div
-          className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
+          className="shrink-0 border-b border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
           role="alert"
         >
           {error}
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex flex-wrap gap-2 rounded-xl border border-border bg-card/50 p-1">
-          {maps.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => {
-                setActiveMapId(m.id);
-                setAddOpen(false);
-                setAddNorm(null);
-                setSelectedPlacementId(null);
-              }}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                m.id === activeMapId
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              }`}
-            >
-              {m.title}
-            </button>
-          ))}
+      <div className="shrink-0 border-b border-white/10 bg-black/55 px-3 py-2.5 backdrop-blur-md md:px-4">
+        <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between md:gap-4">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            <div className="inline-flex flex-wrap gap-0.5 rounded-lg border border-white/12 bg-white/[0.06] p-0.5">
+              {maps.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveMapId(m.id);
+                    setAddOpen(false);
+                    setAddNorm(null);
+                    setSelectedPlacementId(null);
+                  }}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition md:px-4 md:py-2 ${
+                    m.id === activeMapId
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                  }`}
+                >
+                  {m.title}
+                </button>
+              ))}
+            </div>
+            {activeMap.description ? (
+              <p className="hidden max-w-md text-[11px] leading-snug text-muted-foreground lg:block xl:max-w-lg">
+                {activeMap.description}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 md:justify-end">
+            {isMobile ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[11px] text-muted-foreground">
+                  {mobileNavEnabled ? "Pan & pinch on" : "Scroll mode — "}
+                </p>
+                <button
+                  type="button"
+                  className="rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-foreground"
+                  onClick={() => setMobileNavEnabled((v) => !v)}
+                >
+                  {mobileNavEnabled ? "Scroll page" : "Enable map"}
+                </button>
+              </div>
+            ) : null}
+            {canEdit ? (
+              <button
+                type="button"
+                className="rounded-md border border-white/15 bg-white/[0.08] px-3 py-1.5 text-sm font-medium text-foreground hover:bg-white/12"
+                onClick={() => {
+                  setAddMode("cell");
+                  setAddCol("A");
+                  setAddRow(1);
+                  setAddKind("window");
+                  setAddLabel("");
+                  setAddNote("");
+                  setAddNorm(null);
+                  setAddOpen(true);
+                }}
+              >
+                Add to grid cell…
+              </button>
+            ) : (
+              <span className="text-[11px] text-muted-foreground">
+                <Link href="/auth/login?next=/warehouse" className="font-medium text-accent-gold underline-offset-4 hover:underline">
+                  Sign in
+                </Link>{" "}
+                to add or edit. Viewing is public.
+              </span>
+            )}
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground sm:max-w-sm sm:text-right">
-          {activeMap.description}
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
         {canEdit ? (
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-            <span>
-              Signed in as <span className="font-medium text-foreground">{sessionEmail}</span> — click the floor for an
-              exact spot, or add up to ten items per grid cell (A has 10 rows; B and C have 8). Types: window, door, or
-              screen. Cell pins show a count; hover for the list.
-            </span>
-            <button
-              type="button"
-              className="shrink-0 rounded-lg border border-border bg-muted/40 px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted/60"
-              onClick={() => {
-                setAddMode("cell");
-                setAddCol("A");
-                setAddRow(1);
-                setAddKind("window");
-                setAddLabel("");
-                setAddNote("");
-                setAddNorm(null);
-                setAddOpen(true);
-              }}
-            >
-              Add to grid cell…
-            </button>
-          </div>
-        ) : (
-          <span>
-            <Link href="/auth/login?next=/warehouse" className="font-medium text-accent-gold underline-offset-4 hover:underline">
-              Sign in
-            </Link>{" "}
-            to add or edit markers. Everyone can view this page.
-          </span>
-        )}
+          <p className="mt-2 border-t border-white/5 pt-2 text-[11px] leading-relaxed text-muted-foreground">
+            Signed in as <span className="font-medium text-foreground">{sessionEmail}</span> — click the floor for an
+            exact spot, or add up to ten items per grid cell (A: 10 rows; B/C: 8). Types: window, door, screen. Cell pins
+            show a count; hover for the list.
+          </p>
+        ) : null}
       </div>
 
-      {isMobile ? (
-        <div className="rounded-xl border border-border bg-card/40 p-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">
-              {mobileNavEnabled
-                ? "Map navigation is on. Drag to pan and pinch to zoom."
-                : "Scroll mode is on. Turn map navigation on to pan/zoom."}
-            </p>
-            <button
-              type="button"
-              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground"
-              onClick={() => setMobileNavEnabled((v) => !v)}
-            >
-              {mobileNavEnabled ? "Scroll page" : "Enable map"}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="relative overflow-hidden rounded-xl border border-border bg-card/30 shadow-sm">
-        <div className={isMobile ? "h-[72dvh] min-h-[430px] w-full" : "h-[min(72vh,560px)] min-h-[320px] w-full"}>
+      <div className="relative min-h-0 flex-1">
+        <div className="absolute inset-0 z-0 min-h-[240px]">
           <MapErrorBoundary fallback={mapFallback}>
             <MapContainer
               key={`warehouse-floor-${activeMap.id}`}
+              className="warehouse-map-canvas z-0 !h-full !w-full"
               crs={L.CRS.Simple}
               center={mapCenter}
               zoom={0}
@@ -667,7 +668,7 @@ export function WarehouseMapClient() {
               inertia
               inertiaDeceleration={3400}
               inertiaMaxSpeed={1800}
-              style={{ height: "100%", width: "100%", background: "#0a0a0a" }}
+              style={{ height: "100%", width: "100%", background: "#07070a" }}
               attributionControl={false}
               scrollWheelZoom={!isMobile}
               doubleClickZoom={!isMobile}
@@ -803,7 +804,7 @@ export function WarehouseMapClient() {
           <div className="pointer-events-none absolute bottom-3 right-3 z-[900] flex flex-col gap-2">
             <button
               type="button"
-              className="pointer-events-auto h-11 w-11 rounded-full border border-border bg-card text-lg font-semibold text-foreground shadow-lg"
+              className="pointer-events-auto h-11 w-11 rounded-full border border-white/15 bg-black/65 text-lg font-semibold text-foreground shadow-lg backdrop-blur-sm"
               onClick={() => mapInstance?.zoomIn(0.75)}
               aria-label="Zoom in"
             >
@@ -811,7 +812,7 @@ export function WarehouseMapClient() {
             </button>
             <button
               type="button"
-              className="pointer-events-auto h-11 w-11 rounded-full border border-border bg-card text-lg font-semibold text-foreground shadow-lg"
+              className="pointer-events-auto h-11 w-11 rounded-full border border-white/15 bg-black/65 text-lg font-semibold text-foreground shadow-lg backdrop-blur-sm"
               onClick={() => mapInstance?.zoomOut(0.75)}
               aria-label="Zoom out"
             >
@@ -819,7 +820,7 @@ export function WarehouseMapClient() {
             </button>
             <button
               type="button"
-              className="pointer-events-auto rounded-full border border-border bg-card px-3 py-2 text-xs font-medium text-foreground shadow-lg"
+              className="pointer-events-auto rounded-full border border-white/15 bg-black/65 px-3 py-2 text-xs font-medium text-foreground shadow-lg backdrop-blur-sm"
               onClick={fitToMap}
             >
               Fit
@@ -829,9 +830,9 @@ export function WarehouseMapClient() {
       </div>
 
       {jumpPlacementTargets.length > 0 ? (
-        <div className="space-y-2 rounded-xl border border-border bg-card/40 p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Jump to marker</p>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="shrink-0 border-t border-white/10 bg-black/35 px-3 py-2.5 md:px-4">
+          <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Jump to marker</p>
+          <div className="flex gap-2 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]">
             {jumpPlacementTargets.map((p) => {
               const cellPrefix =
                 p.cell_column && p.cell_row != null ? `${p.cell_column}${p.cell_row} · ` : "";
@@ -842,8 +843,8 @@ export function WarehouseMapClient() {
                   onClick={() => focusPlacement(p)}
                   className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                     p.id === selectedPlacementId
-                      ? "border-primary bg-primary/15 text-foreground"
-                      : "border-border bg-background text-muted-foreground"
+                      ? "border-primary bg-primary/20 text-foreground"
+                      : "border-white/12 bg-white/[0.06] text-muted-foreground hover:bg-white/10"
                   }`}
                 >
                   {cellPrefix}

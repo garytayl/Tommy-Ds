@@ -1148,6 +1148,12 @@
   }
 }
 
+/* Immersive warehouse floor: map fills flex / absolute region */
+.warehouse-map-canvas.leaflet-container {
+  height: 100%;
+  width: 100%;
+}
+
 /* Leaflet: custom div markers on warehouse floor maps */
 .leaflet-container .warehouse-leaflet-icon {
   border: none !important;

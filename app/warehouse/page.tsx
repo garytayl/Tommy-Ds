@@ -8,7 +8,7 @@ export default function WarehousePage() {
   if (!features.supabase) {
     return (
       <PublicShell>
-        <div className="container mx-auto max-w-2xl px-4 pb-16 pt-6 md:px-6">
+        <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 md:px-6">
           <div className="rounded-xl border border-border bg-card/60 p-6 shadow-sm">
             <h1 className="text-xl font-semibold text-foreground">Warehouse map</h1>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -26,20 +26,22 @@ export default function WarehousePage() {
 
   return (
     <PublicShell>
-      <div className="container mx-auto max-w-6xl px-4 pb-16 pt-6 md:px-6 md:pt-8">
-        <div className="mb-6">
+      <div className="flex flex-col">
+        <header className="shrink-0 border-b border-white/10 px-4 pb-4 pt-2 md:px-8">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Yard</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-            Upper warehouse
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Three columns: A has ten rows; B and C have eight rows each. Each grid cell can hold up to ten stacked items
-            (pins show a count). Use the toolbar (+/−) or pinch and scroll to zoom, and drag to pan. On mobile, use the map
-            mode toggle and quick marker chips to jump to any item. Mark windows, doors, and screens on the layout map,
-            or use the inventory map for stock and bay labels. Changes save for everyone in real time.
-          </p>
+          <div className="mt-1 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Upper warehouse</h1>
+            <p className="max-w-xl text-xs leading-relaxed text-muted-foreground md:text-right">
+              Full-width floor — pan and zoom the whole plan. Grid cells stack up to ten items; pins show window, door,
+              or screen.
+            </p>
+          </div>
+        </header>
+
+        {/* Viewport-tied floor: avoids a short “card” map; main already has pt-20 and footer below */}
+        <div className="flex h-[min(calc(100dvh-12rem),1200px)] min-h-[min(72dvh,640px)] flex-col bg-[#050508]">
+          <WarehouseMapSection />
         </div>
-        <WarehouseMapSection />
       </div>
     </PublicShell>
   );
