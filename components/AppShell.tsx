@@ -60,10 +60,7 @@ const ADMIN_TOOLS_ADMIN: GlassNavSection = {
     { title: "Yard & inventory", links: YARD_LINKS },
     {
       title: "Labs",
-      links: [
-        { href: "/admin/environment", label: "Environment" },
-        { href: "/admin/future-features", label: "Future features" },
-      ],
+      links: [{ href: "/admin/future-features", label: "Future features" }],
     },
   ],
 };
@@ -79,10 +76,7 @@ const ADMIN_TOOLS_MANAGER: GlassNavSection = {
     { title: "Yard & inventory", links: YARD_LINKS },
     {
       title: "Labs",
-      links: [
-        { href: "/admin/environment", label: "Environment" },
-        { href: "/admin/future-features", label: "Future features" },
-      ],
+      links: [{ href: "/admin/future-features", label: "Future features" }],
     },
   ],
 };
