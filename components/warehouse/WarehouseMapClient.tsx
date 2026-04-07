@@ -46,14 +46,24 @@ function num(v: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function placementIcon(kind: "window" | "door") {
+function placementIcon(
+  kind: "window" | "door",
+  opts?: {
+    selected?: boolean;
+    compact?: boolean;
+  },
+) {
+  const selected = Boolean(opts?.selected);
+  const compact = Boolean(opts?.compact);
   const letter = kind === "window" ? "W" : "D";
   const bg = kind === "window" ? "#1d4ed8" : "#b45309";
+  const size = compact ? 30 : 34;
+  const ring = selected ? "0 0 0 3px rgba(255,255,255,.95),0 0 0 6px rgba(29,78,216,.7)" : "0 2px 10px rgba(0,0,0,.5)";
   return L.divIcon({
     className: "warehouse-leaflet-icon",
-    html: `<div style="width:32px;height:32px;border-radius:9999px;background:${bg};color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.5);border:2px solid rgba(255,255,255,.3);font-family:system-ui,sans-serif">${letter}</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
+    html: `<div style="width:${size}px;height:${size}px;border-radius:9999px;background:${bg};color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:${ring};border:2px solid rgba(255,255,255,.35);font-family:system-ui,sans-serif">${letter}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   });
 }
 
@@ -74,6 +84,14 @@ function FitBoundsWhenMapChanges({
     lastKeyRef.current = mapFitKey;
     map.fitBounds(bounds, { animate: false, padding: [12, 12] });
   }, [map, bounds, mapFitKey]);
+  return null;
+}
+
+function MapInstanceBridge({ onMapReady }: { onMapReady: (map: L.Map) => void }) {
+  const map = useMap();
+  useEffect(() => {
+    onMapReady(map);
+  }, [map, onMapReady]);
   return null;
 }
 
@@ -124,6 +142,7 @@ export function WarehouseMapClient() {
   const [maps, setMaps] = useState<WarehouseMapRow[]>([]);
   const [placements, setPlacements] = useState<WarehousePlacementRow[]>([]);
   const [activeMapId, setActiveMapId] = useState<string | null>(null);
+  const [selectedPlacementId, setSelectedPlacementId] = useState<string | null>(null);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -133,6 +152,10 @@ export function WarehouseMapClient() {
   const [addLabel, setAddLabel] = useState("");
   const [addNote, setAddNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileNavEnabled, setMobileNavEnabled] = useState(true);
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
+  const markerRefs = useRef<Record<string, L.Marker | null>>({});
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -201,6 +224,19 @@ export function WarehouseMapClient() {
   }, [supabase, loadAll]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(max-width: 900px), (pointer: coarse)");
+    const update = () => setIsMobile(media.matches);
+    update();
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", update);
+      return () => media.removeEventListener("change", update);
+    }
+    media.addListener(update);
+    return () => media.removeListener(update);
+  }, []);
+
+  useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -232,27 +268,44 @@ export function WarehouseMapClient() {
 
   const bounds: L.LatLngBoundsExpression | null = useMemo(() => {
     if (!activeMap) return null;
-    const h = activeMap.height_px;
-    const w = activeMap.width_px;
     return [
       [0, 0],
-      [h, w],
+      [activeMap.height_px, activeMap.width_px],
     ];
-  }, [activeMap?.height_px, activeMap?.width_px]);
+  }, [activeMap]);
 
   /** Stable while the same map is selected — avoids remount/fit when Supabase returns a new object for the same row. */
   const mapFitKey = activeMap ? `${activeMap.id}-${activeMap.width_px}-${activeMap.height_px}` : "";
 
-  const mapCenter = useMemo<L.LatLngTuple>(() => {
-    if (!activeMap) return [0, 0];
-    return [activeMap.height_px / 2, activeMap.width_px / 2];
-  }, [activeMap?.height_px, activeMap?.width_px]);
+  const mapCenter = useMemo<L.LatLngTuple>(
+    () => (activeMap ? [activeMap.height_px / 2, activeMap.width_px / 2] : [0, 0]),
+    [activeMap],
+  );
+
+  const fitToMap = useCallback(() => {
+    if (!mapInstance || !bounds) return;
+    mapInstance.fitBounds(bounds, { animate: true, padding: isMobile ? [36, 24] : [16, 16] });
+  }, [mapInstance, bounds, isMobile]);
+
+  const focusPlacement = useCallback(
+    (placement: WarehousePlacementRow) => {
+      if (!activeMap || !mapInstance) return;
+      const target = normToLatLng(placement.pos_x, placement.pos_y, activeMap.width_px, activeMap.height_px);
+      const minFocusZoom = isMobile ? 1.25 : 0.75;
+      const nextZoom = Math.max(mapInstance.getZoom(), minFocusZoom);
+      mapInstance.flyTo(target, nextZoom, { animate: true, duration: 0.35 });
+      setSelectedPlacementId(placement.id);
+      markerRefs.current[placement.id]?.openPopup();
+    },
+    [activeMap, isMobile, mapInstance],
+  );
 
   const imageUrl = activeMap
     ? typeof window !== "undefined"
       ? new URL(activeMap.image_path, window.location.origin).href
       : activeMap.image_path
     : "";
+  const touchZoomBehavior: boolean | "center" = isMobile ? (mobileNavEnabled ? "center" : false) : true;
 
   async function onMapClick(latlng: L.LatLng) {
     if (!activeMap || !canEdit) return;
@@ -367,6 +420,7 @@ export function WarehouseMapClient() {
                 setActiveMapId(m.id);
                 setAddOpen(false);
                 setAddNorm(null);
+                setSelectedPlacementId(null);
               }}
               className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
                 m.id === activeMapId
@@ -399,8 +453,27 @@ export function WarehouseMapClient() {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card/30 shadow-sm">
-        <div className="h-[min(72vh,560px)] min-h-[320px] w-full">
+      {isMobile ? (
+        <div className="rounded-xl border border-border bg-card/40 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              {mobileNavEnabled
+                ? "Map navigation is on. Drag to pan and pinch to zoom."
+                : "Scroll mode is on. Turn map navigation on to pan/zoom."}
+            </p>
+            <button
+              type="button"
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground"
+              onClick={() => setMobileNavEnabled((v) => !v)}
+            >
+              {mobileNavEnabled ? "Scroll page" : "Enable map"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="relative overflow-hidden rounded-xl border border-border bg-card/30 shadow-sm">
+        <div className={isMobile ? "h-[72dvh] min-h-[430px] w-full" : "h-[min(72vh,560px)] min-h-[320px] w-full"}>
           <MapErrorBoundary fallback={mapFallback}>
             <MapContainer
               key={`warehouse-floor-${activeMap.id}`}
@@ -416,13 +489,15 @@ export function WarehouseMapClient() {
               inertiaMaxSpeed={1800}
               style={{ height: "100%", width: "100%", background: "#0a0a0a" }}
               attributionControl={false}
-              scrollWheelZoom
-              doubleClickZoom
-              boxZoom
-              dragging
-              keyboard
+              scrollWheelZoom={!isMobile}
+              doubleClickZoom={!isMobile}
+              boxZoom={!isMobile}
+              dragging={isMobile ? mobileNavEnabled : true}
+              touchZoom={touchZoomBehavior}
+              keyboard={!isMobile}
             >
-              <ZoomControl position="topright" />
+              {!isMobile ? <ZoomControl position="topright" /> : null}
+              <MapInstanceBridge onMapReady={setMapInstance} />
               <FitBoundsWhenMapChanges bounds={bounds} mapFitKey={mapFitKey} />
               <ImageOverlay url={imageUrl} bounds={bounds} />
               <MapClickHandler enabled={canEdit && !addOpen} onClick={onMapClick} />
@@ -436,10 +511,19 @@ export function WarehouseMapClient() {
                 return (
                   <Marker
                     key={p.id}
+                    ref={(marker) => {
+                      markerRefs.current[p.id] = marker;
+                    }}
                     position={position}
-                    icon={placementIcon(p.kind)}
-                    draggable={canEdit}
+                    icon={placementIcon(p.kind, {
+                      selected: p.id === selectedPlacementId,
+                      compact: isMobile,
+                    })}
+                    draggable={canEdit && (!isMobile || mobileNavEnabled)}
                     eventHandlers={{
+                      click: () => {
+                        setSelectedPlacementId(p.id);
+                      },
                       dragend: (e) => {
                         const m = e.target;
                         if (!m || typeof (m as L.Marker).getLatLng !== "function") return;
@@ -447,15 +531,17 @@ export function WarehouseMapClient() {
                       },
                     }}
                   >
-                    <Tooltip
-                      direction="top"
-                      offset={L.point(0, -22)}
-                      opacity={1}
-                      sticky
-                      className="warehouse-tooltip"
-                    >
-                      <PlacementHoverDetails p={p} />
-                    </Tooltip>
+                    {!isMobile ? (
+                      <Tooltip
+                        direction="top"
+                        offset={L.point(0, -22)}
+                        opacity={1}
+                        sticky
+                        className="warehouse-tooltip"
+                      >
+                        <PlacementHoverDetails p={p} />
+                      </Tooltip>
+                    ) : null}
                     <Popup className="warehouse-popup">
                       <div className="min-w-[200px] space-y-2 p-1 text-foreground">
                         <div className="text-xs font-semibold uppercase text-muted-foreground">
@@ -484,7 +570,56 @@ export function WarehouseMapClient() {
             </MapContainer>
           </MapErrorBoundary>
         </div>
+        {isMobile ? (
+          <div className="pointer-events-none absolute bottom-3 right-3 z-[900] flex flex-col gap-2">
+            <button
+              type="button"
+              className="pointer-events-auto h-11 w-11 rounded-full border border-border bg-card text-lg font-semibold text-foreground shadow-lg"
+              onClick={() => mapInstance?.zoomIn(0.75)}
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              className="pointer-events-auto h-11 w-11 rounded-full border border-border bg-card text-lg font-semibold text-foreground shadow-lg"
+              onClick={() => mapInstance?.zoomOut(0.75)}
+              aria-label="Zoom out"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              className="pointer-events-auto rounded-full border border-border bg-card px-3 py-2 text-xs font-medium text-foreground shadow-lg"
+              onClick={fitToMap}
+            >
+              Fit
+            </button>
+          </div>
+        ) : null}
       </div>
+
+      {placementsForActive.length > 0 ? (
+        <div className="space-y-2 rounded-xl border border-border bg-card/40 p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Jump to marker</p>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {placementsForActive.map((p) => (
+              <button
+                key={`${p.id}-jump`}
+                type="button"
+                onClick={() => focusPlacement(p)}
+                className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                  p.id === selectedPlacementId
+                    ? "border-primary bg-primary/15 text-foreground"
+                    : "border-border bg-background text-muted-foreground"
+                }`}
+              >
+                {p.kind === "window" ? "W" : "D"} · {p.label?.trim() || "Untitled"}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {addOpen && addNorm ? (
         <div
