@@ -578,7 +578,7 @@ export function WarehouseMapClient() {
             Signed in as <span className="font-medium text-foreground">{sessionEmail}</span> —{" "}
             {workspaceView === "table"
               ? "Drag chips between grid cells or onto “Floor only” to unassign. Column A has 10 rows; B and C have 8."
-              : "Click the floor for an exact spot, or use Table to assign by cell. Types: window, door, screen. Double-click zooms in."}
+              : "Click the floor for an exact spot, or use Table to assign by cell. Types: window, door, screen. Double-click or double-tap to zoom in."}
           </p>
         ) : null}
       </div>

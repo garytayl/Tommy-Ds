@@ -160,6 +160,12 @@ export const WarehouseFloorPlan = forwardRef<WarehouseFloorPlanHandle, Props>(fu
   const contentRef = useRef<HTMLDivElement | null>(null);
   const markerRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const pointerDownRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  /** Touch single-tap to add marker is deferred so double-tap can zoom first. */
+  const singleTapToAddTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const lastTapRef = useRef<{ t: number; x: number; y: number } | null>(null);
+  /** After a double-tap zoom, ignore the following pointerup that would schedule "add marker". */
+  const suppressPointerFloorTapUntilRef = useRef(0);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragPreview, setDragPreview] = useState<{ id: string; pos_x: number; pos_y: number } | null>(null);
 
@@ -215,6 +221,15 @@ export const WarehouseFloorPlan = forwardRef<WarehouseFloorPlanHandle, Props>(fu
   );
 
   useEffect(() => {
+    return () => {
+      if (singleTapToAddTimerRef.current) {
+        clearTimeout(singleTapToAddTimerRef.current);
+        singleTapToAddTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!draggingId || !contentRef.current) return;
     const content = contentRef.current;
     const onMove = (e: PointerEvent) => {
@@ -252,6 +267,7 @@ export const WarehouseFloorPlan = forwardRef<WarehouseFloorPlanHandle, Props>(fu
 
   function handleFloorPointerUp(e: React.PointerEvent) {
     if (!canEdit || !contentRef.current) return;
+    if (Date.now() < suppressPointerFloorTapUntilRef.current) return;
     if ((e.target as HTMLElement).closest(".warehouse-pin")) return;
     const start = pointerDownRef.current;
     pointerDownRef.current = null;
@@ -259,6 +275,14 @@ export const WarehouseFloorPlan = forwardRef<WarehouseFloorPlanHandle, Props>(fu
     const dist = Math.hypot(e.clientX - start.x, e.clientY - start.y);
     if (dist > 10 || Date.now() - start.t > 600) return;
     const { pos_x, pos_y } = normFromClientOnContent(e.clientX, e.clientY, contentRef.current);
+    if (e.pointerType === "touch") {
+      if (singleTapToAddTimerRef.current) clearTimeout(singleTapToAddTimerRef.current);
+      singleTapToAddTimerRef.current = setTimeout(() => {
+        singleTapToAddTimerRef.current = null;
+        onFloorTap({ pos_x, pos_y });
+      }, 380);
+      return;
+    }
     onFloorTap({ pos_x, pos_y });
   }
 
@@ -270,6 +294,67 @@ export const WarehouseFloorPlan = forwardRef<WarehouseFloorPlanHandle, Props>(fu
     const p = freePlacements.find((x) => x.id === id);
     if (p) setDragPreview({ id, pos_x: p.pos_x, pos_y: p.pos_y });
   }
+
+  const DOUBLE_TAP_MS = 320;
+  const DOUBLE_TAP_MAX_MOVE = 14;
+
+  const handleWrapperTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length !== 1) {
+      touchStartRef.current = null;
+      lastTapRef.current = null;
+      return;
+    }
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  }, []);
+
+  const handleWrapperTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.changedTouches.length !== 1) return;
+      const t = e.changedTouches[0];
+      const target = e.target as HTMLElement;
+      if (target.closest(".warehouse-pin")) {
+        lastTapRef.current = null;
+        touchStartRef.current = null;
+        return;
+      }
+
+      const start = touchStartRef.current;
+      touchStartRef.current = null;
+      if (!start) return;
+      if (Math.hypot(t.clientX - start.x, t.clientY - start.y) > DOUBLE_TAP_MAX_MOVE) {
+        lastTapRef.current = null;
+        return;
+      }
+
+      const now = Date.now();
+      const last = lastTapRef.current;
+      if (last && now - last.t < DOUBLE_TAP_MS && Math.hypot(t.clientX - last.x, t.clientY - last.y) < 36) {
+        lastTapRef.current = null;
+        if (singleTapToAddTimerRef.current) {
+          clearTimeout(singleTapToAddTimerRef.current);
+          singleTapToAddTimerRef.current = null;
+        }
+        const wrapper = transformRef.current?.instance?.wrapperComponent;
+        if (wrapper) {
+          wrapper.dispatchEvent(
+            new MouseEvent("dblclick", {
+              bubbles: true,
+              cancelable: true,
+              clientX: t.clientX,
+              clientY: t.clientY,
+              view: typeof window !== "undefined" ? window : undefined,
+            }),
+          );
+        }
+        suppressPointerFloorTapUntilRef.current = Date.now() + 600;
+        e.preventDefault();
+        return;
+      }
+      lastTapRef.current = { t: now, x: t.clientX, y: t.clientY };
+    },
+    [],
+  );
 
   const w = activeMap.width_px;
   const h = activeMap.height_px;
@@ -305,6 +390,10 @@ export const WarehouseFloorPlan = forwardRef<WarehouseFloorPlanHandle, Props>(fu
             <TransformComponent
               wrapperClass="!h-full !w-full"
               wrapperStyle={{ width: "100%", height: "100%", overflow: "hidden", touchAction: "none" }}
+              wrapperProps={{
+                onTouchStart: handleWrapperTouchStart,
+                onTouchEnd: handleWrapperTouchEnd,
+              }}
               contentClass="flex items-center justify-center"
             >
               <div
