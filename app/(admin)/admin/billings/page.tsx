@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { CopyToClipboardButton } from "@/components/CopyToClipboardButton";
 import { PaymentTemplateAutofill } from "@/components/PaymentTemplateAutofill";
+import { TerminalCollectPanel } from "@/components/TerminalCollectPanel";
 import { formatCents, dollarsToCents } from "@/lib/money";
 import { getAppUrl, getStripeServerClient, isStripeConfigured } from "@/lib/stripe";
 import { getOfficeSessionOrNull, UNAUTHORIZED_TOAST } from "@/lib/server-action-guards";
@@ -306,6 +307,11 @@ export default async function BillingsPage() {
           </div>
         </form>
       </section>
+
+      <TerminalCollectPanel
+        title="In-person card payment (Stripe Terminal)"
+        descriptionDefault="In-person payment"
+      />
 
       <section className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
         <div className="border-b border-border bg-muted/50 px-4 py-3">

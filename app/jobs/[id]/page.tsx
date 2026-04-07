@@ -9,6 +9,7 @@ import { JobKindBadge, type JobKind } from "@/components/JobKindBadge";
 import { JobStatusBadge } from "@/components/JobStatusBadge";
 import { JobStickyActions } from "@/components/JobStickyActions";
 import { PaymentTemplateAutofill } from "@/components/PaymentTemplateAutofill";
+import { TerminalCollectPanel } from "@/components/TerminalCollectPanel";
 import { JobWorkspaceTabs } from "@/components/JobWorkspaceTabs";
 import { SubmitButton } from "@/components/SubmitButton";
 import { getCrewDisplayName } from "@/lib/crews";
@@ -1285,6 +1286,23 @@ export default async function JobWorkspacePage({
               </p>
             ) : null}
           </div>
+
+          <TerminalCollectPanel
+            title="In-person card payment (Stripe Terminal)"
+            descriptionDefault={
+              invoice
+                ? `Invoice #${invoice.invoice_number} in-person payment`
+                : `In-person payment for ${job.title}`
+            }
+            amountDefaultDollars={
+              invoice?.balance_due_cents
+                ? Math.max(Math.round(invoice.balance_due_cents / 100), 1)
+                : null
+            }
+            invoiceId={invoice?.id ?? null}
+            jobId={id}
+            customerId={customer?.id ?? null}
+          />
 
           <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
             <div className="border-b border-border bg-muted/50 px-4 py-3">

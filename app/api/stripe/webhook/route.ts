@@ -59,6 +59,54 @@ async function syncCheckoutStatus(
   });
 }
 
+async function syncTerminalIntentStatus(
+  paymentIntent: Stripe.PaymentIntent,
+  status: "paid" | "failed" | "canceled",
+) {
+  const source = paymentIntent.metadata?.source ?? "";
+  if (!source.includes("terminal")) {
+    return;
+  }
+
+  const supabase = createSupabaseServiceClient();
+  const { data: isolatedPayment } = await supabase
+    .from("isolated_payments")
+    .select("id,invoice_id,amount_cents")
+    .eq("stripe_payment_intent_id", paymentIntent.id)
+    .maybeSingle();
+
+  if (!isolatedPayment) return;
+
+  const updates: {
+    status: "paid" | "failed" | "canceled";
+    paid_at?: string;
+  } = { status };
+  if (status === "paid") updates.paid_at = new Date().toISOString();
+
+  await supabase.from("isolated_payments").update(updates).eq("id", isolatedPayment.id);
+
+  if (status !== "paid" || !isolatedPayment.invoice_id) {
+    return;
+  }
+
+  const { data: existingPayment } = await supabase
+    .from("payments")
+    .select("id")
+    .eq("invoice_id", isolatedPayment.invoice_id)
+    .eq("provider_payment_intent_id", paymentIntent.id)
+    .maybeSingle();
+
+  if (existingPayment) return;
+
+  await supabase.from("payments").insert({
+    invoice_id: isolatedPayment.invoice_id,
+    amount_cents: paymentIntent.amount_received || isolatedPayment.amount_cents,
+    provider: "stripe_terminal",
+    provider_payment_intent_id: paymentIntent.id,
+    status: "succeeded",
+  });
+}
+
 export async function POST(request: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
@@ -100,6 +148,21 @@ export async function POST(request: Request) {
     await syncCheckoutStatus(
       event.data.object as Stripe.Checkout.Session,
       "failed",
+    );
+  } else if (event.type === "payment_intent.succeeded") {
+    await syncTerminalIntentStatus(
+      event.data.object as Stripe.PaymentIntent,
+      "paid",
+    );
+  } else if (event.type === "payment_intent.payment_failed") {
+    await syncTerminalIntentStatus(
+      event.data.object as Stripe.PaymentIntent,
+      "failed",
+    );
+  } else if (event.type === "payment_intent.canceled") {
+    await syncTerminalIntentStatus(
+      event.data.object as Stripe.PaymentIntent,
+      "canceled",
     );
   }
 

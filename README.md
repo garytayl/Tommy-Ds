@@ -29,6 +29,42 @@ NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
 STRIPE_SECRET_KEY=
 # Optional but recommended when using webhook sync at /api/stripe/webhook
 STRIPE_WEBHOOK_SECRET=
+# Optional: enable Stripe Terminal reader-based in-person checkout
+STRIPE_TERMINAL_LOCATION_ID=tml_...
+```
+
+### Stripe Terminal API routes (for native mobile apps)
+
+When deployed (e.g. Railway), your app exposes these routes:
+
+- `POST /api/stripe/terminal/connection-token`
+- `POST /api/stripe/terminal/create-payment-intent`
+- `POST /api/stripe/terminal/cancel-payment-intent`
+
+Authentication supports either:
+
+- browser cookie session (existing web app), or
+- `Authorization: Bearer <supabase_access_token>` for native apps.
+
+`create-payment-intent` body:
+
+```json
+{
+  "amount_cents": 12500,
+  "description": "Invoice #123 in-person payment",
+  "note": "Optional note",
+  "invoice_id": "optional-uuid-or-null",
+  "job_id": "optional-uuid-or-null",
+  "customer_id": "optional-uuid-or-null"
+}
+```
+
+`cancel-payment-intent` body:
+
+```json
+{
+  "payment_intent_id": "pi_..."
+}
 ```
 
 ## Key File Tree
