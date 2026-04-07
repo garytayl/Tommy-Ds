@@ -33,8 +33,9 @@ export default function WarehousePage() {
             Upper warehouse
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Shared floor maps for the upper warehouse. Mark windows and doors on the layout map, or use the inventory
-            map for aisles and stock zones. Changes save for everyone in real time.
+            The plan shows three columns (A–C) and fourteen row bands to match the upper warehouse layout. Mark windows
+            and doors on the layout map, or use the inventory map for stock and bay labels. Changes save for everyone in
+            real time.
           </p>
         </div>
         <WarehouseMapSection />

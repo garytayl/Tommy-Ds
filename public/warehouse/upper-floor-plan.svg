@@ -1,20 +1,63 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="640" viewBox="0 0 1000 640">
   <defs>
-    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#c4b8a8" stroke-width="0.5" opacity="0.35"/>
-    </pattern>
     <linearGradient id="floor" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#2a2520"/>
       <stop offset="100%" style="stop-color:#1a1714"/>
     </linearGradient>
   </defs>
   <rect width="1000" height="640" fill="url(#floor)"/>
-  <rect width="1000" height="640" fill="url(#grid)"/>
-  <rect x="48" y="48" width="904" height="544" fill="none" stroke="#8b7355" stroke-width="3" rx="4" opacity="0.9"/>
-  <text x="500" y="42" text-anchor="middle" fill="#d4c4a8" font-family="system-ui,sans-serif" font-size="18" font-weight="600">
-    Upper warehouse  floor plan
+  <text x="500" y="38" text-anchor="middle" fill="#d4c4a8" font-family="system-ui,sans-serif" font-size="17" font-weight="600">
+    Upper warehouse — floor plan
   </text>
-  <text x="500" y="612" text-anchor="middle" fill="#7a6f5c" font-family="system-ui,sans-serif" font-size="13">
-    Place windows (W) and doors (D) on the map  shared with the team
+  <text x="500" y="58" text-anchor="middle" fill="#8a7d68" font-family="system-ui,sans-serif" font-size="12">
+    Three columns, rows of bays — place windows (W) and doors (D) on the map
+  </text>
+  <!-- Grid area: 3 columns × 14 rows -->
+  <g id="grid" transform="translate(0,0)">
+    <!-- Column labels -->
+    <text x="213" y="88" text-anchor="middle" fill="#a89878" font-family="system-ui,sans-serif" font-size="11" font-weight="600">Column A</text>
+    <text x="500" y="88" text-anchor="middle" fill="#a89878" font-family="system-ui,sans-serif" font-size="11" font-weight="600">Column B</text>
+    <text x="787" y="88" text-anchor="middle" fill="#a89878" font-family="system-ui,sans-serif" font-size="11" font-weight="600">Column C</text>
+    <!-- Outer frame -->
+    <rect x="72" y="96" width="856" height="488" fill="none" stroke="#6b5a45" stroke-width="2" rx="3"/>
+    <!-- Vertical column dividers -->
+    <line x1="357.33" y1="96" x2="357.33" y2="584" stroke="#8b7355" stroke-width="2" opacity="0.95"/>
+    <line x1="642.67" y1="96" x2="642.67" y2="584" stroke="#8b7355" stroke-width="2" opacity="0.95"/>
+    <!-- Row lines: 14 rows -->
+    <g stroke="#5c5045" stroke-width="1" opacity="0.55">
+      <line x1="72" y1="130.86" x2="928" y2="130.86"/>
+      <line x1="72" y1="165.71" x2="928" y2="165.71"/>
+      <line x1="72" y1="200.57" x2="928" y2="200.57"/>
+      <line x1="72" y1="235.43" x2="928" y2="235.43"/>
+      <line x1="72" y1="270.29" x2="928" y2="270.29"/>
+      <line x1="72" y1="305.14" x2="928" y2="305.14"/>
+      <line x1="72" y1="340" x2="928" y2="340"/>
+      <line x1="72" y1="374.86" x2="928" y2="374.86"/>
+      <line x1="72" y1="409.71" x2="928" y2="409.71"/>
+      <line x1="72" y1="444.57" x2="928" y2="444.57"/>
+      <line x1="72" y1="479.43" x2="928" y2="479.43"/>
+      <line x1="72" y1="514.29" x2="928" y2="514.29"/>
+      <line x1="72" y1="549.14" x2="928" y2="549.14"/>
+    </g>
+    <!-- Row numbers (left) -->
+    <g fill="#6a5d4c" font-family="system-ui,sans-serif" font-size="9" text-anchor="end">
+      <text x="66" y="118">1</text>
+      <text x="66" y="152">2</text>
+      <text x="66" y="187">3</text>
+      <text x="66" y="222">4</text>
+      <text x="66" y="257">5</text>
+      <text x="66" y="292">6</text>
+      <text x="66" y="327">7</text>
+      <text x="66" y="362">8</text>
+      <text x="66" y="397">9</text>
+      <text x="66" y="432">10</text>
+      <text x="66" y="467">11</text>
+      <text x="66" y="502">12</text>
+      <text x="66" y="537">13</text>
+      <text x="66" y="572">14</text>
+    </g>
+  </g>
+  <text x="500" y="618" text-anchor="middle" fill="#7a6f5c" font-family="system-ui,sans-serif" font-size="12">
+    Shared with the team — drag markers to match real openings
   </text>
 </svg>
