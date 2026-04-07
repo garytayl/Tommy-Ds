@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { MapErrorBoundary } from "@/components/MapErrorBoundary";
 import { WarehouseFloorPlan, type WarehouseFloorPlanHandle } from "@/components/warehouse/WarehouseFloorPlan";
+import { WarehouseGridTable, type WarehouseGridMoveTarget } from "@/components/warehouse/WarehouseGridTable";
 import type {
   WarehouseMapRow,
   WarehousePlacementKind,
@@ -71,6 +72,7 @@ export function WarehouseMapClient() {
   const [addNote, setAddNote] = useState("");
   const [saving, setSaving] = useState(false);
   const floorPlanRef = useRef<WarehouseFloorPlanHandle | null>(null);
+  const [workspaceView, setWorkspaceView] = useState<"table" | "floor">("table");
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -224,9 +226,80 @@ export function WarehouseMapClient() {
     return freePlacements.find((p) => p.id === selectedPlacementId) ?? null;
   }, [freePlacements, selectedPlacementId, selectedCellGroup]);
 
-  const focusPlacement = useCallback((placement: WarehousePlacementRow) => {
-    floorPlanRef.current?.focusMarker(placement.id);
-  }, []);
+  const focusPlacement = useCallback(
+    (placement: WarehousePlacementRow) => {
+      setSelectedPlacementId(placement.id);
+      if (workspaceView === "floor") {
+        floorPlanRef.current?.focusMarker(placement.id);
+      }
+    },
+    [workspaceView],
+  );
+
+  const handleGridMove = useCallback(
+    async (placementId: string, target: WarehouseGridMoveTarget) => {
+      if (!activeMap) return;
+      setSaving(true);
+      setError(null);
+      const p = placementsForActive.find((x) => x.id === placementId);
+      if (!p) {
+        setSaving(false);
+        return;
+      }
+
+      if (target.kind === "floor") {
+        if (!p.cell_column && p.cell_row == null) {
+          setSaving(false);
+          return;
+        }
+        const { error } = await supabase
+          .from("warehouse_map_placements")
+          .update({
+            cell_column: null,
+            cell_row: null,
+            stack_index: 0,
+          })
+          .eq("id", placementId);
+        setSaving(false);
+        if (error) setError(error.message);
+        else await loadAll();
+        return;
+      }
+
+      const { col, row } = target;
+      if (p.cell_column === col && p.cell_row === row) {
+        setSaving(false);
+        return;
+      }
+
+      const othersInTarget = placementsForActive.filter(
+        (x) => x.cell_column === col && x.cell_row === row && x.id !== placementId,
+      );
+      const stacks = othersInTarget.map((x) => x.stack_index).filter(Number.isFinite);
+      const nextStack = stacks.length ? Math.max(...stacks) + 1 : 0;
+      if (nextStack > 9) {
+        setError("That cell already has 10 items. Move or remove one first.");
+        setSaving(false);
+        return;
+      }
+
+      const { pos_x, pos_y } = cellCenterNormalized(col, row);
+      const { error } = await supabase
+        .from("warehouse_map_placements")
+        .update({
+          cell_column: col,
+          cell_row: row,
+          stack_index: nextStack,
+          pos_x,
+          pos_y,
+        })
+        .eq("id", placementId);
+      setSaving(false);
+      if (error) setError(error.message);
+      else await loadAll();
+    },
+    [activeMap, placementsForActive, supabase, loadAll],
+  );
 
   const imageUrl = activeMap
     ? typeof window !== "undefined"
@@ -414,6 +487,30 @@ export function WarehouseMapClient() {
                 </button>
               ))}
             </div>
+            <div className="inline-flex flex-wrap gap-0.5 rounded-lg border border-white/12 bg-white/[0.04] p-0.5">
+              <button
+                type="button"
+                onClick={() => setWorkspaceView("table")}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                  workspaceView === "table"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                }`}
+              >
+                Table
+              </button>
+              <button
+                type="button"
+                onClick={() => setWorkspaceView("floor")}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                  workspaceView === "floor"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                }`}
+              >
+                Floor
+              </button>
+            </div>
             {activeMap.description ? (
               <p className="hidden max-w-md text-[11px] leading-snug text-muted-foreground lg:block xl:max-w-lg">
                 {activeMap.description}
@@ -450,31 +547,45 @@ export function WarehouseMapClient() {
         </div>
         {canEdit ? (
           <p className="mt-2 border-t border-white/5 pt-2 text-[11px] leading-relaxed text-muted-foreground">
-            Signed in as <span className="font-medium text-foreground">{sessionEmail}</span> — click the floor for an
-            exact spot, or add up to ten items per grid cell (A: 10 rows; B/C: 8). Types: window, door, screen. Pan and
-            zoom use smooth trackpad-style movement; double-click zooms in.
+            Signed in as <span className="font-medium text-foreground">{sessionEmail}</span> —{" "}
+            {workspaceView === "table"
+              ? "Drag chips between grid cells or onto “Floor only” to unassign. Column A has 10 rows; B and C have 8."
+              : "Click the floor for an exact spot, or use Table to assign by cell. Types: window, door, screen. Double-click zooms in."}
           </p>
         ) : null}
       </div>
 
       <div className="relative min-h-0 flex-1">
-        <div className="absolute inset-0 z-0 min-h-[240px]">
-          <MapErrorBoundary fallback={mapFallback}>
-            <WarehouseFloorPlan
-              ref={floorPlanRef}
-              mapFitKey={mapFitKey}
-              activeMap={activeMap}
-              imageUrl={imageUrl}
+        {workspaceView === "floor" ? (
+          <div className="absolute inset-0 z-0 min-h-[240px]">
+            <MapErrorBoundary fallback={mapFallback}>
+              <WarehouseFloorPlan
+                ref={floorPlanRef}
+                mapFitKey={mapFitKey}
+                activeMap={activeMap}
+                imageUrl={imageUrl}
+                freePlacements={freePlacements}
+                cellGroupList={cellGroupList}
+                canEdit={canEdit && !addOpen}
+                selectedPlacementId={selectedPlacementId}
+                onSelectPlacement={setSelectedPlacementId}
+                onFloorTap={onFloorTap}
+                onFreeMarkerDragEnd={handleFreeMarkerDragEnd}
+              />
+            </MapErrorBoundary>
+          </div>
+        ) : (
+          <div className="absolute inset-0 z-0 min-h-[240px] overflow-hidden bg-[#050508]">
+            <WarehouseGridTable
               freePlacements={freePlacements}
               cellGroupList={cellGroupList}
               canEdit={canEdit && !addOpen}
               selectedPlacementId={selectedPlacementId}
               onSelectPlacement={setSelectedPlacementId}
-              onFloorTap={onFloorTap}
-              onFreeMarkerDragEnd={handleFreeMarkerDragEnd}
+              onMove={(id, target) => handleGridMove(id, target)}
             />
-          </MapErrorBoundary>
-        </div>
+          </div>
+        )}
 
         {selectedPlacementId && (selectedCellGroup || selectedFreePlacement) ? (
           <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-50 max-h-[55vh] overflow-y-auto border-t border-white/15 bg-black/85 p-3 shadow-2xl backdrop-blur-md sm:bottom-3 sm:left-auto sm:right-3 sm:max-h-[min(70vh,520px)] sm:max-w-md sm:rounded-xl sm:border sm:p-4">
