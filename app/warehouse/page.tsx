@@ -33,9 +33,9 @@ export default function WarehousePage() {
             Upper warehouse
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            The plan shows three columns (A–C) and fourteen row bands to match the upper warehouse layout. Mark windows
-            and doors on the layout map, or use the inventory map for stock and bay labels. Changes save for everyone in
-            real time.
+            Three columns: A has ten rows; B and C have eight rows each. Use the toolbar (+/−) or pinch and scroll to zoom,
+            and drag to pan. Mark windows and doors on the layout map, or use the inventory map for stock and bay labels.
+            Changes save for everyone in real time.
           </p>
         </div>
         <WarehouseMapSection />

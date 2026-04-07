@@ -4,13 +4,14 @@ import "leaflet/dist/leaflet.css";
 
 import L from "leaflet";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ImageOverlay,
   MapContainer,
   Marker,
   Popup,
   Tooltip,
+  ZoomControl,
   useMap,
   useMapEvents,
 } from "react-leaflet";
@@ -56,11 +57,23 @@ function placementIcon(kind: "window" | "door") {
   });
 }
 
-function FitBounds({ bounds }: { bounds: L.LatLngBoundsExpression }) {
+/**
+ * Fits the map once per warehouse map identity — not on every data refresh (which would reset pan/zoom).
+ */
+function FitBoundsWhenMapChanges({
+  bounds,
+  mapFitKey,
+}: {
+  bounds: L.LatLngBoundsExpression;
+  mapFitKey: string;
+}) {
   const map = useMap();
+  const lastKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    map.fitBounds(bounds, { animate: false, padding: [8, 8] });
-  }, [map, bounds]);
+    if (lastKeyRef.current === mapFitKey) return;
+    lastKeyRef.current = mapFitKey;
+    map.fitBounds(bounds, { animate: false, padding: [12, 12] });
+  }, [map, bounds, mapFitKey]);
   return null;
 }
 
@@ -225,7 +238,15 @@ export function WarehouseMapClient() {
       [0, 0],
       [h, w],
     ];
-  }, [activeMap]);
+  }, [activeMap?.height_px, activeMap?.width_px]);
+
+  /** Stable while the same map is selected — avoids remount/fit when Supabase returns a new object for the same row. */
+  const mapFitKey = activeMap ? `${activeMap.id}-${activeMap.width_px}-${activeMap.height_px}` : "";
+
+  const mapCenter = useMemo<L.LatLngTuple>(() => {
+    if (!activeMap) return [0, 0];
+    return [activeMap.height_px / 2, activeMap.width_px / 2];
+  }, [activeMap?.height_px, activeMap?.width_px]);
 
   const imageUrl = activeMap
     ? typeof window !== "undefined"
@@ -382,17 +403,27 @@ export function WarehouseMapClient() {
         <div className="h-[min(72vh,560px)] min-h-[320px] w-full">
           <MapErrorBoundary fallback={mapFallback}>
             <MapContainer
+              key={`warehouse-floor-${activeMap.id}`}
               crs={L.CRS.Simple}
-              center={[activeMap.height_px / 2, activeMap.width_px / 2]}
+              center={mapCenter}
               zoom={0}
-              minZoom={-3}
-              maxZoom={3}
+              minZoom={-4}
+              maxZoom={8}
               zoomSnap={0.25}
+              wheelPxPerZoomLevel={48}
+              inertia
+              inertiaDeceleration={3400}
+              inertiaMaxSpeed={1800}
               style={{ height: "100%", width: "100%", background: "#0a0a0a" }}
               attributionControl={false}
               scrollWheelZoom
+              doubleClickZoom
+              boxZoom
+              dragging
+              keyboard
             >
-              <FitBounds bounds={bounds} />
+              <ZoomControl position="topright" />
+              <FitBoundsWhenMapChanges bounds={bounds} mapFitKey={mapFitKey} />
               <ImageOverlay url={imageUrl} bounds={bounds} />
               <MapClickHandler enabled={canEdit && !addOpen} onClick={onMapClick} />
               {placementsForActive.map((p) => {
