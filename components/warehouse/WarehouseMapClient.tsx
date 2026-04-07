@@ -21,7 +21,8 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export type { WarehousePlacementKind };
 
-const WAREHOUSE_LOAD_TIMEOUT_MS = 30_000;
+/** Initial load should finish quickly; this only guards hung networks. */
+const WAREHOUSE_LOAD_TIMEOUT_MS = 20_000;
 
 function num(v: unknown): number {
   if (typeof v === "number" && Number.isFinite(v)) return v;
@@ -87,36 +88,37 @@ export function WarehouseMapClient() {
 
   const loadAll = useCallback(async () => {
     setError(null);
-    const { data: mapRows, error: mapErr } = await supabase
+    const mapsQ = supabase
       .from("warehouse_maps")
       .select("id, slug, title, description, image_path, width_px, height_px, sort_order")
       .order("sort_order", { ascending: true });
+    const placementsQ = supabase
+      .from("warehouse_map_placements")
+      .select("id, map_id, kind, label, pos_x, pos_y, note, cell_column, cell_row, stack_index");
+
+    const [{ data: mapRows, error: mapErr }, { data: placeRows, error: pErr }] = await Promise.all([mapsQ, placementsQ]);
+
     if (mapErr) {
       setError(mapErr.message);
       return;
     }
+    if (pErr) {
+      setError(pErr.message);
+      return;
+    }
+
     const list = (mapRows ?? []) as WarehouseMapRow[];
+    const mapIds = new Set(list.map((m) => m.id));
     setMaps(list);
     setActiveMapId((prev) => {
       if (list.length === 0) return null;
       if (prev && list.some((m) => m.id === prev)) return prev;
       return list[0].id;
     });
-    const ids = list.map((m) => m.id);
-    if (ids.length === 0) {
-      setPlacements([]);
-      return;
-    }
-    const { data: placeRows, error: pErr } = await supabase
-      .from("warehouse_map_placements")
-      .select("id, map_id, kind, label, pos_x, pos_y, note, cell_column, cell_row, stack_index")
-      .in("map_id", ids);
-    if (pErr) {
-      setError(pErr.message);
-      return;
-    }
+
+    const filtered = (placeRows ?? []).filter((r) => mapIds.has(String(r.map_id)));
     setPlacements(
-      (placeRows ?? []).map((r) => ({
+      filtered.map((r) => ({
         ...r,
         kind: normalizePlacementKind(String(r.kind)),
         pos_x: num(r.pos_x),
@@ -134,13 +136,12 @@ export function WarehouseMapClient() {
       setLoading(true);
       try {
         const loadWork = (async () => {
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
-          if (!cancelled) {
-            setSessionEmail(session?.user?.email ?? null);
-          }
-          await loadAll();
+          await Promise.all([
+            supabase.auth.getSession().then(({ data: { session } }) => {
+              if (!cancelled) setSessionEmail(session?.user?.email ?? null);
+            }),
+            loadAll(),
+          ]);
         })();
         const timeoutP = new Promise<never>((_, reject) => {
           timeoutId = setTimeout(
@@ -178,7 +179,9 @@ export function WarehouseMapClient() {
     setAddRow((r) => Math.min(max, Math.max(1, r)));
   }, [addCol]);
 
+  /** Subscribe after first load so realtime handshake does not compete with initial queries. */
   useEffect(() => {
+    if (loading) return undefined;
     const ch = supabase
       .channel("warehouse_map_placements_changes")
       .on(
@@ -192,7 +195,7 @@ export function WarehouseMapClient() {
     return () => {
       void supabase.removeChannel(ch);
     };
-  }, [supabase, loadAll]);
+  }, [loading, supabase, loadAll]);
 
   useEffect(() => {
     const {
