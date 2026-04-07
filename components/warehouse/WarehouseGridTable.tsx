@@ -198,12 +198,14 @@ export function WarehouseGridTable({
           </DroppableZone>
         </div>
 
-        <div className="grid min-h-0 grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="grid min-h-0 grid-cols-3 gap-2 md:gap-3">
           {columns.map((col) => {
             const maxR = maxRowForColumn(col);
             return (
-              <div key={col} className="flex min-h-0 flex-col rounded-lg border border-white/10 bg-black/20 p-2">
-                <div className="mb-2 text-center text-xs font-semibold text-foreground">Column {col}</div>
+              <div key={col} className="flex min-h-0 min-w-0 flex-col rounded-lg border border-white/10 bg-black/20 p-1.5 md:p-2">
+                <div className="mb-1.5 text-center text-[11px] font-semibold text-foreground md:mb-2 md:text-xs">
+                  Column {col}
+                </div>
                 <div className="flex flex-col gap-1.5 overflow-y-auto">
                   {Array.from({ length: maxR }, (_, i) => i + 1).map((row) => {
                     const key = `${col}${row}`;
