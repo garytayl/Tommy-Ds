@@ -115,20 +115,15 @@ export default async function TodayCommandCenterPage() {
   return (
     <div className="space-y-8">
       {hasNoData && (
-        <div className="animate-fade-in-section rounded-xl border border-border bg-muted/30 p-4">
-          <p className="font-medium text-foreground">Your workspace is empty</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Counts and lists come from your database. With a new project you will see zeros and empty sections until you add
-            customers and jobs — that is expected, not missing configuration.
+        <div className="animate-fade-in-section rounded-xl border-2 border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
+          <p className="font-medium text-amber-900 dark:text-amber-200">
+            No data showing? Add the service role key so the app can read your DB.
           </p>
-          <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm">
-            <Link href="/admin/jobs/new" className="font-medium text-primary hover:underline">
-              New job
-            </Link>
-            <span className="text-muted-foreground">·</span>
-            <Link href="/admin/customers" className="font-medium text-primary hover:underline">
-              Customers
-            </Link>
+          <p className="mt-2 text-sm text-amber-800 dark:text-amber-300">
+            In <code className="rounded bg-amber-200/50 px-1 dark:bg-amber-900/50">.env.local</code> set{" "}
+            <code className="rounded bg-amber-200/50 px-1 dark:bg-amber-900/50">SUPABASE_SERVICE_ROLE_KEY</code> (from
+            Supabase Dashboard → Project Settings → API → <span className="font-medium">service_role</span> secret).
+            Then restart the dev server and refresh. This bypasses RLS so seed data and new jobs show without logging in.
           </p>
         </div>
       )}
