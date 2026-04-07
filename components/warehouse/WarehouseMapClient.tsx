@@ -1,22 +1,15 @@
 "use client";
 
-import "leaflet/dist/leaflet.css";
-
-import L from "leaflet";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ImageOverlay,
-  MapContainer,
-  Marker,
-  Popup,
-  Tooltip,
-  ZoomControl,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
 
 import { MapErrorBoundary } from "@/components/MapErrorBoundary";
+import { WarehouseFloorPlan, type WarehouseFloorPlanHandle } from "@/components/warehouse/WarehouseFloorPlan";
+import type {
+  WarehouseMapRow,
+  WarehousePlacementKind,
+  WarehousePlacementRow,
+} from "@/components/warehouse/warehouse-map-types";
 import {
   cellCenterNormalized,
   cellKey,
@@ -25,31 +18,7 @@ import {
 } from "@/lib/warehouse-grid";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-type WarehouseMapRow = {
-  id: string;
-  slug: string;
-  title: string;
-  description: string | null;
-  image_path: string;
-  width_px: number;
-  height_px: number;
-  sort_order: number;
-};
-
-export type WarehousePlacementKind = "window" | "door" | "screen";
-
-type WarehousePlacementRow = {
-  id: string;
-  map_id: string;
-  kind: WarehousePlacementKind;
-  label: string;
-  pos_x: number;
-  pos_y: number;
-  note: string | null;
-  cell_column: string | null;
-  cell_row: number | null;
-  stack_index: number;
-};
+export type { WarehousePlacementKind };
 
 function num(v: unknown): number {
   if (typeof v === "number" && Number.isFinite(v)) return v;
@@ -84,126 +53,6 @@ function labelPlaceholderForKind(kind: WarehousePlacementKind): string {
   return "e.g. Patio screen";
 }
 
-function placementIcon(
-  kind: WarehousePlacementKind,
-  opts?: {
-    selected?: boolean;
-    compact?: boolean;
-  },
-) {
-  const selected = Boolean(opts?.selected);
-  const compact = Boolean(opts?.compact);
-  const letter = placementKindLetter(kind);
-  const bg = kind === "window" ? "#1d4ed8" : kind === "door" ? "#b45309" : "#0d9488";
-  const size = compact ? 30 : 34;
-  const ring = selected ? "0 0 0 3px rgba(255,255,255,.95),0 0 0 6px rgba(29,78,216,.7)" : "0 2px 10px rgba(0,0,0,.5)";
-  return L.divIcon({
-    className: "warehouse-leaflet-icon",
-    html: `<div style="width:${size}px;height:${size}px;border-radius:9999px;background:${bg};color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:${ring};border:2px solid rgba(255,255,255,.35);font-family:system-ui,sans-serif">${letter}</div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
-}
-
-function cellGroupIcon(cellLabel: string, count: number, selected?: boolean) {
-  const ring = selected
-    ? "0 0 0 3px rgba(255,255,255,.95),0 0 0 6px rgba(29,78,216,.7)"
-    : "0 2px 12px rgba(0,0,0,.55)";
-  return L.divIcon({
-    className: "warehouse-leaflet-icon",
-    html: `<div style="min-width:40px;min-height:40px;border-radius:10px;background:#0f172a;color:#fff;font-weight:700;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:${ring};border:2px solid rgba(255,255,255,.28);font-family:system-ui,sans-serif;padding:3px 6px;line-height:1.1"><span style="font-size:10px;font-weight:600;opacity:.88">${cellLabel}</span><span>${count}</span></div>`,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
-  });
-}
-
-/**
- * Fits the map once per warehouse map identity — not on every data refresh (which would reset pan/zoom).
- */
-function FitBoundsWhenMapChanges({
-  bounds,
-  mapFitKey,
-}: {
-  bounds: L.LatLngBoundsExpression;
-  mapFitKey: string;
-}) {
-  const map = useMap();
-  const lastKeyRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (lastKeyRef.current === mapFitKey) return;
-    lastKeyRef.current = mapFitKey;
-    map.fitBounds(bounds, { animate: false, padding: [12, 12] });
-  }, [map, bounds, mapFitKey]);
-  return null;
-}
-
-function MapInstanceBridge({ onMapReady }: { onMapReady: (map: L.Map) => void }) {
-  const map = useMap();
-  useEffect(() => {
-    onMapReady(map);
-  }, [map, onMapReady]);
-  return null;
-}
-
-function MapClickHandler({
-  enabled,
-  onClick,
-}: {
-  enabled: boolean;
-  onClick: (latlng: L.LatLng) => void;
-}) {
-  useMapEvents({
-    click(e) {
-      if (enabled) onClick(e.latlng);
-    },
-  });
-  return null;
-}
-
-function latLngToNorm(latlng: L.LatLng, width: number, height: number) {
-  const pos_x = latlng.lng / width;
-  const pos_y = 1 - latlng.lat / height;
-  return {
-    pos_x: Math.min(1, Math.max(0, pos_x)),
-    pos_y: Math.min(1, Math.max(0, pos_y)),
-  };
-}
-
-function normToLatLng(pos_x: number, pos_y: number, width: number, height: number): L.LatLngTuple {
-  const lat = (1 - pos_y) * height;
-  const lng = pos_x * width;
-  return [lat, lng];
-}
-
-function PlacementHoverDetails({ p }: { p: WarehousePlacementRow }) {
-  const title = placementKindTitle(p.kind);
-  const label = p.label?.trim() || "—";
-  const note = p.note?.trim();
-  return (
-    <div className="warehouse-tooltip-inner">
-      <div className="warehouse-tooltip-kind">{title}</div>
-      <div className="warehouse-tooltip-label">{label}</div>
-      {note ? <div className="warehouse-tooltip-note">{note}</div> : null}
-    </div>
-  );
-}
-
-function CellHoverDetails({ cellLabel, items }: { cellLabel: string; items: WarehousePlacementRow[] }) {
-  return (
-    <div className="warehouse-tooltip-inner max-h-48 overflow-y-auto pr-1 text-left">
-      <div className="warehouse-tooltip-kind">Cell {cellLabel}</div>
-      <ul className="mt-1 list-inside list-disc space-y-1 text-[11px] text-card-foreground">
-        {items.map((p) => (
-          <li key={p.id}>
-            <span className="font-semibold">{placementKindLetter(p.kind)}</span> — {p.label?.trim() || "—"}
-            {p.note?.trim() ? <span className="text-muted-foreground"> ({p.note.trim()})</span> : null}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 export function WarehouseMapClient() {
   const [maps, setMaps] = useState<WarehouseMapRow[]>([]);
   const [placements, setPlacements] = useState<WarehousePlacementRow[]>([]);
@@ -213,7 +62,6 @@ export function WarehouseMapClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  /** `map` = exact coordinates from a map click; `cell` = stacked in a grid cell (up to 10). */
   const [addMode, setAddMode] = useState<"map" | "cell">("map");
   const [addNorm, setAddNorm] = useState<{ pos_x: number; pos_y: number } | null>(null);
   const [addCol, setAddCol] = useState<WarehouseColumn>("A");
@@ -222,10 +70,7 @@ export function WarehouseMapClient() {
   const [addLabel, setAddLabel] = useState("");
   const [addNote, setAddNote] = useState("");
   const [saving, setSaving] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [mobileNavEnabled, setMobileNavEnabled] = useState(true);
-  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
-  const markerRefs = useRef<Record<string, L.Marker | null>>({});
+  const floorPlanRef = useRef<WarehouseFloorPlanHandle | null>(null);
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -297,29 +142,9 @@ export function WarehouseMapClient() {
   }, [supabase, loadAll]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const media = window.matchMedia("(max-width: 900px), (pointer: coarse)");
-    const update = () => setIsMobile(media.matches);
-    update();
-    if (typeof media.addEventListener === "function") {
-      media.addEventListener("change", update);
-      return () => media.removeEventListener("change", update);
-    }
-    media.addListener(update);
-    return () => media.removeListener(update);
-  }, []);
-
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSessionEmail(session?.user?.email ?? null);
-    });
-    return () => subscription.unsubscribe();
-  }, [supabase]);
-
-  useEffect(() => {
     const max = maxRowForColumn(addCol);
+    // Sync row clamp when column changes (max rows differ per column).
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional clamp when addCol changes
     setAddRow((r) => Math.min(max, Math.max(1, r)));
   }, [addCol]);
 
@@ -338,6 +163,15 @@ export function WarehouseMapClient() {
       void supabase.removeChannel(ch);
     };
   }, [supabase, loadAll]);
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSessionEmail(session?.user?.email ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   const placementsForActive = useMemo(
     () => placements.filter((p) => p.map_id === activeMapId),
@@ -364,7 +198,6 @@ export function WarehouseMapClient() {
     return { freePlacements: free, cellGroupList };
   }, [placementsForActive]);
 
-  /** All items for “Jump to marker” chips (free + every cell stack entry). */
   const jumpPlacementTargets = useMemo(() => {
     const out = [...freePlacements];
     for (const [, items] of cellGroupList) out.push(...items);
@@ -376,52 +209,35 @@ export function WarehouseMapClient() {
     });
   }, [freePlacements, cellGroupList]);
 
-  const bounds: L.LatLngBoundsExpression | null = useMemo(() => {
-    if (!activeMap) return null;
-    return [
-      [0, 0],
-      [activeMap.height_px, activeMap.width_px],
-    ];
-  }, [activeMap?.height_px, activeMap?.width_px]);
-
-  /** Stable while the same map is selected — avoids remount/fit when Supabase returns a new object for the same row. */
   const mapFitKey = activeMap ? `${activeMap.id}-${activeMap.width_px}-${activeMap.height_px}` : "";
 
-  const mapCenter = useMemo<L.LatLngTuple>(
-    () => (activeMap ? [activeMap.height_px / 2, activeMap.width_px / 2] : [0, 0]),
-    [activeMap?.height_px, activeMap?.width_px],
-  );
+  const selectedCellGroup = useMemo(() => {
+    if (!selectedPlacementId) return null;
+    for (const [label, items] of cellGroupList) {
+      if (items.some((i) => i.id === selectedPlacementId)) return [label, items] as const;
+    }
+    return null;
+  }, [cellGroupList, selectedPlacementId]);
 
-  const fitToMap = useCallback(() => {
-    if (!mapInstance || !bounds) return;
-    mapInstance.fitBounds(bounds, { animate: true, padding: isMobile ? [36, 24] : [16, 16] });
-  }, [mapInstance, bounds, isMobile]);
+  const selectedFreePlacement = useMemo(() => {
+    if (!selectedPlacementId || selectedCellGroup) return null;
+    return freePlacements.find((p) => p.id === selectedPlacementId) ?? null;
+  }, [freePlacements, selectedPlacementId, selectedCellGroup]);
 
-  const focusPlacement = useCallback(
-    (placement: WarehousePlacementRow) => {
-      if (!activeMap || !mapInstance) return;
-      const target = normToLatLng(placement.pos_x, placement.pos_y, activeMap.width_px, activeMap.height_px);
-      const minFocusZoom = isMobile ? 1.25 : 0.75;
-      const nextZoom = Math.max(mapInstance.getZoom(), minFocusZoom);
-      mapInstance.flyTo(target, nextZoom, { animate: true, duration: 0.35 });
-      setSelectedPlacementId(placement.id);
-      markerRefs.current[placement.id]?.openPopup();
-    },
-    [activeMap, isMobile, mapInstance],
-  );
+  const focusPlacement = useCallback((placement: WarehousePlacementRow) => {
+    floorPlanRef.current?.focusMarker(placement.id);
+  }, []);
 
   const imageUrl = activeMap
     ? typeof window !== "undefined"
       ? new URL(activeMap.image_path, window.location.origin).href
       : activeMap.image_path
     : "";
-  const touchZoomBehavior: boolean | "center" = isMobile ? (mobileNavEnabled ? "center" : false) : true;
 
-  async function onMapClick(latlng: L.LatLng) {
-    if (!activeMap || !canEdit) return;
-    const { pos_x, pos_y } = latLngToNorm(latlng, activeMap.width_px, activeMap.height_px);
+  function onFloorTap(norm: { pos_x: number; pos_y: number }) {
+    if (!activeMap || !canEdit || addOpen) return;
     setAddMode("map");
-    setAddNorm({ pos_x, pos_y });
+    setAddNorm(norm);
     setAddKind("window");
     setAddLabel("");
     setAddNote("");
@@ -524,23 +340,26 @@ export function WarehouseMapClient() {
       setError(dErr.message);
       return;
     }
+    setSelectedPlacementId(null);
     await loadAll();
   }
 
-  async function onMarkerDragEnd(id: string, latlng: L.LatLng, isCell: boolean) {
-    if (!activeMap || isCell) return;
-    const { pos_x, pos_y } = latLngToNorm(latlng, activeMap.width_px, activeMap.height_px);
-    const { error: uErr } = await supabase
-      .from("warehouse_map_placements")
-      .update({ pos_x, pos_y })
-      .eq("id", id);
-    if (uErr) setError(uErr.message);
-    else await loadAll();
-  }
+  const handleFreeMarkerDragEnd = useCallback(
+    async (id: string, pos_x: number, pos_y: number) => {
+      if (!activeMap) return;
+      const { error: uErr } = await supabase
+        .from("warehouse_map_placements")
+        .update({ pos_x, pos_y })
+        .eq("id", id);
+      if (uErr) setError(uErr.message);
+      else await loadAll();
+    },
+    [activeMap, supabase, loadAll],
+  );
 
   const mapFallback = (
     <div className="flex h-full min-h-[200px] items-center justify-center bg-[#08080c] p-6 text-sm text-muted-foreground">
-      Map could not be loaded.
+      Floor could not be loaded.
     </div>
   );
 
@@ -552,7 +371,7 @@ export function WarehouseMapClient() {
     );
   }
 
-  if (!activeMap || !bounds) {
+  if (!activeMap) {
     return (
       <div className="flex min-h-[min(40dvh,240px)] flex-1 items-center justify-center bg-[#050508] px-4 text-center text-sm text-muted-foreground">
         No floor maps are configured yet.
@@ -602,20 +421,6 @@ export function WarehouseMapClient() {
             ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2 md:justify-end">
-            {isMobile ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-[11px] text-muted-foreground">
-                  {mobileNavEnabled ? "Pan & pinch on" : "Scroll mode — "}
-                </p>
-                <button
-                  type="button"
-                  className="rounded-md border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-foreground"
-                  onClick={() => setMobileNavEnabled((v) => !v)}
-                >
-                  {mobileNavEnabled ? "Scroll page" : "Enable map"}
-                </button>
-              </div>
-            ) : null}
             {canEdit ? (
               <button
                 type="button"
@@ -646,8 +451,8 @@ export function WarehouseMapClient() {
         {canEdit ? (
           <p className="mt-2 border-t border-white/5 pt-2 text-[11px] leading-relaxed text-muted-foreground">
             Signed in as <span className="font-medium text-foreground">{sessionEmail}</span> — click the floor for an
-            exact spot, or add up to ten items per grid cell (A: 10 rows; B/C: 8). Types: window, door, screen. Cell pins
-            show a count; hover for the list.
+            exact spot, or add up to ten items per grid cell (A: 10 rows; B/C: 8). Types: window, door, screen. Pan and
+            zoom use smooth trackpad-style movement; double-click zooms in.
           </p>
         ) : null}
       </div>
@@ -655,176 +460,67 @@ export function WarehouseMapClient() {
       <div className="relative min-h-0 flex-1">
         <div className="absolute inset-0 z-0 min-h-[240px]">
           <MapErrorBoundary fallback={mapFallback}>
-            <MapContainer
-              key={`warehouse-floor-${activeMap.id}`}
-              className="warehouse-map-canvas z-0 !h-full !w-full"
-              crs={L.CRS.Simple}
-              center={mapCenter}
-              zoom={0}
-              minZoom={-4}
-              maxZoom={8}
-              zoomSnap={0.25}
-              wheelPxPerZoomLevel={48}
-              inertia
-              inertiaDeceleration={3400}
-              inertiaMaxSpeed={1800}
-              style={{ height: "100%", width: "100%", background: "#07070a" }}
-              attributionControl={false}
-              scrollWheelZoom={!isMobile}
-              doubleClickZoom={!isMobile}
-              boxZoom={!isMobile}
-              dragging={isMobile ? mobileNavEnabled : true}
-              touchZoom={touchZoomBehavior}
-              keyboard={!isMobile}
-            >
-              {!isMobile ? <ZoomControl position="topright" /> : null}
-              <MapInstanceBridge onMapReady={setMapInstance} />
-              <FitBoundsWhenMapChanges bounds={bounds} mapFitKey={mapFitKey} />
-              <ImageOverlay url={imageUrl} bounds={bounds} />
-              <MapClickHandler enabled={canEdit && !addOpen} onClick={onMapClick} />
-              {freePlacements.map((p) => {
-                const position = normToLatLng(
-                  p.pos_x,
-                  p.pos_y,
-                  activeMap.width_px,
-                  activeMap.height_px,
-                );
-                return (
-                  <Marker
-                    key={p.id}
-                    ref={(marker) => {
-                      markerRefs.current[p.id] = marker;
-                    }}
-                    position={position}
-                    icon={placementIcon(p.kind, {
-                      selected: p.id === selectedPlacementId,
-                      compact: isMobile,
-                    })}
-                    draggable={canEdit && (!isMobile || mobileNavEnabled)}
-                    eventHandlers={{
-                      click: () => {
-                        setSelectedPlacementId(p.id);
-                      },
-                      dragend: (e) => {
-                        const m = e.target;
-                        if (!m || typeof (m as L.Marker).getLatLng !== "function") return;
-                        void onMarkerDragEnd(p.id, (m as L.Marker).getLatLng(), false);
-                      },
-                    }}
-                  >
-                    {!isMobile ? (
-                      <Tooltip
-                        direction="top"
-                        offset={L.point(0, -22)}
-                        opacity={1}
-                        sticky
-                        className="warehouse-tooltip"
-                      >
-                        <PlacementHoverDetails p={p} />
-                      </Tooltip>
-                    ) : null}
-                    <Popup className="warehouse-popup">
-                      <div className="min-w-[200px] space-y-2 p-1 text-foreground">
-                        <div className="text-xs font-semibold uppercase text-muted-foreground">
-                          {placementKindTitle(p.kind)}
-                        </div>
-                        {canEdit ? (
-                          <MarkerEditForm
-                            key={p.id}
-                            initialLabel={p.label}
-                            initialNote={p.note ?? ""}
-                            saving={saving}
-                            onSave={(label, note) => updatePlacementLabel(p.id, label, note)}
-                            onDelete={() => deletePlacement(p.id)}
-                          />
-                        ) : (
-                          <>
-                            <p className="text-sm font-medium">{p.label || "—"}</p>
-                            {p.note ? <p className="text-xs text-muted-foreground">{p.note}</p> : null}
-                          </>
-                        )}
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
-              {cellGroupList.map(([label, items]) => {
-                const head = items[0];
-                const position = normToLatLng(
-                  head.pos_x,
-                  head.pos_y,
-                  activeMap.width_px,
-                  activeMap.height_px,
-                );
-                const cellSelected = items.some((it) => it.id === selectedPlacementId);
-                return (
-                  <Marker
-                    key={`cell-${label}`}
-                    ref={(marker) => {
-                      for (const pl of items) {
-                        if (marker) markerRefs.current[pl.id] = marker;
-                        else delete markerRefs.current[pl.id];
-                      }
-                    }}
-                    position={position}
-                    icon={cellGroupIcon(label, items.length, cellSelected)}
-                    draggable={false}
-                    eventHandlers={{
-                      click: () => {
-                        setSelectedPlacementId(items[0]?.id ?? null);
-                      },
-                    }}
-                  >
-                    <Tooltip
-                      direction="top"
-                      offset={L.point(0, -26)}
-                      opacity={1}
-                      sticky
-                      className="warehouse-tooltip"
-                    >
-                      <CellHoverDetails cellLabel={label} items={items} />
-                    </Tooltip>
-                    <Popup className="warehouse-popup">
-                      <CellGroupPopupBody
-                        cellLabel={label}
-                        items={items}
-                        canEdit={canEdit}
-                        saving={saving}
-                        onSave={(id, lbl, note) => updatePlacementLabel(id, lbl, note)}
-                        onDelete={(id) => deletePlacement(id)}
-                      />
-                    </Popup>
-                  </Marker>
-                );
-              })}
-            </MapContainer>
+            <WarehouseFloorPlan
+              ref={floorPlanRef}
+              mapFitKey={mapFitKey}
+              activeMap={activeMap}
+              imageUrl={imageUrl}
+              freePlacements={freePlacements}
+              cellGroupList={cellGroupList}
+              canEdit={canEdit && !addOpen}
+              selectedPlacementId={selectedPlacementId}
+              onSelectPlacement={setSelectedPlacementId}
+              onFloorTap={onFloorTap}
+              onFreeMarkerDragEnd={handleFreeMarkerDragEnd}
+            />
           </MapErrorBoundary>
         </div>
-        {isMobile ? (
-          <div className="pointer-events-none absolute bottom-3 right-3 z-[900] flex flex-col gap-2">
-            <button
-              type="button"
-              className="pointer-events-auto h-11 w-11 rounded-full border border-white/15 bg-black/65 text-lg font-semibold text-foreground shadow-lg backdrop-blur-sm"
-              onClick={() => mapInstance?.zoomIn(0.75)}
-              aria-label="Zoom in"
-            >
-              +
-            </button>
-            <button
-              type="button"
-              className="pointer-events-auto h-11 w-11 rounded-full border border-white/15 bg-black/65 text-lg font-semibold text-foreground shadow-lg backdrop-blur-sm"
-              onClick={() => mapInstance?.zoomOut(0.75)}
-              aria-label="Zoom out"
-            >
-              −
-            </button>
-            <button
-              type="button"
-              className="pointer-events-auto rounded-full border border-white/15 bg-black/65 px-3 py-2 text-xs font-medium text-foreground shadow-lg backdrop-blur-sm"
-              onClick={fitToMap}
-            >
-              Fit
-            </button>
+
+        {selectedPlacementId && (selectedCellGroup || selectedFreePlacement) ? (
+          <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-50 max-h-[55vh] overflow-y-auto border-t border-white/15 bg-black/85 p-3 shadow-2xl backdrop-blur-md sm:bottom-3 sm:left-auto sm:right-3 sm:max-h-[min(70vh,520px)] sm:max-w-md sm:rounded-xl sm:border sm:p-4">
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Details</span>
+              <button
+                type="button"
+                className="shrink-0 rounded-md border border-white/15 px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                onClick={() => setSelectedPlacementId(null)}
+              >
+                Close
+              </button>
+            </div>
+            {selectedCellGroup ? (
+              <CellGroupPopupBody
+                cellLabel={selectedCellGroup[0]}
+                items={selectedCellGroup[1]}
+                canEdit={canEdit}
+                saving={saving}
+                onSave={(id, lbl, note) => updatePlacementLabel(id, lbl, note)}
+                onDelete={(id) => deletePlacement(id)}
+              />
+            ) : selectedFreePlacement ? (
+              <div className="space-y-2 text-foreground">
+                <div className="text-xs font-semibold uppercase text-muted-foreground">
+                  {placementKindTitle(selectedFreePlacement.kind)}
+                </div>
+                {canEdit ? (
+                  <MarkerEditForm
+                    key={selectedFreePlacement.id}
+                    initialLabel={selectedFreePlacement.label}
+                    initialNote={selectedFreePlacement.note ?? ""}
+                    saving={saving}
+                    onSave={(label, note) => updatePlacementLabel(selectedFreePlacement.id, label, note)}
+                    onDelete={() => deletePlacement(selectedFreePlacement.id)}
+                  />
+                ) : (
+                  <>
+                    <p className="text-sm font-medium">{selectedFreePlacement.label || "—"}</p>
+                    {selectedFreePlacement.note ? (
+                      <p className="text-xs text-muted-foreground">{selectedFreePlacement.note}</p>
+                    ) : null}
+                  </>
+                )}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
