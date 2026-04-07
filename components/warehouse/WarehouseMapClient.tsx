@@ -75,10 +75,7 @@ export function WarehouseMapClient() {
   const [addNote, setAddNote] = useState("");
   const [saving, setSaving] = useState(false);
   const floorPlanRef = useRef<WarehouseFloorPlanHandle | null>(null);
-  const [workspaceView, setWorkspaceView] = useState<"table" | "floor">("floor");
-  const [kindFilter, setKindFilter] = useState<WarehousePlacementKind | "all">("all");
-  const [columnFilter, setColumnFilter] = useState<WarehouseColumn | "all">("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [workspaceView, setWorkspaceView] = useState<"table" | "floor">("table");
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -178,6 +175,7 @@ export function WarehouseMapClient() {
   useEffect(() => {
     const max = maxRowForColumn(addCol);
     // Sync row clamp when column changes (max rows differ per column).
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional clamp when addCol changes
     setAddRow((r) => Math.min(max, Math.max(1, r)));
   }, [addCol]);
 
@@ -213,22 +211,10 @@ export function WarehouseMapClient() {
     [placements, activeMapId],
   );
 
-  const normalizedSearch = useMemo(() => searchQuery.trim().toLowerCase(), [searchQuery]);
-
-  const filteredPlacementsForActive = useMemo(() => {
-    return placementsForActive.filter((p) => {
-      if (kindFilter !== "all" && p.kind !== kindFilter) return false;
-      if (columnFilter !== "all" && p.cell_column !== columnFilter) return false;
-      if (!normalizedSearch) return true;
-      const haystack = `${p.label ?? ""} ${p.note ?? ""} ${p.cell_column ?? ""}${p.cell_row ?? ""}`.toLowerCase();
-      return haystack.includes(normalizedSearch);
-    });
-  }, [placementsForActive, kindFilter, columnFilter, normalizedSearch]);
-
   const { freePlacements, cellGroupList } = useMemo(() => {
     const free: WarehousePlacementRow[] = [];
     const cellMap = new Map<string, WarehousePlacementRow[]>();
-    for (const p of filteredPlacementsForActive) {
+    for (const p of placementsForActive) {
       if (p.cell_column && p.cell_row != null) {
         const k = cellKey(p.cell_column as WarehouseColumn, p.cell_row);
         const arr = cellMap.get(k) ?? [];
@@ -243,7 +229,7 @@ export function WarehouseMapClient() {
     }
     const cellGroupList = Array.from(cellMap.entries()).sort(([a], [b]) => a.localeCompare(b));
     return { freePlacements: free, cellGroupList };
-  }, [filteredPlacementsForActive]);
+  }, [placementsForActive]);
 
   const jumpPlacementTargets = useMemo(() => {
     const out = [...freePlacements];
@@ -590,86 +576,17 @@ export function WarehouseMapClient() {
             )}
           </div>
         </div>
-        <div
-          className={`mt-2.5 flex flex-col gap-2.5 border-t border-white/5 pt-2.5 ${
-            workspaceView === "floor" ? "hidden md:flex" : ""
-          }`}
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="sr-only" htmlFor="warehouse-search-input">
-              Search markers
-            </label>
-            <input
-              id="warehouse-search-input"
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search label, note, or cell (e.g. A4)…"
-              className="h-9 w-full rounded-md border border-white/15 bg-white/[0.06] px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20 md:max-w-sm"
-            />
-            {(searchQuery || kindFilter !== "all" || columnFilter !== "all") && (
-              <button
-                type="button"
-                className="h-9 rounded-md border border-white/15 bg-white/[0.06] px-3 text-xs font-medium text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
-                onClick={() => {
-                  setSearchQuery("");
-                  setKindFilter("all");
-                  setColumnFilter("all");
-                }}
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Type</span>
-            {(["all", "window", "door", "screen"] as const).map((kind) => (
-              <button
-                key={kind}
-                type="button"
-                onClick={() => setKindFilter(kind)}
-                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
-                  kindFilter === kind
-                    ? "border-primary bg-primary/20 text-foreground"
-                    : "border-white/15 bg-white/[0.05] text-muted-foreground hover:bg-white/10 hover:text-foreground"
-                }`}
-              >
-                {kind === "all" ? "All" : placementKindTitle(kind)}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Column</span>
-            {(["all", "A", "B", "C"] as const).map((col) => (
-              <button
-                key={col}
-                type="button"
-                onClick={() => setColumnFilter(col)}
-                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
-                  columnFilter === col
-                    ? "border-primary bg-primary/20 text-foreground"
-                    : "border-white/15 bg-white/[0.05] text-muted-foreground hover:bg-white/10 hover:text-foreground"
-                }`}
-              >
-                {col === "all" ? "All columns" : `Column ${col}`}
-              </button>
-            ))}
-            <span className="ml-auto text-[10px] text-muted-foreground">
-              Showing {filteredPlacementsForActive.length} of {placementsForActive.length}
-            </span>
-          </div>
-        </div>
         {canEdit ? (
           <p className="mt-2 border-t border-white/5 pt-2 text-[11px] leading-relaxed text-muted-foreground">
             Signed in as <span className="font-medium text-foreground">{sessionEmail}</span> —{" "}
             {workspaceView === "table"
-              ? "Drag chips between grid cells or onto “Floor only” to unassign. Use filters above to quickly isolate column/type on mobile."
+              ? "Drag chips between grid cells or onto “Floor only” to unassign. Column A has 10 rows; B and C have 8."
               : "Click the floor for an exact spot, or use Table to assign by cell. Types: window, door, screen. Double-click or double-tap to zoom in."}
           </p>
         ) : null}
       </div>
 
-      <div className="relative min-h-[280px] flex-1 md:min-h-0">
+      <div className="relative min-h-0 flex-1">
         {workspaceView === "floor" ? (
           <div className="absolute inset-0 z-0 min-h-[240px]">
             <MapErrorBoundary fallback={mapFallback}>
