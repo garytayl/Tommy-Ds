@@ -21,6 +21,8 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export type { WarehousePlacementKind };
 
+const WAREHOUSE_LOAD_TIMEOUT_MS = 30_000;
+
 function num(v: unknown): number {
   if (typeof v === "number" && Number.isFinite(v)) return v;
   const n = Number(v);
@@ -127,19 +129,45 @@ export function WarehouseMapClient() {
 
   useEffect(() => {
     let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     (async () => {
       setLoading(true);
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!cancelled) {
-        setSessionEmail(session?.user?.email ?? null);
+      try {
+        const loadWork = (async () => {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (!cancelled) {
+            setSessionEmail(session?.user?.email ?? null);
+          }
+          await loadAll();
+        })();
+        const timeoutP = new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(
+            () =>
+              reject(
+                new Error(
+                  "Loading timed out. Check your network, Supabase status, and that warehouse tables exist for this project.",
+                ),
+              ),
+            WAREHOUSE_LOAD_TIMEOUT_MS,
+          );
+        });
+        await Promise.race([loadWork, timeoutP]);
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "Failed to load warehouse data.");
+        }
+      } finally {
+        if (timeoutId !== undefined) clearTimeout(timeoutId);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-      await loadAll();
-      if (!cancelled) setLoading(false);
     })();
     return () => {
       cancelled = true;
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
     };
   }, [supabase, loadAll]);
 
