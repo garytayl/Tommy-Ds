@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "db:link": "npx supabase link",
+    "db:push": "npx supabase db push",
     "db:seed": "node --env-file=.env.local scripts/seed-db.mjs",
     "storage:clear": "node --env-file=.env.local scripts/clear-storage-buckets.mjs"
   },
