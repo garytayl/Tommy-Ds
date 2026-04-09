@@ -204,11 +204,14 @@ export function WarehouseGridTable({
           </DroppableZone>
         </div>
 
-        <div className="grid min-h-0 grid-cols-3 gap-1.5 md:gap-3">
+        <div className="flex min-h-0 gap-1.5 md:gap-3">
           {columns.map((col) => {
             const maxR = maxRowForColumn(col);
             return (
-              <div key={col} className="flex min-h-0 min-w-0 flex-col rounded-lg border border-white/10 bg-black/20 p-1 md:p-2">
+              <div
+                key={col}
+                className="flex min-h-0 min-w-0 flex-1 flex-col rounded-lg border border-white/10 bg-black/20 p-1 md:p-2"
+              >
                 <div className="mb-1 text-center text-[10px] font-semibold text-foreground md:mb-2 md:text-xs">
                   Column {col}
                 </div>
