@@ -32,8 +32,8 @@ export default function WarehousePage() {
           <div className="mt-1 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Upper warehouse</h1>
             <p className="max-w-xl text-xs leading-relaxed text-muted-foreground md:text-right">
-              Switch to the table to drag markers between grid cells, or open the floor view to pan the plan. Up to ten
-              items per cell; types are window, door, or screen.
+              Switch to the table to drag markers between grid cells, or open the floor view to pan the plan. Stack as
+              many items per cell as needed; types are window, door, or screen.
             </p>
           </div>
         </header>

@@ -216,7 +216,6 @@ export function WarehouseGridTable({
                   {Array.from({ length: maxR }, (_, i) => i + 1).map((row) => {
                     const key = `${col}${row}`;
                     const items = cellMap.get(key) ?? [];
-                    const atCapacity = items.length >= 10;
                     return (
                       <div key={key} className="flex flex-col gap-0.5">
                         <div className="flex items-center justify-between gap-1 pr-0.5">
@@ -227,15 +226,14 @@ export function WarehouseGridTable({
                           {canEdit && onQuickAddCell ? (
                             <button
                               type="button"
-                              disabled={atCapacity}
-                              title={atCapacity ? "Cell full (10 items max)" : `Add to cell ${col}${row}`}
-                              aria-label={atCapacity ? "Cell full" : `Add item to cell ${col}${row}`}
+                              title={`Add to cell ${col}${row}`}
+                              aria-label={`Add item to cell ${col}${row}`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onQuickAddCell(col, row);
                               }}
                               onPointerDown={(e) => e.stopPropagation()}
-                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/[0.06] text-muted-foreground transition hover:border-primary/50 hover:bg-primary/15 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 md:h-7 md:w-7"
+                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/[0.06] text-muted-foreground transition hover:border-primary/50 hover:bg-primary/15 hover:text-foreground md:h-7 md:w-7"
                             >
                               <Plus className="h-3 w-3 md:h-3.5 md:w-3.5" strokeWidth={2.5} />
                             </button>
