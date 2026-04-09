@@ -286,9 +286,14 @@ export const WarehouseFloorPlan = forwardRef<WarehouseFloorPlanHandle, Props>(fu
     onFloorTap({ pos_x, pos_y });
   }
 
-  function startDragFreeMarker(id: string, e: React.PointerEvent) {
+  function handleFreeMarkerPointerDown(id: string, e: React.PointerEvent) {
     if (!canEdit) return;
     e.stopPropagation();
+    // On touch, prefer selection (open details/delete) over instant drag.
+    if (e.pointerType === "touch") {
+      onSelectPlacement(id);
+      return;
+    }
     e.preventDefault();
     setDraggingId(id);
     const p = freePlacements.find((x) => x.id === id);
@@ -426,7 +431,7 @@ export const WarehouseFloorPlan = forwardRef<WarehouseFloorPlanHandle, Props>(fu
                       }}
                       className={`warehouse-pin absolute z-20 -translate-x-1/2 -translate-y-1/2 ${canEdit ? "touch-none cursor-grab active:cursor-grabbing" : "cursor-pointer"}`}
                       style={{ left: `${p.pos_x * 100}%`, top: `${p.pos_y * 100}%` }}
-                      onPointerDown={canEdit ? (e) => startDragFreeMarker(p.id, e) : undefined}
+                      onPointerDown={canEdit ? (e) => handleFreeMarkerPointerDown(p.id, e) : undefined}
                       onClick={(e) => {
                         e.stopPropagation();
                         onSelectPlacement(p.id);
