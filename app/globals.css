@@ -1179,3 +1179,11 @@
   color: var(--muted-foreground);
   word-break: break-word;
 }
+
+/* When warehouse mobile fullscreen is active, hide page chrome for a true workspace. */
+@media (max-width: 767px) {
+  html.warehouse-mobile-fullscreen body > header,
+  html.warehouse-mobile-fullscreen body > footer {
+    display: none !important;
+  }
+}

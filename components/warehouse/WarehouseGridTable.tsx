@@ -12,7 +12,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import type { WarehousePlacementRow } from "./warehouse-map-types";
 import { maxRowForColumn, type WarehouseColumn } from "@/lib/warehouse-grid";
@@ -65,18 +65,26 @@ function DroppableZone({
 
 function DraggableChip({
   placement,
-  disabled,
+  dragDisabled,
   selected,
+  tapMoveEnabled,
+  tapMoveSelected,
+  movePending,
   onSelect,
+  onTapMoveSelect,
 }: {
   placement: WarehousePlacementRow;
-  disabled: boolean;
+  dragDisabled: boolean;
   selected: boolean;
+  tapMoveEnabled: boolean;
+  tapMoveSelected: boolean;
+  movePending: boolean;
   onSelect: (id: string) => void;
+  onTapMoveSelect: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: placement.id,
-    disabled,
+    disabled: dragDisabled || movePending,
   });
   const style = transform
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
@@ -93,12 +101,15 @@ function DraggableChip({
       onClick={(e) => {
         e.stopPropagation();
         onSelect(placement.id);
+        if (tapMoveEnabled) onTapMoveSelect(placement.id);
       }}
-      className={`mb-1 flex w-full items-center gap-1 rounded-md border px-1.5 py-0.5 text-left text-[10px] font-medium transition md:gap-1.5 md:px-2 md:py-1 md:text-[11px] ${
+      className={`mb-1 flex w-full touch-manipulation select-none items-center gap-1 rounded-md border px-1.5 py-0.5 text-left text-[10px] font-medium transition md:gap-1.5 md:px-2 md:py-1 md:text-[11px] ${
         selected
           ? "border-primary bg-primary/20 text-foreground"
           : "border-white/12 bg-black/40 text-foreground hover:bg-white/10"
-      } ${disabled ? "cursor-default opacity-90" : "cursor-grab active:cursor-grabbing"} ${isDragging ? "opacity-40" : ""}`}
+      } ${tapMoveSelected ? "ring-1 ring-primary/70" : ""} ${
+        dragDisabled ? (tapMoveEnabled ? "cursor-pointer" : "cursor-default opacity-90") : "cursor-grab active:cursor-grabbing"
+      } ${isDragging ? "opacity-40" : ""}`}
     >
       <span className="shrink-0 font-bold text-accent-gold">{kindLetter(placement.kind)}</span>
       <span className="min-w-0 truncate">{label}</span>
@@ -127,6 +138,9 @@ export function WarehouseGridTable({
   onQuickAddCell,
 }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [useTapMove, setUseTapMove] = useState(false);
+  const [tapMoveId, setTapMoveId] = useState<string | null>(null);
+  const [tapMovePending, setTapMovePending] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -142,20 +156,56 @@ export function WarehouseGridTable({
   }, [cellGroupList]);
 
   const columns: WarehouseColumn[] = ["A", "B", "C"];
+  const allPlacements = useMemo(
+    () => [...freePlacements, ...cellGroupList.flatMap(([, items]) => items)],
+    [freePlacements, cellGroupList],
+  );
+  const isDragEnabled = canEdit && !useTapMove;
+  const tapMovePlacement = useMemo(
+    () => (tapMoveId ? allPlacements.find((p) => p.id === tapMoveId) ?? null : null),
+    [allPlacements, tapMoveId],
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => setUseTapMove(mq.matches);
+    apply();
+    const onChange = () => apply();
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    }
+    mq.addListener(onChange);
+    return () => mq.removeListener(onChange);
+  }, []);
+
+  async function handleTapMove(target: WarehouseGridMoveTarget) {
+    if (!tapMoveId || tapMovePending) return;
+    setTapMovePending(true);
+    try {
+      await onMove(tapMoveId, target);
+      setTapMoveId(null);
+    } finally {
+      setTapMovePending(false);
+    }
+  }
 
   function handleDragStart(e: DragStartEvent) {
+    if (!isDragEnabled) return;
     setActiveId(String(e.active.id));
   }
 
   async function handleDragEnd(e: DragEndEvent) {
     setActiveId(null);
+    if (!isDragEnabled) return;
     const { active, over } = e;
     if (!over) return;
     const pid = String(active.id);
     const target = parseDropId(String(over.id));
     if (!target) return;
 
-    const placement = [...freePlacements, ...cellGroupList.flatMap(([, items]) => items)].find((p) => p.id === pid);
+    const placement = allPlacements.find((p) => p.id === pid);
     if (!placement) return;
 
     if (target.kind === "floor") {
@@ -171,17 +221,57 @@ export function WarehouseGridTable({
   }
 
   const activePlacement = activeId
-    ? [...freePlacements, ...cellGroupList.flatMap(([, items]) => items)].find((p) => p.id === activeId)
+    ? allPlacements.find((p) => p.id === activeId)
     : null;
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={(e) => void handleDragEnd(e)}>
-      <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-3 md:p-4">
+      <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-3 select-none md:p-4">
         <div className="md:hidden rounded-lg border border-white/10 bg-black/25 px-2 py-1.5">
           <p className="text-center text-[10px] font-medium text-muted-foreground">
             A · B · C stay visible together on mobile.
           </p>
         </div>
+        {canEdit ? (
+          <div className="rounded-lg border border-white/10 bg-black/25 px-2 py-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Move mode</p>
+              <div className="inline-flex gap-0.5 rounded-md border border-white/15 bg-white/[0.04] p-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUseTapMove(true);
+                    setActiveId(null);
+                  }}
+                  className={`rounded px-2 py-1 text-[10px] font-semibold transition ${
+                    useTapMove ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-white/10"
+                  }`}
+                >
+                  Tap move
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUseTapMove(false);
+                    setTapMoveId(null);
+                  }}
+                  className={`rounded px-2 py-1 text-[10px] font-semibold transition ${
+                    !useTapMove ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-white/10"
+                  }`}
+                >
+                  Drag
+                </button>
+              </div>
+            </div>
+            {useTapMove ? (
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {tapMovePlacement
+                  ? `Selected: ${kindLetter(tapMovePlacement.kind)} · ${tapMovePlacement.label?.trim() || "Untitled"} — now tap a destination cell or Floor only.`
+                  : "Tap a chip to select it, then tap destination cell/Floor only."}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         <div>
           <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -195,12 +285,26 @@ export function WarehouseGridTable({
                 <DraggableChip
                   key={p.id}
                   placement={p}
-                  disabled={!canEdit}
+                  dragDisabled={!isDragEnabled}
                   selected={p.id === selectedPlacementId}
+                  tapMoveEnabled={canEdit && useTapMove}
+                  tapMoveSelected={p.id === tapMoveId}
+                  movePending={tapMovePending}
                   onSelect={(id) => onSelectPlacement(id)}
+                  onTapMoveSelect={setTapMoveId}
                 />
               ))
             )}
+            {canEdit && useTapMove && tapMoveId ? (
+              <button
+                type="button"
+                onClick={() => void handleTapMove({ kind: "floor" })}
+                disabled={tapMovePending}
+                className="mt-1.5 w-full rounded-md border border-primary/50 bg-primary/10 px-2 py-1 text-[10px] font-medium text-foreground disabled:opacity-50"
+              >
+                {tapMovePending ? "Moving…" : "Move selected marker to Floor only"}
+              </button>
+            ) : null}
           </DroppableZone>
         </div>
 
@@ -252,12 +356,26 @@ export function WarehouseGridTable({
                               <DraggableChip
                                 key={p.id}
                                 placement={p}
-                                disabled={!canEdit}
+                                dragDisabled={!isDragEnabled}
                                 selected={p.id === selectedPlacementId}
+                                tapMoveEnabled={canEdit && useTapMove}
+                                tapMoveSelected={p.id === tapMoveId}
+                                movePending={tapMovePending}
                                 onSelect={(id) => onSelectPlacement(id)}
+                                onTapMoveSelect={setTapMoveId}
                               />
                             ))
                           )}
+                          {canEdit && useTapMove && tapMoveId ? (
+                            <button
+                              type="button"
+                              onClick={() => void handleTapMove({ kind: "cell", col, row })}
+                              disabled={tapMovePending}
+                              className="mt-1 w-full rounded-md border border-primary/50 bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-foreground disabled:opacity-50 md:text-[10px]"
+                            >
+                              {tapMovePending ? "Moving…" : `Move selected here (${col}${row})`}
+                            </button>
+                          ) : null}
                         </DroppableZone>
                       </div>
                     );

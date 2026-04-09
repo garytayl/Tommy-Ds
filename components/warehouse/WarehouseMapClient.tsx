@@ -83,7 +83,8 @@ export function WarehouseMapClient() {
   const [addNote, setAddNote] = useState("");
   const [saving, setSaving] = useState(false);
   const floorPlanRef = useRef<WarehouseFloorPlanHandle | null>(null);
-  const [workspaceView, setWorkspaceView] = useState<"table" | "floor">("table");
+  const [workspaceView, setWorkspaceView] = useState<"table" | "floor">("floor");
+  const [mobileFullscreen, setMobileFullscreen] = useState(false);
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -340,6 +341,30 @@ export function WarehouseMapClient() {
       : activeMap.image_path
     : "";
 
+  useEffect(() => {
+    const root = document.documentElement;
+    if (mobileFullscreen) root.classList.add("warehouse-mobile-fullscreen");
+    else root.classList.remove("warehouse-mobile-fullscreen");
+    return () => {
+      root.classList.remove("warehouse-mobile-fullscreen");
+    };
+  }, [mobileFullscreen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const sync = () => {
+      if (mq.matches) setMobileFullscreen(false);
+    };
+    sync();
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", sync);
+      return () => mq.removeEventListener("change", sync);
+    }
+    mq.addListener(sync);
+    return () => mq.removeListener(sync);
+  }, []);
+
   function onFloorTap(norm: { pos_x: number; pos_y: number }) {
     if (!activeMap || !canEdit || addOpen) return;
     setAddMode("map");
@@ -481,7 +506,12 @@ export function WarehouseMapClient() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div
+      className={`flex min-h-0 flex-1 flex-col ${mobileFullscreen ? "fixed inset-0 z-[9000] h-dvh bg-[#050508]" : ""}`}
+      role={mobileFullscreen ? "dialog" : undefined}
+      aria-modal={mobileFullscreen ? "true" : undefined}
+      aria-label={mobileFullscreen ? "Warehouse workspace fullscreen mode" : undefined}
+    >
       {error ? (
         <div
           className="shrink-0 border-b border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
@@ -546,6 +576,13 @@ export function WarehouseMapClient() {
             ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2 md:justify-end">
+            <button
+              type="button"
+              className="rounded-md border border-white/15 bg-white/[0.08] px-3 py-1.5 text-xs font-medium text-foreground hover:bg-white/12 md:hidden"
+              onClick={() => setMobileFullscreen((v) => !v)}
+            >
+              {mobileFullscreen ? "Exit full screen" : "Canvas mode"}
+            </button>
             {canEdit ? (
               <button
                 type="button"
@@ -573,11 +610,11 @@ export function WarehouseMapClient() {
             )}
           </div>
         </div>
-        {canEdit ? (
+        {canEdit && !mobileFullscreen ? (
           <p className="mt-2 border-t border-white/5 pt-2 text-[11px] leading-relaxed text-muted-foreground">
             Signed in as <span className="font-medium text-foreground">{sessionEmail}</span> —{" "}
             {workspaceView === "table"
-              ? "Drag chips between grid cells or onto “Floor only” to unassign. Column A has 10 rows; B and C have 8."
+              ? "On mobile, use Tap move to avoid drag/text-selection issues: tap a chip, then tap destination cell or Floor only."
               : "Click the floor for an exact spot, or use Table to assign by cell. Types: window, door, screen. Double-click or double-tap to zoom in."}
           </p>
         ) : null}
@@ -678,7 +715,7 @@ export function WarehouseMapClient() {
         ) : null}
       </div>
 
-      {jumpPlacementTargets.length > 0 ? (
+      {!mobileFullscreen && jumpPlacementTargets.length > 0 ? (
         <div className="shrink-0 border-t border-white/10 bg-black/35 px-3 py-2.5 md:px-4">
           <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Jump to marker</p>
           <div className="flex gap-2 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]">
