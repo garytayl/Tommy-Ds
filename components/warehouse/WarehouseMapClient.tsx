@@ -57,6 +57,14 @@ function labelPlaceholderForKind(kind: WarehousePlacementKind): string {
   return "e.g. Patio screen";
 }
 
+function friendlyWarehouseErrorMessage(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes("warehouse_placements_stack_index_range") || lower.includes("stack_index")) {
+    return "Database migration is missing: the old 10-item stack constraint is still active. Apply migration 20260409110000_warehouse_unbounded_cell_stacks.sql in Supabase, then retry.";
+  }
+  return message;
+}
+
 export function WarehouseMapClient() {
   const [maps, setMaps] = useState<WarehouseMapRow[]>([]);
   const [placements, setPlacements] = useState<WarehousePlacementRow[]>([]);
@@ -99,11 +107,11 @@ export function WarehouseMapClient() {
     const [{ data: mapRows, error: mapErr }, { data: placeRows, error: pErr }] = await Promise.all([mapsQ, placementsQ]);
 
     if (mapErr) {
-      setError(mapErr.message);
+      setError(friendlyWarehouseErrorMessage(mapErr.message));
       return;
     }
     if (pErr) {
-      setError(pErr.message);
+      setError(friendlyWarehouseErrorMessage(pErr.message));
       return;
     }
 
@@ -291,7 +299,7 @@ export function WarehouseMapClient() {
           })
           .eq("id", placementId);
         setSaving(false);
-        if (error) setError(error.message);
+        if (error) setError(friendlyWarehouseErrorMessage(error.message));
         else await loadAll();
         return;
       }
@@ -320,7 +328,7 @@ export function WarehouseMapClient() {
         })
         .eq("id", placementId);
       setSaving(false);
-      if (error) setError(error.message);
+      if (error) setError(friendlyWarehouseErrorMessage(error.message));
       else await loadAll();
     },
     [activeMap, placementsForActive, supabase, loadAll],
@@ -366,7 +374,7 @@ export function WarehouseMapClient() {
       });
       setSaving(false);
       if (insErr) {
-        setError(insErr.message);
+        setError(friendlyWarehouseErrorMessage(insErr.message));
         return;
       }
     } else {
@@ -380,7 +388,7 @@ export function WarehouseMapClient() {
         .eq("cell_row", row);
       if (exErr) {
         setSaving(false);
-        setError(exErr.message);
+        setError(friendlyWarehouseErrorMessage(exErr.message));
         return;
       }
       const stacks = (existing ?? []).map((r) => Number(r.stack_index)).filter(Number.isFinite);
@@ -399,7 +407,7 @@ export function WarehouseMapClient() {
       });
       setSaving(false);
       if (insErr) {
-        setError(insErr.message);
+        setError(friendlyWarehouseErrorMessage(insErr.message));
         return;
       }
     }
@@ -418,7 +426,7 @@ export function WarehouseMapClient() {
       .eq("id", id);
     setSaving(false);
     if (uErr) {
-      setError(uErr.message);
+      setError(friendlyWarehouseErrorMessage(uErr.message));
       return;
     }
     await loadAll();
@@ -430,7 +438,7 @@ export function WarehouseMapClient() {
     const { error: dErr } = await supabase.from("warehouse_map_placements").delete().eq("id", id);
     setSaving(false);
     if (dErr) {
-      setError(dErr.message);
+      setError(friendlyWarehouseErrorMessage(dErr.message));
       return;
     }
     setSelectedPlacementId(null);
@@ -444,7 +452,7 @@ export function WarehouseMapClient() {
         .from("warehouse_map_placements")
         .update({ pos_x, pos_y })
         .eq("id", id);
-      if (uErr) setError(uErr.message);
+      if (uErr) setError(friendlyWarehouseErrorMessage(uErr.message));
       else await loadAll();
     },
     [activeMap, supabase, loadAll],
