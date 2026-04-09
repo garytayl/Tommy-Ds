@@ -175,7 +175,6 @@ export function WarehouseMapClient() {
   useEffect(() => {
     const max = maxRowForColumn(addCol);
     // Sync row clamp when column changes (max rows differ per column).
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional clamp when addCol changes
     setAddRow((r) => Math.min(max, Math.max(1, r)));
   }, [addCol]);
 
@@ -308,11 +307,6 @@ export function WarehouseMapClient() {
       );
       const stacks = othersInTarget.map((x) => x.stack_index).filter(Number.isFinite);
       const nextStack = stacks.length ? Math.max(...stacks) + 1 : 0;
-      if (nextStack > 9) {
-        setError("That cell already has 10 items. Move or remove one first.");
-        setSaving(false);
-        return;
-      }
 
       const { pos_x, pos_y } = cellCenterNormalized(col, row);
       const { error } = await supabase
@@ -391,11 +385,6 @@ export function WarehouseMapClient() {
       }
       const stacks = (existing ?? []).map((r) => Number(r.stack_index)).filter(Number.isFinite);
       const next = stacks.length ? Math.max(...stacks) + 1 : 0;
-      if (next > 9) {
-        setSaving(false);
-        setError("That cell already has 10 items. Remove one before adding another.");
-        return;
-      }
       const { pos_x, pos_y } = cellCenterNormalized(addCol, row);
       const { error: insErr } = await supabase.from("warehouse_map_placements").insert({
         map_id: activeMap.id,
@@ -720,8 +709,7 @@ export function WarehouseMapClient() {
               Add marker
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Choose window, door, or screen. Use map position for exact spots, or a grid cell for up to ten stacked
-              items per cell.
+              Choose window, door, or screen. Use map position for exact spots, or a grid cell for stacked items.
             </p>
             <div className="mt-4 flex gap-2 rounded-lg border border-border bg-muted/20 p-1">
               <button
@@ -882,7 +870,7 @@ function CellGroupPopupBody({
       {items.map((p) => (
         <div key={p.id} className="rounded-lg border border-border bg-muted/15 p-2">
           <div className="mb-1 text-[10px] text-muted-foreground">
-            {placementKindTitle(p.kind)} · slot {p.stack_index + 1} / 10
+            {placementKindTitle(p.kind)} · slot {p.stack_index + 1}
           </div>
           {canEdit ? (
             <MarkerEditForm
