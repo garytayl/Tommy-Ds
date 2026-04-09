@@ -56,7 +56,7 @@ function DroppableZone({
   return (
     <div
       ref={setNodeRef}
-      className={`min-h-[48px] rounded-lg border border-dashed border-white/15 bg-white/[0.03] p-1.5 transition-colors ${isOver ? "border-primary/70 bg-primary/10" : ""} ${className ?? ""}`}
+      className={`min-h-[40px] rounded-lg border border-dashed border-white/15 bg-white/[0.03] p-1 transition-colors ${isOver ? "border-primary/70 bg-primary/10" : ""} ${className ?? ""}`}
     >
       {children}
     </div>
@@ -94,7 +94,7 @@ function DraggableChip({
         e.stopPropagation();
         onSelect(placement.id);
       }}
-      className={`mb-1 flex w-full items-center gap-1.5 rounded-md border px-2 py-1 text-left text-[11px] font-medium transition ${
+      className={`mb-1 flex w-full items-center gap-1 rounded-md border px-1.5 py-0.5 text-left text-[10px] font-medium transition md:gap-1.5 md:px-2 md:py-1 md:text-[11px] ${
         selected
           ? "border-primary bg-primary/20 text-foreground"
           : "border-white/12 bg-black/40 text-foreground hover:bg-white/10"
@@ -177,6 +177,12 @@ export function WarehouseGridTable({
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={(e) => void handleDragEnd(e)}>
       <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-3 md:p-4">
+        <div className="md:hidden rounded-lg border border-white/10 bg-black/25 px-2 py-1.5">
+          <p className="text-center text-[10px] font-medium text-muted-foreground">
+            A · B · C stay visible together on mobile.
+          </p>
+        </div>
+
         <div>
           <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             Floor only (not in a cell)
@@ -198,13 +204,15 @@ export function WarehouseGridTable({
           </DroppableZone>
         </div>
 
-        <div className="grid min-h-0 grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="grid min-h-0 grid-cols-3 gap-1.5 md:gap-3">
           {columns.map((col) => {
             const maxR = maxRowForColumn(col);
             return (
-              <div key={col} className="flex min-h-0 flex-col rounded-lg border border-white/10 bg-black/20 p-2">
-                <div className="mb-2 text-center text-xs font-semibold text-foreground">Column {col}</div>
-                <div className="flex flex-col gap-1.5 overflow-y-auto">
+              <div key={col} className="flex min-h-0 min-w-0 flex-col rounded-lg border border-white/10 bg-black/20 p-1 md:p-2">
+                <div className="mb-1 text-center text-[10px] font-semibold text-foreground md:mb-2 md:text-xs">
+                  Column {col}
+                </div>
+                <div className="flex flex-col gap-1 overflow-y-auto">
                   {Array.from({ length: maxR }, (_, i) => i + 1).map((row) => {
                     const key = `${col}${row}`;
                     const items = cellMap.get(key) ?? [];
@@ -212,7 +220,7 @@ export function WarehouseGridTable({
                     return (
                       <div key={key} className="flex flex-col gap-0.5">
                         <div className="flex items-center justify-between gap-1 pr-0.5">
-                          <span className="text-[10px] font-medium text-muted-foreground">
+                          <span className="text-[9px] font-medium text-muted-foreground md:text-[10px]">
                             {col}
                             {row}
                           </span>
@@ -227,15 +235,17 @@ export function WarehouseGridTable({
                                 onQuickAddCell(col, row);
                               }}
                               onPointerDown={(e) => e.stopPropagation()}
-                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/[0.06] text-muted-foreground transition hover:border-primary/50 hover:bg-primary/15 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/15 bg-white/[0.06] text-muted-foreground transition hover:border-primary/50 hover:bg-primary/15 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 md:h-7 md:w-7"
                             >
-                              <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+                              <Plus className="h-3 w-3 md:h-3.5 md:w-3.5" strokeWidth={2.5} />
                             </button>
                           ) : null}
                         </div>
-                        <DroppableZone id={cellDropId(col, row)} className="min-h-[56px]">
+                        <DroppableZone id={cellDropId(col, row)} className="min-h-[40px] p-1 md:min-h-[56px] md:p-1.5">
                           {items.length === 0 ? (
-                            <p className="py-1.5 text-center text-[10px] text-muted-foreground/80">Empty</p>
+                            <p className="py-0.5 text-center text-[9px] text-muted-foreground/80 md:py-1.5 md:text-[10px]">
+                              Empty
+                            </p>
                           ) : (
                             items.map((p) => (
                               <DraggableChip
