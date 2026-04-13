@@ -1179,3 +1179,11 @@
   color: var(--muted-foreground);
   word-break: break-word;
 }
+
+/* Hide shell chrome when warehouse canvas mode is active on mobile. */
+@media (max-width: 767px) {
+  html.warehouse-mobile-fullscreen header,
+  html.warehouse-mobile-fullscreen footer {
+    display: none !important;
+  }
+}

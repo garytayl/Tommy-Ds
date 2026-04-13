@@ -57,6 +57,14 @@ function labelPlaceholderForKind(kind: WarehousePlacementKind): string {
   return "e.g. Patio screen";
 }
 
+function friendlyWarehouseErrorMessage(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes("warehouse_placements_stack_index_range") || lower.includes("stack_index")) {
+    return "Database migration is missing: the old 10-item stack constraint is still active. Apply migration 20260409110000_warehouse_unbounded_cell_stacks.sql in Supabase, then retry.";
+  }
+  return message;
+}
+
 export function WarehouseMapClient() {
   const [maps, setMaps] = useState<WarehouseMapRow[]>([]);
   const [placements, setPlacements] = useState<WarehousePlacementRow[]>([]);
@@ -75,7 +83,8 @@ export function WarehouseMapClient() {
   const [addNote, setAddNote] = useState("");
   const [saving, setSaving] = useState(false);
   const floorPlanRef = useRef<WarehouseFloorPlanHandle | null>(null);
-  const [workspaceView, setWorkspaceView] = useState<"table" | "floor">("table");
+  const [workspaceView, setWorkspaceView] = useState<"table" | "floor">("floor");
+  const [mobileFullscreen, setMobileFullscreen] = useState(false);
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -99,11 +108,11 @@ export function WarehouseMapClient() {
     const [{ data: mapRows, error: mapErr }, { data: placeRows, error: pErr }] = await Promise.all([mapsQ, placementsQ]);
 
     if (mapErr) {
-      setError(mapErr.message);
+      setError(friendlyWarehouseErrorMessage(mapErr.message));
       return;
     }
     if (pErr) {
-      setError(pErr.message);
+      setError(friendlyWarehouseErrorMessage(pErr.message));
       return;
     }
 
@@ -241,6 +250,12 @@ export function WarehouseMapClient() {
     });
   }, [freePlacements, cellGroupList]);
 
+  const placedInCellsCount = useMemo(
+    () => placementsForActive.filter((p) => p.cell_column && p.cell_row != null).length,
+    [placementsForActive],
+  );
+  const floorOnlyCount = placementsForActive.length - placedInCellsCount;
+
   const mapFitKey = activeMap ? `${activeMap.id}-${activeMap.width_px}-${activeMap.height_px}` : "";
 
   const selectedCellGroup = useMemo(() => {
@@ -291,7 +306,7 @@ export function WarehouseMapClient() {
           })
           .eq("id", placementId);
         setSaving(false);
-        if (error) setError(error.message);
+        if (error) setError(friendlyWarehouseErrorMessage(error.message));
         else await loadAll();
         return;
       }
@@ -320,7 +335,7 @@ export function WarehouseMapClient() {
         })
         .eq("id", placementId);
       setSaving(false);
-      if (error) setError(error.message);
+      if (error) setError(friendlyWarehouseErrorMessage(error.message));
       else await loadAll();
     },
     [activeMap, placementsForActive, supabase, loadAll],
@@ -331,6 +346,30 @@ export function WarehouseMapClient() {
       ? new URL(activeMap.image_path, window.location.origin).href
       : activeMap.image_path
     : "";
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (mobileFullscreen) root.classList.add("warehouse-mobile-fullscreen");
+    else root.classList.remove("warehouse-mobile-fullscreen");
+    return () => {
+      root.classList.remove("warehouse-mobile-fullscreen");
+    };
+  }, [mobileFullscreen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const sync = () => {
+      if (mq.matches) setMobileFullscreen(false);
+    };
+    sync();
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", sync);
+      return () => mq.removeEventListener("change", sync);
+    }
+    mq.addListener(sync);
+    return () => mq.removeListener(sync);
+  }, []);
 
   function onFloorTap(norm: { pos_x: number; pos_y: number }) {
     if (!activeMap || !canEdit || addOpen) return;
@@ -366,7 +405,7 @@ export function WarehouseMapClient() {
       });
       setSaving(false);
       if (insErr) {
-        setError(insErr.message);
+        setError(friendlyWarehouseErrorMessage(insErr.message));
         return;
       }
     } else {
@@ -380,7 +419,7 @@ export function WarehouseMapClient() {
         .eq("cell_row", row);
       if (exErr) {
         setSaving(false);
-        setError(exErr.message);
+        setError(friendlyWarehouseErrorMessage(exErr.message));
         return;
       }
       const stacks = (existing ?? []).map((r) => Number(r.stack_index)).filter(Number.isFinite);
@@ -399,7 +438,7 @@ export function WarehouseMapClient() {
       });
       setSaving(false);
       if (insErr) {
-        setError(insErr.message);
+        setError(friendlyWarehouseErrorMessage(insErr.message));
         return;
       }
     }
@@ -418,7 +457,7 @@ export function WarehouseMapClient() {
       .eq("id", id);
     setSaving(false);
     if (uErr) {
-      setError(uErr.message);
+      setError(friendlyWarehouseErrorMessage(uErr.message));
       return;
     }
     await loadAll();
@@ -430,7 +469,7 @@ export function WarehouseMapClient() {
     const { error: dErr } = await supabase.from("warehouse_map_placements").delete().eq("id", id);
     setSaving(false);
     if (dErr) {
-      setError(dErr.message);
+      setError(friendlyWarehouseErrorMessage(dErr.message));
       return;
     }
     setSelectedPlacementId(null);
@@ -444,7 +483,7 @@ export function WarehouseMapClient() {
         .from("warehouse_map_placements")
         .update({ pos_x, pos_y })
         .eq("id", id);
-      if (uErr) setError(uErr.message);
+      if (uErr) setError(friendlyWarehouseErrorMessage(uErr.message));
       else await loadAll();
     },
     [activeMap, supabase, loadAll],
@@ -473,106 +512,134 @@ export function WarehouseMapClient() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className={`flex min-h-0 flex-1 flex-col ${mobileFullscreen ? "fixed inset-0 z-[9000] h-dvh bg-[#050508]" : ""}`}>
       {error ? (
         <div
-          className="shrink-0 border-b border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
+          className="shrink-0 border-b border-destructive/35 bg-destructive/10 px-4 py-3 text-sm text-destructive-foreground"
           role="alert"
         >
           {error}
         </div>
       ) : null}
 
-      <div className="shrink-0 border-b border-white/10 bg-black/55 px-3 py-2.5 backdrop-blur-md md:px-4">
-        <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between md:gap-4">
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-            <div className="inline-flex flex-wrap gap-0.5 rounded-lg border border-white/12 bg-white/[0.06] p-0.5">
-              {maps.map((m) => (
+      <div className="shrink-0 border-b border-white/10 bg-gradient-to-b from-black/75 to-black/55 px-3 py-3 backdrop-blur-xl md:px-5">
+        <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-3">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Warehouse workspace</p>
+              <h2 className="mt-1 truncate text-lg font-semibold text-foreground md:text-xl">{activeMap.title}</h2>
+              {activeMap.description ? (
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">{activeMap.description}</p>
+              ) : null}
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-foreground">
+                {placementsForActive.length} total
+              </span>
+              <span className="rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-foreground">
+                {placedInCellsCount} in cells
+              </span>
+              <span className="rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-foreground">
+                {floorOnlyCount} floor only
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex flex-wrap gap-1 rounded-xl border border-white/12 bg-white/[0.05] p-1">
+                {maps.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveMapId(m.id);
+                      setAddOpen(false);
+                      setAddNorm(null);
+                      setSelectedPlacementId(null);
+                    }}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition md:text-sm ${
+                      m.id === activeMapId
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                    }`}
+                  >
+                    {m.title}
+                  </button>
+                ))}
+              </div>
+
+              <div className="inline-flex rounded-xl border border-white/12 bg-white/[0.04] p-1">
                 <button
-                  key={m.id}
                   type="button"
-                  onClick={() => {
-                    setActiveMapId(m.id);
-                    setAddOpen(false);
-                    setAddNorm(null);
-                    setSelectedPlacementId(null);
-                  }}
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition md:px-4 md:py-2 ${
-                    m.id === activeMapId
+                  onClick={() => setWorkspaceView("floor")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                    workspaceView === "floor"
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:bg-white/10 hover:text-foreground"
                   }`}
                 >
-                  {m.title}
+                  Floor canvas
                 </button>
-              ))}
+                <button
+                  type="button"
+                  onClick={() => setWorkspaceView("table")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                    workspaceView === "table"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                  }`}
+                >
+                  Grid studio
+                </button>
+              </div>
             </div>
-            <div className="inline-flex flex-wrap gap-0.5 rounded-lg border border-white/12 bg-white/[0.04] p-0.5">
+
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => setWorkspaceView("table")}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                  workspaceView === "table"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-white/10 hover:text-foreground"
-                }`}
+                className="rounded-lg border border-white/15 bg-white/[0.08] px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-white/14 md:hidden"
+                onClick={() => setMobileFullscreen((v) => !v)}
               >
-                Table
+                {mobileFullscreen ? "Exit canvas mode" : "Canvas mode"}
               </button>
-              <button
-                type="button"
-                onClick={() => setWorkspaceView("floor")}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                  workspaceView === "floor"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-white/10 hover:text-foreground"
-                }`}
-              >
-                Floor
-              </button>
+              {canEdit ? (
+                <button
+                  type="button"
+                  className="rounded-lg border border-primary/45 bg-primary/20 px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-primary/30"
+                  onClick={() => {
+                    setAddMode("cell");
+                    setAddCol("A");
+                    setAddRow(1);
+                    setAddKind("window");
+                    setAddLabel("");
+                    setAddNote("");
+                    setAddNorm(null);
+                    setAddOpen(true);
+                  }}
+                >
+                  + Add marker
+                </button>
+              ) : (
+                <span className="text-[11px] text-muted-foreground">
+                  <Link href="/auth/login?next=/warehouse" className="font-medium text-accent-gold underline-offset-4 hover:underline">
+                    Sign in
+                  </Link>{" "}
+                  to add or edit.
+                </span>
+              )}
             </div>
-            {activeMap.description ? (
-              <p className="hidden max-w-md text-[11px] leading-snug text-muted-foreground lg:block xl:max-w-lg">
-                {activeMap.description}
-              </p>
-            ) : null}
           </div>
-          <div className="flex flex-wrap items-center gap-2 md:justify-end">
-            {canEdit ? (
-              <button
-                type="button"
-                className="rounded-md border border-white/15 bg-white/[0.08] px-3 py-1.5 text-sm font-medium text-foreground hover:bg-white/12"
-                onClick={() => {
-                  setAddMode("cell");
-                  setAddCol("A");
-                  setAddRow(1);
-                  setAddKind("window");
-                  setAddLabel("");
-                  setAddNote("");
-                  setAddNorm(null);
-                  setAddOpen(true);
-                }}
-              >
-                Add to grid cell…
-              </button>
-            ) : (
-              <span className="text-[11px] text-muted-foreground">
-                <Link href="/auth/login?next=/warehouse" className="font-medium text-accent-gold underline-offset-4 hover:underline">
-                  Sign in
-                </Link>{" "}
-                to add or edit. Viewing is public.
-              </span>
-            )}
-          </div>
+
+          {canEdit && !mobileFullscreen ? (
+            <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+              Signed in as <span className="font-medium text-foreground">{sessionEmail}</span> —{" "}
+              {workspaceView === "table"
+                ? "Grid studio is touch-first: use Tap move to select a marker, then tap destination cell/floor."
+                : "Floor canvas supports pinch-to-zoom, pan, tap-to-select, and quick detail editing from the bottom sheet."}
+            </p>
+          ) : null}
         </div>
-        {canEdit ? (
-          <p className="mt-2 border-t border-white/5 pt-2 text-[11px] leading-relaxed text-muted-foreground">
-            Signed in as <span className="font-medium text-foreground">{sessionEmail}</span> —{" "}
-            {workspaceView === "table"
-              ? "Drag chips between grid cells or onto “Floor only” to unassign. Column A has 10 rows; B and C have 8."
-              : "Click the floor for an exact spot, or use Table to assign by cell. Types: window, door, screen. Double-click or double-tap to zoom in."}
-          </p>
-        ) : null}
       </div>
 
       <div className="relative min-h-0 flex-1">
@@ -622,70 +689,75 @@ export function WarehouseMapClient() {
         )}
 
         {selectedPlacementId && (selectedCellGroup || selectedFreePlacement) ? (
-          <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-50 max-h-[55vh] overflow-y-auto border-t border-white/15 bg-black/85 p-3 shadow-2xl backdrop-blur-md sm:bottom-3 sm:left-auto sm:right-3 sm:max-h-[min(70vh,520px)] sm:max-w-md sm:rounded-xl sm:border sm:p-4">
-            <div className="mb-2 flex items-start justify-between gap-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Details</span>
-              <button
-                type="button"
-                className="shrink-0 rounded-md border border-white/15 px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-white/10 hover:text-foreground"
-                onClick={() => setSelectedPlacementId(null)}
-              >
-                Close
-              </button>
-            </div>
-            {selectedCellGroup ? (
-              <CellGroupPopupBody
-                cellLabel={selectedCellGroup[0]}
-                items={selectedCellGroup[1]}
-                canEdit={canEdit}
-                saving={saving}
-                onSave={(id, lbl, note) => updatePlacementLabel(id, lbl, note)}
-                onDelete={(id) => deletePlacement(id)}
-              />
-            ) : selectedFreePlacement ? (
-              <div className="space-y-2 text-foreground">
-                <div className="text-xs font-semibold uppercase text-muted-foreground">
-                  {placementKindTitle(selectedFreePlacement.kind)}
+          <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-50 p-2 sm:bottom-3 sm:right-3 sm:left-auto sm:w-[380px]">
+            <div className="rounded-2xl border border-white/15 bg-black/85 p-3 shadow-[0_20px_50px_-25px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-h-[75vh] sm:overflow-y-auto">
+              <div className="mb-2 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">Inspector</p>
+                  <p className="text-xs text-foreground">{selectedCellGroup ? `Cell ${selectedCellGroup[0]}` : "Free marker"}</p>
                 </div>
-                {canEdit ? (
-                  <MarkerEditForm
-                    key={selectedFreePlacement.id}
-                    initialLabel={selectedFreePlacement.label}
-                    initialNote={selectedFreePlacement.note ?? ""}
-                    saving={saving}
-                    onSave={(label, note) => updatePlacementLabel(selectedFreePlacement.id, label, note)}
-                    onDelete={() => deletePlacement(selectedFreePlacement.id)}
-                  />
-                ) : (
-                  <>
-                    <p className="text-sm font-medium">{selectedFreePlacement.label || "—"}</p>
-                    {selectedFreePlacement.note ? (
-                      <p className="text-xs text-muted-foreground">{selectedFreePlacement.note}</p>
-                    ) : null}
-                  </>
-                )}
+                <button
+                  type="button"
+                  className="rounded-lg border border-white/15 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
+                  onClick={() => setSelectedPlacementId(null)}
+                >
+                  Close
+                </button>
               </div>
-            ) : null}
+
+              {selectedCellGroup ? (
+                <CellGroupPopupBody
+                  cellLabel={selectedCellGroup[0]}
+                  items={selectedCellGroup[1]}
+                  canEdit={canEdit}
+                  saving={saving}
+                  onSave={(id, lbl, note) => updatePlacementLabel(id, lbl, note)}
+                  onDelete={(id) => deletePlacement(id)}
+                />
+              ) : selectedFreePlacement ? (
+                <div className="space-y-2 text-foreground">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {placementKindTitle(selectedFreePlacement.kind)}
+                  </div>
+                  {canEdit ? (
+                    <MarkerEditForm
+                      key={selectedFreePlacement.id}
+                      initialLabel={selectedFreePlacement.label}
+                      initialNote={selectedFreePlacement.note ?? ""}
+                      saving={saving}
+                      onSave={(label, note) => updatePlacementLabel(selectedFreePlacement.id, label, note)}
+                      onDelete={() => deletePlacement(selectedFreePlacement.id)}
+                    />
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium">{selectedFreePlacement.label || "—"}</p>
+                      {selectedFreePlacement.note ? (
+                        <p className="text-xs text-muted-foreground">{selectedFreePlacement.note}</p>
+                      ) : null}
+                    </>
+                  )}
+                </div>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </div>
 
-      {jumpPlacementTargets.length > 0 ? (
-        <div className="shrink-0 border-t border-white/10 bg-black/35 px-3 py-2.5 md:px-4">
-          <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Jump to marker</p>
-          <div className="flex gap-2 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]">
+      {!mobileFullscreen && jumpPlacementTargets.length > 0 ? (
+        <div className="shrink-0 border-t border-white/10 bg-black/45 px-3 py-2 md:px-4">
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Quick jump</p>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
             {jumpPlacementTargets.map((p) => {
-              const cellPrefix =
-                p.cell_column && p.cell_row != null ? `${p.cell_column}${p.cell_row} · ` : "";
+              const cellPrefix = p.cell_column && p.cell_row != null ? `${p.cell_column}${p.cell_row} · ` : "";
               return (
                 <button
                   key={`${p.id}-jump`}
                   type="button"
                   onClick={() => focusPlacement(p)}
-                  className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                  className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
                     p.id === selectedPlacementId
-                      ? "border-primary bg-primary/20 text-foreground"
-                      : "border-white/12 bg-white/[0.06] text-muted-foreground hover:bg-white/10"
+                      ? "border-primary bg-primary/25 text-foreground"
+                      : "border-white/15 bg-white/[0.05] text-muted-foreground hover:bg-white/10 hover:text-foreground"
                   }`}
                 >
                   {cellPrefix}
@@ -699,148 +771,175 @@ export function WarehouseMapClient() {
 
       {addOpen ? (
         <div
-          className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/50 p-4 sm:items-center"
+          className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/65 p-0 backdrop-blur-sm sm:items-center sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="warehouse-add-title"
         >
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
-            <h2 id="warehouse-add-title" className="text-lg font-semibold text-foreground">
-              Add marker
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Choose window, door, or screen. Use map position for exact spots, or a grid cell for stacked items.
-            </p>
-            <div className="mt-4 flex gap-2 rounded-lg border border-border bg-muted/20 p-1">
-              <button
-                type="button"
-                onClick={() => setAddMode("map")}
-                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${
-                  addMode === "map" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted/50"
-                }`}
-              >
-                Map position
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAddMode("cell");
-                  setAddNorm(null);
-                }}
-                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${
-                  addMode === "cell" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted/50"
-                }`}
-              >
-                Grid cell
-              </button>
-            </div>
-            {addMode === "map" && addNorm ? (
-              <p className="mt-3 text-xs text-muted-foreground">
-                Using click at ({addNorm.pos_x.toFixed(3)}, {addNorm.pos_y.toFixed(3)}) normalized.
-              </p>
-            ) : null}
-            {addMode === "cell" ? (
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <label className="text-sm font-medium text-foreground">
-                  Column
-                  <select
-                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                    value={addCol}
-                    onChange={(e) => setAddCol(e.target.value as WarehouseColumn)}
-                  >
-                    <option value="A">A (10 rows)</option>
-                    <option value="B">B (8 rows)</option>
-                    <option value="C">C (8 rows)</option>
-                  </select>
-                </label>
-                <label className="text-sm font-medium text-foreground">
-                  Row
-                  <select
-                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                    value={addRow}
-                    onChange={(e) => setAddRow(Number(e.target.value))}
-                  >
-                    {Array.from({ length: maxRowForColumn(addCol) }, (_, i) => i + 1).map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+          <div className="flex h-[min(92dvh,760px)] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border border-white/15 bg-[#0b0b10] shadow-2xl sm:rounded-3xl">
+            <div className="shrink-0 border-b border-white/10 px-4 py-3">
+              <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-white/20 sm:hidden" />
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 id="warehouse-add-title" className="text-lg font-semibold text-foreground">
+                    New marker
+                  </h2>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Add directly on the floor or place into a grid cell with stacked indexing.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-lg border border-white/15 px-2.5 py-1 text-xs font-medium text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
+                  onClick={() => {
+                    setAddOpen(false);
+                    setAddNorm(null);
+                  }}
+                >
+                  Close
+                </button>
               </div>
-            ) : null}
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setAddKind("window")}
-                className={`rounded-lg border px-2 py-2 text-sm font-medium ${
-                  addKind === "window"
-                    ? "border-primary bg-primary/15 text-foreground"
-                    : "border-border bg-muted/30"
-                }`}
-              >
-                Window
-              </button>
-              <button
-                type="button"
-                onClick={() => setAddKind("door")}
-                className={`rounded-lg border px-2 py-2 text-sm font-medium ${
-                  addKind === "door"
-                    ? "border-primary bg-primary/15 text-foreground"
-                    : "border-border bg-muted/30"
-                }`}
-              >
-                Door
-              </button>
-              <button
-                type="button"
-                onClick={() => setAddKind("screen")}
-                className={`rounded-lg border px-2 py-2 text-sm font-medium ${
-                  addKind === "screen"
-                    ? "border-primary bg-primary/15 text-foreground"
-                    : "border-border bg-muted/30"
-                }`}
-              >
-                Screen
-              </button>
             </div>
-            <label className="mt-4 block text-sm font-medium text-foreground">
-              Label
-              <input
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                value={addLabel}
-                onChange={(e) => setAddLabel(e.target.value)}
-                placeholder={labelPlaceholderForKind(addKind)}
-              />
-            </label>
-            <label className="mt-3 block text-sm font-medium text-foreground">
-              Note (optional)
-              <textarea
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                rows={2}
-                value={addNote}
-                onChange={(e) => setAddNote(e.target.value)}
-              />
-            </label>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted/50"
-                onClick={() => {
-                  setAddOpen(false);
-                  setAddNorm(null);
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
-                disabled={saving || (addMode === "map" && !addNorm)}
-                onClick={() => void saveNewPlacement()}
-              >
-                {saving ? "Saving…" : "Save"}
-              </button>
+
+            <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+              <div className="grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-1">
+                <button
+                  type="button"
+                  onClick={() => setAddMode("map")}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    addMode === "map" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-white/10"
+                  }`}
+                >
+                  Floor position
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddMode("cell");
+                    setAddNorm(null);
+                  }}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    addMode === "cell" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-white/10"
+                  }`}
+                >
+                  Grid cell
+                </button>
+              </div>
+
+              {addMode === "map" && addNorm ? (
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-muted-foreground">
+                  Marker anchor: x={addNorm.pos_x.toFixed(3)}, y={addNorm.pos_y.toFixed(3)}.
+                </div>
+              ) : null}
+
+              {addMode === "cell" ? (
+                <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                  <label className="text-sm font-medium text-foreground">
+                    Column
+                    <select
+                      className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm"
+                      value={addCol}
+                      onChange={(e) => setAddCol(e.target.value as WarehouseColumn)}
+                    >
+                      <option value="A">A (10 rows)</option>
+                      <option value="B">B (8 rows)</option>
+                      <option value="C">C (8 rows)</option>
+                    </select>
+                  </label>
+                  <label className="text-sm font-medium text-foreground">
+                    Row
+                    <select
+                      className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm"
+                      value={addRow}
+                      onChange={(e) => setAddRow(Number(e.target.value))}
+                    >
+                      {Array.from({ length: maxRowForColumn(addCol) }, (_, i) => i + 1).map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              ) : null}
+
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAddKind("window")}
+                  className={`rounded-xl border px-2 py-2 text-sm font-medium transition ${
+                    addKind === "window"
+                      ? "border-primary bg-primary/20 text-foreground"
+                      : "border-white/15 bg-white/[0.03] text-muted-foreground hover:bg-white/10"
+                  }`}
+                >
+                  Window
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddKind("door")}
+                  className={`rounded-xl border px-2 py-2 text-sm font-medium transition ${
+                    addKind === "door"
+                      ? "border-primary bg-primary/20 text-foreground"
+                      : "border-white/15 bg-white/[0.03] text-muted-foreground hover:bg-white/10"
+                  }`}
+                >
+                  Door
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddKind("screen")}
+                  className={`rounded-xl border px-2 py-2 text-sm font-medium transition ${
+                    addKind === "screen"
+                      ? "border-primary bg-primary/20 text-foreground"
+                      : "border-white/15 bg-white/[0.03] text-muted-foreground hover:bg-white/10"
+                  }`}
+                >
+                  Screen
+                </button>
+              </div>
+
+              <label className="block text-sm font-medium text-foreground">
+                Label
+                <input
+                  className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm"
+                  value={addLabel}
+                  onChange={(e) => setAddLabel(e.target.value)}
+                  placeholder={labelPlaceholderForKind(addKind)}
+                />
+              </label>
+              <label className="block text-sm font-medium text-foreground">
+                Note (optional)
+                <textarea
+                  className="mt-1 w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-sm"
+                  rows={3}
+                  value={addNote}
+                  onChange={(e) => setAddNote(e.target.value)}
+                />
+              </label>
+            </div>
+
+            <div className="shrink-0 border-t border-white/10 bg-black/50 px-4 py-3">
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg border border-white/15 px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/10 hover:text-foreground"
+                  onClick={() => {
+                    setAddOpen(false);
+                    setAddNorm(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
+                  disabled={saving || (addMode === "map" && !addNorm)}
+                  onClick={() => void saveNewPlacement()}
+                >
+                  {saving ? "Saving…" : "Create marker"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
