@@ -35,6 +35,38 @@ export function WarehouseCheckpointLinker({ maps, activeMapSlug }: Props) {
   const fullUrl =
     typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
 
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (typeof window === "undefined") return undefined;
+    const url = `${window.location.origin}${path}`;
+    setQrLoading(true);
+    setQrDataUrl(null);
+    void import("qrcode")
+      .then((mod) =>
+        mod.default.toDataURL(url, {
+          width: 240,
+          margin: 2,
+          errorCorrectionLevel: "M",
+          color: { dark: "#0f172a", light: "#ffffff" },
+        }),
+      )
+      .then((dataUrl) => {
+        if (!cancelled) setQrDataUrl(dataUrl);
+      })
+      .catch(() => {
+        if (!cancelled) setQrDataUrl(null);
+      })
+      .finally(() => {
+        if (!cancelled) setQrLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [path]);
+
   const [copied, setCopied] = useState(false);
   async function copy() {
     try {
@@ -50,10 +82,10 @@ export function WarehouseCheckpointLinker({ maps, activeMapSlug }: Props) {
 
   return (
     <div className="mt-3 rounded-lg border border-white/10 bg-black/30 p-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">QR checkpoint link</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">QR checkpoint</h3>
       <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-        Print a QR that opens this exact floor view and highlights the grid cell (iPhone Camera works). Use the same
-        diagram as the selected map so the grid lines up.
+        The code below encodes the same URL—scan with iPhone Camera to open the map and highlight this cell. Use the
+        map that matches your printed floor diagram.
       </p>
       <div className="mt-2 flex flex-wrap gap-2">
         <label className="flex min-w-[8rem] flex-col gap-1 text-[11px] text-muted-foreground">
@@ -97,16 +129,54 @@ export function WarehouseCheckpointLinker({ maps, activeMapSlug }: Props) {
           </select>
         </label>
       </div>
-      <div className="mt-2 break-all rounded-md border border-white/10 bg-black/40 px-2 py-1.5 font-mono text-[11px] text-foreground/90">
-        {fullUrl}
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+        <div className="shrink-0 rounded-xl border border-white/15 bg-white p-3 shadow-inner">
+          {qrLoading ? (
+            <div className="flex h-[240px] w-[240px] items-center justify-center text-xs text-muted-foreground">
+              Generating…
+            </div>
+          ) : qrDataUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- data URL from qrcode
+            <img
+              src={qrDataUrl}
+              alt="QR code that opens this warehouse checkpoint in the browser"
+              width={240}
+              height={240}
+              className="block h-[240px] w-[240px]"
+            />
+          ) : (
+            <div className="flex h-[240px] w-[240px] items-center justify-center text-center text-xs text-muted-foreground">
+              QR unavailable
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="break-all rounded-md border border-white/10 bg-black/40 px-2 py-1.5 font-mono text-[11px] text-foreground/90">
+            {fullUrl}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void copy()}
+              className="rounded-md border border-accent-gold/40 bg-accent-gold/10 px-3 py-1.5 text-xs font-medium text-accent-gold hover:bg-accent-gold/20"
+            >
+              {copied ? "Copied" : "Copy link"}
+            </button>
+            {qrDataUrl ? (
+              <a
+                href={qrDataUrl}
+                download={`warehouse-checkpoint-${formatCellQuery(col, row)}.png`}
+                className="inline-flex items-center rounded-md border border-white/15 bg-white/[0.08] px-3 py-1.5 text-xs font-medium text-foreground hover:bg-white/12"
+              >
+                Download QR (PNG)
+              </a>
+            ) : null}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Tip: print the PNG or screenshot the square; tape it at the aisle that matches this cell on the diagram.
+          </p>
+        </div>
       </div>
-      <button
-        type="button"
-        onClick={() => void copy()}
-        className="mt-2 rounded-md border border-accent-gold/40 bg-accent-gold/10 px-3 py-1.5 text-xs font-medium text-accent-gold hover:bg-accent-gold/20"
-      >
-        {copied ? "Copied" : "Copy link"}
-      </button>
     </div>
   );
 }
