@@ -8,7 +8,7 @@ const WarehouseMapClient = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex min-h-[min(72dvh,640px)] flex-1 items-center justify-center bg-[#050508] text-sm text-muted-foreground">
+      <div className="flex min-h-[50vh] items-center justify-center bg-[#050508] text-sm text-muted-foreground md:min-h-[min(72dvh,640px)]">
         Loading map…
       </div>
     ),
@@ -17,10 +17,10 @@ const WarehouseMapClient = dynamic(
 
 export function WarehouseMapSection() {
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex w-full flex-col md:min-h-0 md:flex-1">
       <Suspense
         fallback={
-          <div className="flex min-h-[min(72dvh,640px)] flex-1 items-center justify-center bg-[#050508] text-sm text-muted-foreground">
+          <div className="flex min-h-[50vh] items-center justify-center bg-[#050508] text-sm text-muted-foreground md:min-h-[min(72dvh,640px)]">
             Loading map…
           </div>
         }

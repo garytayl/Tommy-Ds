@@ -41,8 +41,8 @@ export default function WarehousePage() {
           </div>
         </header>
 
-        {/* Viewport-tied floor: avoids a short “card” map; main already has pt-20 and footer below */}
-        <div className="flex h-[min(calc(100dvh-12rem),1200px)] min-h-[min(72dvh,640px)] flex-col bg-[#050508]">
+        {/* Desktop: fixed viewport band for the workspace. Mobile: natural page height so Safari can scroll (overflow was clipped by PublicShell before). */}
+        <div className="flex flex-col bg-[#050508] pb-10 md:h-[min(calc(100dvh-12rem),1200px)] md:min-h-[min(72dvh,640px)]">
           <WarehouseMapSection />
         </div>
       </div>

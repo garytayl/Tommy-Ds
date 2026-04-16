@@ -20,7 +20,7 @@ type PublicShellProps = {
 
 export function PublicShell({ children, aurora = false }: PublicShellProps) {
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
+    <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-background">
       <div className="fixed inset-0 h-full w-full">
         <Aurora
           colorStops={aurora ? VIBRANT_STOPS : SUBTLE_STOPS}

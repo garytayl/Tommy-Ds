@@ -606,9 +606,11 @@ export function WarehouseMapClient() {
     );
   }
 
+  const isCheckpointLink = Boolean(cellParam || placementParam);
+
   return (
     <div
-      className={`flex min-h-0 flex-1 flex-col ${mobileFullscreen ? "fixed inset-0 z-[9000] h-dvh bg-[#050508]" : ""}`}
+      className={`flex flex-col ${mobileFullscreen ? "fixed inset-0 z-[9000] h-dvh min-h-0 overflow-hidden bg-[#050508]" : "min-h-[72vh] md:min-h-0 md:flex-1"}`}
       role={mobileFullscreen ? "dialog" : undefined}
       aria-modal={mobileFullscreen ? "true" : undefined}
       aria-label={mobileFullscreen ? "Warehouse workspace fullscreen mode" : undefined}
@@ -663,6 +665,15 @@ export function WarehouseMapClient() {
                     Unknown map slug. Check the URL or pick a map below.
                   </span>
                 ) : null}
+              </div>
+            ) : null}
+            {isCheckpointLink ? (
+              <div className="mx-3 mt-2 rounded-xl border border-white/15 bg-black/55 px-4 py-3 md:mx-4 md:hidden">
+                <p className="text-base font-semibold leading-snug text-foreground">Scanned checkpoint</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  Scroll this page to see tools and the floor diagram. Your cell is highlighted with a gold ring on the
+                  map when it loads—pinch to zoom the plan if you need to.
+                </p>
               </div>
             ) : null}
             {canEdit && maps.length > 0 ? (
@@ -781,9 +792,9 @@ export function WarehouseMapClient() {
             ) : null}
           </div>
 
-          <div className="relative min-h-0 flex-1">
+          <div className="relative min-h-[min(52vh,420px)] flex-1 md:min-h-0">
             {workspaceView === "floor" ? (
-              <div className="absolute inset-0 z-0 min-h-[240px]">
+              <div className="absolute inset-0 z-0 min-h-[240px] md:min-h-0">
                 <MapErrorBoundary fallback={mapFallback}>
                   <WarehouseFloorPlan
                     ref={floorPlanRef}
