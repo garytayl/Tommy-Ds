@@ -557,8 +557,19 @@ export function WarehouseMapClient() {
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <div className="shrink-0 border-b border-white/10 bg-black/55 px-3 py-2.5 backdrop-blur-md md:px-4">
-            <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between md:gap-4">
+          <div className="shrink-0 border-b border-white/10 bg-black/55 backdrop-blur-md">
+            <WarehouseCustomerGuide
+              supabase={supabase}
+              onFocusInventoryMap={() => {
+                const inv = maps.find((m) => m.slug === "upper-inventory");
+                if (inv) {
+                  setActiveMapId(inv.id);
+                  setSelectedPlacementId(null);
+                }
+                setWorkspaceView("floor");
+              }}
+            />
+            <div className="flex flex-col gap-2.5 px-3 py-2.5 md:flex-row md:items-center md:justify-between md:gap-4 md:px-4">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -657,7 +668,7 @@ export function WarehouseMapClient() {
               </div>
             </div>
             {canEdit && !mobileFullscreen ? (
-              <details className="mt-2 border-t border-white/5 pt-2 text-[11px] leading-relaxed text-muted-foreground">
+              <details className="mt-2 border-t border-white/5 px-3 pb-2 pt-2 text-[11px] leading-relaxed text-muted-foreground md:px-4">
                 <summary className="cursor-pointer font-medium text-foreground/90">How to use this map</summary>
                 <p className="mt-1.5">
                   Signed in as <span className="font-medium text-foreground">{sessionEmail}</span>.{" "}
@@ -667,17 +678,6 @@ export function WarehouseMapClient() {
                 </p>
               </details>
             ) : null}
-            <WarehouseCustomerGuide
-              supabase={supabase}
-              onFocusInventoryMap={() => {
-                const inv = maps.find((m) => m.slug === "upper-inventory");
-                if (inv) {
-                  setActiveMapId(inv.id);
-                  setSelectedPlacementId(null);
-                }
-                setWorkspaceView("floor");
-              }}
-            />
           </div>
 
           <div className="relative min-h-0 flex-1">
