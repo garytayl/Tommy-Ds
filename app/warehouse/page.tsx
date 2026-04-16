@@ -33,8 +33,9 @@ export default function WarehousePage() {
             <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Upper warehouse</h1>
             <p className="max-w-xl text-xs leading-relaxed text-muted-foreground md:text-right">
               Use the marker list to search and jump; tap a pin for read-only details, then edit when signed in. Table
-              view drags chips between cells; floor view pans the plan. Stack as many items per cell as needed (window,
-              door, or screen).
+              view drags chips between cells; floor view pans the plan. When signed in as office staff, find a
+              customer&apos;s job supplies by location under the map toolbar. Stack as many items per cell as needed
+              (window, door, or screen).
             </p>
           </div>
         </header>

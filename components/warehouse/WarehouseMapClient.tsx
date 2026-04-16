@@ -9,6 +9,7 @@ import {
   WarehouseMapInspectorSummary,
   WarehousePlacementEditDialog,
 } from "@/components/warehouse/WarehouseMapInspector";
+import { WarehouseCustomerGuide } from "@/components/warehouse/WarehouseCustomerGuide";
 import { WarehousePlacementListPanel } from "@/components/warehouse/WarehousePlacementListPanel";
 import { WarehouseGridTable, type WarehouseGridMoveTarget } from "@/components/warehouse/WarehouseGridTable";
 import type {
@@ -666,6 +667,17 @@ export function WarehouseMapClient() {
                 </p>
               </details>
             ) : null}
+            <WarehouseCustomerGuide
+              supabase={supabase}
+              onFocusInventoryMap={() => {
+                const inv = maps.find((m) => m.slug === "upper-inventory");
+                if (inv) {
+                  setActiveMapId(inv.id);
+                  setSelectedPlacementId(null);
+                }
+                setWorkspaceView("floor");
+              }}
+            />
           </div>
 
           <div className="relative min-h-0 flex-1">
