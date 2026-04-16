@@ -61,6 +61,8 @@ function CellHoverDetails({ cellLabel, items }: { cellLabel: string; items: Ware
 export type WarehouseFloorPlanHandle = {
   fit: () => void;
   focusMarker: (placementId: string) => void;
+  /** Pan/zoom to normalized map coordinates (same as placement pos_x / pos_y). Shows a short pulse ring. */
+  focusAtNormalized: (pos: { pos_x: number; pos_y: number }) => void;
 };
 
 type Props = {
@@ -168,6 +170,9 @@ export const WarehouseFloorPlan = forwardRef<WarehouseFloorPlanHandle, Props>(fu
   const suppressPointerFloorTapUntilRef = useRef(0);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragPreview, setDragPreview] = useState<{ id: string; pos_x: number; pos_y: number } | null>(null);
+  /** Checkpoint / deep-link focus ring at a cell or arbitrary point. */
+  const [checkpointFocus, setCheckpointFocus] = useState<{ pos_x: number; pos_y: number } | null>(null);
+  const checkpointAnchorRef = useRef<HTMLDivElement | null>(null);
 
   const fit = useCallback(() => {
     const api = transformRef.current;
@@ -192,9 +197,28 @@ export const WarehouseFloorPlan = forwardRef<WarehouseFloorPlanHandle, Props>(fu
         api.zoomToElement(el, nextScale, 380, "easeOut");
         onSelectPlacement(placementId);
       },
+      focusAtNormalized: (pos: { pos_x: number; pos_y: number }) => {
+        setCheckpointFocus(pos);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const api = transformRef.current;
+            const el = checkpointAnchorRef.current;
+            if (!api || !el) return;
+            const minZoom = 1.35;
+            const nextScale = Math.max(api.state.scale, minZoom);
+            api.zoomToElement(el, nextScale, 420, "easeOut");
+          });
+        });
+      },
     }),
     [fit, onSelectPlacement],
   );
+
+  useEffect(() => {
+    if (!checkpointFocus) return undefined;
+    const t = window.setTimeout(() => setCheckpointFocus(null), 10_000);
+    return () => window.clearTimeout(t);
+  }, [checkpointFocus]);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => fit());
@@ -448,6 +472,22 @@ export const WarehouseFloorPlan = forwardRef<WarehouseFloorPlanHandle, Props>(fu
                     </div>
                   );
                 })}
+
+                <div
+                  ref={checkpointAnchorRef}
+                  className={`pointer-events-none absolute z-[25] -translate-x-1/2 -translate-y-1/2 ${
+                    checkpointFocus ? "opacity-100" : "opacity-0"
+                  }`}
+                  style={{
+                    left: `${(checkpointFocus?.pos_x ?? 0.5) * 100}%`,
+                    top: `${(checkpointFocus?.pos_y ?? 0.5) * 100}%`,
+                  }}
+                  aria-hidden
+                >
+                  {checkpointFocus ? (
+                    <div className="h-14 w-14 rounded-full border-2 border-accent-gold bg-accent-gold/15 shadow-[0_0_0_4px_rgba(245,166,35,0.25)] animate-pulse" />
+                  ) : null}
+                </div>
 
                 {cellGroupList.map(([label, items]) => {
                   const head = items[0];

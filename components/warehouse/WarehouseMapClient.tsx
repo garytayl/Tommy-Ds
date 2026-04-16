@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { MapErrorBoundary } from "@/components/MapErrorBoundary";
@@ -9,6 +10,7 @@ import {
   WarehouseMapInspectorSummary,
   WarehousePlacementEditDialog,
 } from "@/components/warehouse/WarehouseMapInspector";
+import { WarehouseCheckpointLinker } from "@/components/warehouse/WarehouseCheckpointLinker";
 import { WarehouseCustomerGuide } from "@/components/warehouse/WarehouseCustomerGuide";
 import { WarehousePlacementListPanel } from "@/components/warehouse/WarehousePlacementListPanel";
 import { WarehouseGridTable, type WarehouseGridMoveTarget } from "@/components/warehouse/WarehouseGridTable";
@@ -17,6 +19,7 @@ import type {
   WarehousePlacementKind,
   WarehousePlacementRow,
 } from "@/components/warehouse/warehouse-map-types";
+import { formatCellQuery, parseCellQuery } from "@/lib/warehouse-checkpoint";
 import {
   cellCenterNormalized,
   cellKey,
@@ -87,6 +90,13 @@ export function WarehouseMapClient() {
   const [mobileFullscreen, setMobileFullscreen] = useState(false);
   const [editPlacementId, setEditPlacementId] = useState<string | null>(null);
   const [mobileListOpen, setMobileListOpen] = useState(false);
+
+  const searchParams = useSearchParams();
+  const mapSlugParam = searchParams.get("map");
+  const cellParam = searchParams.get("cell");
+  const placementParam = searchParams.get("placement");
+  const checkpointUrlKey = `${mapSlugParam ?? ""}|${cellParam ?? ""}|${placementParam ?? ""}`;
+  const appliedCheckpointKey = useRef<string | null>(null);
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -215,6 +225,78 @@ export function WarehouseMapClient() {
     });
     return () => subscription.unsubscribe();
   }, [supabase]);
+
+  useEffect(() => {
+    appliedCheckpointKey.current = null;
+  }, [checkpointUrlKey]);
+
+  useEffect(() => {
+    if (loading || maps.length === 0 || !mapSlugParam) return;
+    const m = maps.find((x) => x.slug === mapSlugParam);
+    if (m && activeMapId !== m.id) setActiveMapId(m.id);
+  }, [loading, maps, mapSlugParam, activeMapId]);
+
+  useEffect(() => {
+    if (loading || !placementParam || mapSlugParam) return;
+    const hit = placements.find((p) => p.id === placementParam);
+    if (hit && activeMapId !== hit.map_id) setActiveMapId(hit.map_id);
+  }, [loading, placementParam, mapSlugParam, placements, activeMapId]);
+
+  useEffect(() => {
+    if (loading || !activeMap) return;
+    const key = checkpointUrlKey;
+    const hasCheckpoint = Boolean(mapSlugParam || cellParam || placementParam);
+    if (!hasCheckpoint) return;
+    if (mapSlugParam && activeMap.slug !== mapSlugParam) return;
+    if (appliedCheckpointKey.current === key) return;
+
+    const t = window.setTimeout(() => {
+      if (placementParam) {
+        const hit = placements.find((p) => p.id === placementParam && p.map_id === activeMap.id);
+        if (hit) {
+          setWorkspaceView("floor");
+          floorPlanRef.current?.focusMarker(placementParam);
+          appliedCheckpointKey.current = key;
+        }
+        return;
+      }
+      if (cellParam) {
+        const parsed = parseCellQuery(cellParam);
+        if (!parsed) {
+          appliedCheckpointKey.current = key;
+          return;
+        }
+        setWorkspaceView("floor");
+        const { pos_x, pos_y } = cellCenterNormalized(parsed.col, parsed.row);
+        floorPlanRef.current?.focusAtNormalized({ pos_x, pos_y });
+        appliedCheckpointKey.current = key;
+        return;
+      }
+      if (mapSlugParam && activeMap.slug === mapSlugParam) {
+        appliedCheckpointKey.current = key;
+      }
+    }, 260);
+    return () => window.clearTimeout(t);
+  }, [loading, activeMap, checkpointUrlKey, mapSlugParam, cellParam, placementParam, placements]);
+
+  const unknownMapSlug = useMemo(
+    () => Boolean(mapSlugParam && maps.length > 0 && !maps.some((m) => m.slug === mapSlugParam)),
+    [mapSlugParam, maps],
+  );
+
+  const checkpointSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (mapSlugParam) {
+      const m = maps.find((x) => x.slug === mapSlugParam);
+      parts.push(m ? m.title : mapSlugParam);
+    }
+    if (cellParam) {
+      const p = parseCellQuery(cellParam);
+      parts.push(p ? `Cell ${formatCellQuery(p.col, p.row)}` : `cell=${cellParam}`);
+    }
+    if (placementParam) parts.push("Marker");
+    return parts.join(" · ");
+  }, [mapSlugParam, cellParam, placementParam, maps]);
 
   const placementsForActive = useMemo(
     () => placements.filter((p) => p.map_id === activeMapId),
@@ -569,6 +651,25 @@ export function WarehouseMapClient() {
                 setWorkspaceView("floor");
               }}
             />
+            {mapSlugParam || cellParam || placementParam ? (
+              <div
+                className="mx-3 mt-2 rounded-lg border border-accent-gold/35 bg-accent-gold/10 px-3 py-2 text-[12px] text-foreground md:mx-4"
+                role="status"
+              >
+                <span className="font-semibold text-accent-gold">Checkpoint link</span>
+                <span className="text-foreground/90"> — {checkpointSummary}</span>
+                {unknownMapSlug ? (
+                  <span className="mt-1 block text-destructive-foreground">
+                    Unknown map slug. Check the URL or pick a map below.
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+            {canEdit && maps.length > 0 ? (
+              <div className="px-3 pb-1 pt-2 md:px-4">
+                <WarehouseCheckpointLinker maps={maps} activeMapSlug={activeMap?.slug ?? null} />
+              </div>
+            ) : null}
             <div className="flex flex-col gap-2.5 px-3 py-2.5 md:flex-row md:items-center md:justify-between md:gap-4 md:px-4">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                 <button
