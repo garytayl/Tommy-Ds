@@ -120,21 +120,34 @@ export function WarehouseYardQrPrintClient() {
                   return (
                     <li
                       key={slot}
-                      className="break-inside-avoid rounded-lg border border-border bg-muted/20 px-3 py-3 text-center print:border print:border-neutral-300 print:bg-white print:py-2"
+                      className="break-inside-avoid overflow-hidden rounded-lg border border-border bg-muted/20 text-center print:border print:border-neutral-400 print:bg-white"
                     >
-                      {dataUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element -- data URL from qrcode
-                        <img src={dataUrl} alt="" width={QR_WIDTH} height={QR_WIDTH} className="mx-auto h-auto w-[132px]" />
-                      ) : (
-                        <div
-                          className="mx-auto flex h-[132px] w-[132px] items-center justify-center bg-muted/40 text-[10px] text-muted-foreground"
-                          aria-hidden
-                        >
-                          …
-                        </div>
-                      )}
-                      <p className="mt-2 font-mono text-base font-semibold text-foreground print:text-sm">{slot}</p>
-                      <p className="mt-0.5 truncate font-mono text-[9px] leading-tight text-muted-foreground print:text-[8px]">
+                      {/* Slot on the label itself (tape-friendly: readable without rotating the square). */}
+                      <div className="border-b border-white/10 bg-neutral-900 px-2 py-2 print:border-neutral-700">
+                        <p className="font-mono text-xl font-bold tabular-nums tracking-wide text-white sm:text-2xl print:text-[22px] print:leading-none">
+                          {slot}
+                        </p>
+                      </div>
+                      <div className="bg-white px-2 pb-2 pt-2">
+                        {dataUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- data URL from qrcode
+                          <img
+                            src={dataUrl}
+                            alt={`Yard slot ${slot}`}
+                            width={QR_WIDTH}
+                            height={QR_WIDTH}
+                            className="mx-auto h-auto w-[132px]"
+                          />
+                        ) : (
+                          <div
+                            className="mx-auto flex h-[132px] w-[132px] items-center justify-center bg-muted/40 text-[10px] text-muted-foreground"
+                            aria-hidden
+                          >
+                            …
+                          </div>
+                        )}
+                      </div>
+                      <p className="truncate border-t border-border px-1.5 py-1.5 font-mono text-[8px] leading-tight text-muted-foreground print:border-neutral-300 print:py-1 print:text-[7px]">
                         {fullUrl}
                       </p>
                     </li>
