@@ -1,10 +1,11 @@
 "use client";
 
-import { PackageSearch, MapPin, ArrowLeft, LogIn, Sparkles, History } from "lucide-react";
+import { LayoutGrid, PackageSearch, MapPin, ArrowLeft, LogIn, Sparkles, History } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { YardRow } from "@/components/warehouse/warehouse-yard-types";
+import { WarehouseYardInventory } from "@/components/warehouse/WarehouseYardInventory";
 import { cn } from "@/lib/utils";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -142,7 +143,7 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
 
-  const [mode, setMode] = useState<"home" | "find" | "place">("home");
+  const [mode, setMode] = useState<"home" | "find" | "place" | "inventory">("home");
 
   const [findScope, setFindScope] = useState<"name" | "slot">("name");
   const [findQ, setFindQ] = useState("");
@@ -376,7 +377,12 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-[#050508] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-4 sm:px-8 sm:pt-6 md:px-12">
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
+      <div
+        className={cn(
+          "mx-auto flex w-full flex-1 flex-col",
+          mode === "inventory" ? "max-w-6xl" : "max-w-2xl",
+        )}
+      >
         {mode !== "home" ? (
           <button
             type="button"
@@ -394,8 +400,8 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/50">Yard</p>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Warehouse yard</h1>
               <p className="mt-3 max-w-xl font-sans text-base font-light leading-relaxed text-white/70 sm:text-[1.05rem]">
-                Find stock by name or slot, or log a placement with a zone QR or typed code. Yard labels only—not synced
-                to other systems.
+                Find stock, open the <span className="text-white/85">full inventory map</span>, or log a placement with a
+                zone QR or typed code. Yard labels only—not synced to other systems.
               </p>
             </div>
 
@@ -428,6 +434,22 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
                   <span className="block font-sans text-lg font-medium text-white">Place an item</span>
                   <span className="mt-1 block text-sm font-light text-white/65">
                     Scan a zone QR or type the slot, then enter who it belongs to.
+                  </span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMode("inventory")}
+                className="flex w-full items-start gap-4 rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.12] to-transparent p-5 text-left transition hover:border-violet-400/35 hover:from-violet-500/[0.18]"
+              >
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-500/25 text-violet-100">
+                  <LayoutGrid className="h-6 w-6" aria-hidden />
+                </span>
+                <span>
+                  <span className="block font-sans text-lg font-medium text-white">Full inventory map</span>
+                  <span className="mt-1 block text-sm font-light text-white/65">
+                    Sleek atlas of all 26 rack cells—who is where, plus a live activity tape.
                   </span>
                 </span>
               </button>
@@ -515,6 +537,10 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
               ))}
             </ul>
           </div>
+        ) : null}
+
+        {mode === "inventory" ? (
+          <WarehouseYardInventory onChooseSlot={(slot) => jumpToSlotFind(slot)} />
         ) : null}
 
         {mode === "place" ? (
