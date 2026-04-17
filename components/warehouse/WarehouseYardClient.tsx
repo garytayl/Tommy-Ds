@@ -1,11 +1,14 @@
 "use client";
 
-import { LayoutGrid, PackageSearch, MapPin, ArrowLeft, LogIn, Sparkles, History } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { CheckCircle2, LayoutGrid, Loader2, MapPin, PackageSearch, ArrowLeft, LogIn, Sparkles, History } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { YardRow } from "@/components/warehouse/warehouse-yard-types";
+import { WarehouseYardBoot } from "@/components/warehouse/WarehouseYardBoot";
 import { WarehouseYardInventory } from "@/components/warehouse/WarehouseYardInventory";
+import { humanizeDbError, runPostgrestWithRetry } from "@/lib/supabase-retry";
 import { cn } from "@/lib/utils";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -165,6 +168,29 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
   const [pulseBusy, setPulseBusy] = useState<{ slot: string; count: number }[]>([]);
   const [pulseLoading, setPulseLoading] = useState(false);
 
+  const [bootDone, setBootDone] = useState(false);
+  const findReqRef = useRef(0);
+  const slotHistSeqRef = useRef(0);
+  const otherSlotsSeqRef = useRef(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const maxTimer = globalThis.setTimeout(() => {
+      if (!cancelled) setBootDone(true);
+    }, 1800);
+    void runPostgrestWithRetry(() =>
+      supabase.from("warehouse_yard_placements").select("id").limit(1),
+    ).then(() => {
+      if (cancelled) return;
+      globalThis.clearTimeout(maxTimer);
+      setBootDone(true);
+    });
+    return () => {
+      cancelled = true;
+      globalThis.clearTimeout(maxTimer);
+    };
+  }, [supabase]);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSessionEmail(session?.user?.email ?? null);
@@ -187,13 +213,16 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
 
   const loadHomePulse = useCallback(async () => {
     setPulseLoading(true);
-    const recentQ = supabase
-      .from("warehouse_yard_placements")
-      .select("id,customer_name,slot_code,note,created_at")
-      .order("created_at", { ascending: false })
-      .limit(8);
-    const sampleQ = supabase.from("warehouse_yard_placements").select("slot_code").limit(800);
-    const [{ data: recent, error: e1 }, { data: sample, error: e2 }] = await Promise.all([recentQ, sampleQ]);
+    const [{ data: recent, error: e1 }, { data: sample, error: e2 }] = await Promise.all([
+      runPostgrestWithRetry(() =>
+        supabase
+          .from("warehouse_yard_placements")
+          .select("id,customer_name,slot_code,note,created_at")
+          .order("created_at", { ascending: false })
+          .limit(8),
+      ),
+      runPostgrestWithRetry(() => supabase.from("warehouse_yard_placements").select("slot_code").limit(800)),
+    ]);
     setPulseLoading(false);
     if (!e1 && recent) setPulseRecent(recent as YardRow[]);
     if (e2 || !sample) {
@@ -252,10 +281,12 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
   }, [findQ]);
 
   const runFind = useCallback(async () => {
+    const myReq = ++findReqRef.current;
     const raw = findQ.trim().replace(/[%_]/g, "");
     if (raw.length < 2) {
       setFindResults([]);
       setFindError(null);
+      setFindLoading(false);
       return;
     }
     setFindLoading(true);
@@ -263,13 +294,28 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
     const pattern = `%${raw}%`;
     const sel = "id,customer_name,slot_code,note,created_at";
     const [byName, bySlot] = await Promise.all([
-      supabase.from("warehouse_yard_placements").select(sel).ilike("customer_name", pattern).order("created_at", { ascending: false }).limit(40),
-      supabase.from("warehouse_yard_placements").select(sel).ilike("slot_code", pattern).order("created_at", { ascending: false }).limit(40),
+      runPostgrestWithRetry(() =>
+        supabase
+          .from("warehouse_yard_placements")
+          .select(sel)
+          .ilike("customer_name", pattern)
+          .order("created_at", { ascending: false })
+          .limit(40),
+      ),
+      runPostgrestWithRetry(() =>
+        supabase
+          .from("warehouse_yard_placements")
+          .select(sel)
+          .ilike("slot_code", pattern)
+          .order("created_at", { ascending: false })
+          .limit(40),
+      ),
     ]);
+    if (myReq !== findReqRef.current) return;
     setFindLoading(false);
     const err = byName.error ?? bySlot.error;
     if (err) {
-      setFindError(err.message);
+      setFindError(humanizeDbError(err.message));
       setFindResults([]);
       return;
     }
@@ -295,17 +341,20 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
       return;
     }
     let cancelled = false;
+    const seq = ++slotHistSeqRef.current;
     const t = setTimeout(() => {
       void (async () => {
         const safeSlot = slot.replace(/[%_]/g, "");
         setSlotHistoryLoading(true);
-        const { data, error } = await supabase
-          .from("warehouse_yard_placements")
-          .select("id,customer_name,slot_code,note,created_at")
-          .ilike("slot_code", safeSlot)
-          .order("created_at", { ascending: false })
-          .limit(12);
-        if (cancelled) return;
+        const { data, error } = await runPostgrestWithRetry(() =>
+          supabase
+            .from("warehouse_yard_placements")
+            .select("id,customer_name,slot_code,note,created_at")
+            .ilike("slot_code", safeSlot)
+            .order("created_at", { ascending: false })
+            .limit(12),
+        );
+        if (cancelled || seq !== slotHistSeqRef.current) return;
         setSlotHistoryLoading(false);
         if (error) {
           setSlotHistory([]);
@@ -329,16 +378,19 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
       return;
     }
     let cancelled = false;
+    const seq = ++otherSlotsSeqRef.current;
     const t = setTimeout(() => {
       void (async () => {
         const pattern = `%${name.replace(/%/g, "")}%`;
-        const { data } = await supabase
-          .from("warehouse_yard_placements")
-          .select("slot_code,customer_name")
-          .ilike("customer_name", pattern)
-          .order("created_at", { ascending: false })
-          .limit(40);
-        if (cancelled) return;
+        const { data } = await runPostgrestWithRetry(() =>
+          supabase
+            .from("warehouse_yard_placements")
+            .select("slot_code,customer_name")
+            .ilike("customer_name", pattern)
+            .order("created_at", { ascending: false })
+            .limit(40),
+        );
+        if (cancelled || seq !== otherSlotsSeqRef.current) return;
         const here = placeSlot.trim().toUpperCase();
         const seen = new Set<string>();
         const out: string[] = [];
@@ -372,14 +424,16 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
     }
     setPlaceSaving(true);
     setPlaceMsg(null);
-    const { error } = await supabase.from("warehouse_yard_placements").insert({
-      customer_name: name,
-      slot_code: slot,
-      note: placeNote.trim() || null,
-    });
+    const { error } = await runPostgrestWithRetry(() =>
+      supabase.from("warehouse_yard_placements").insert({
+        customer_name: name,
+        slot_code: slot,
+        note: placeNote.trim() || null,
+      }),
+    );
     setPlaceSaving(false);
     if (error) {
-      setPlaceMsg(error.message);
+      setPlaceMsg(humanizeDbError(error.message));
       return;
     }
     setPlaceMsg("Saved. Stock is logged at this slot.");
@@ -387,282 +441,385 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
     setPlaceNote("");
     void loadHomePulse();
     const norm = slot.toUpperCase();
-    const { data: hist } = await supabase
-      .from("warehouse_yard_placements")
-      .select("id,customer_name,slot_code,note,created_at")
-      .ilike("slot_code", slot)
-      .order("created_at", { ascending: false })
-      .limit(12);
+    const { data: hist } = await runPostgrestWithRetry(() =>
+      supabase
+        .from("warehouse_yard_placements")
+        .select("id,customer_name,slot_code,note,created_at")
+        .ilike("slot_code", slot)
+        .order("created_at", { ascending: false })
+        .limit(12),
+    );
     if (hist) {
       setSlotHistory((hist as YardRow[]).filter((r) => r.slot_code.trim().toUpperCase() === norm));
     }
   }
 
+  const placeSuccess = Boolean(placeMsg?.startsWith("Saved"));
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-[#050508] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-4 sm:px-8 sm:pt-6 md:px-12">
-      <div
-        className={cn(
-          "mx-auto flex w-full flex-1 flex-col",
-          mode === "inventory" ? "max-w-6xl" : "max-w-2xl",
-        )}
-      >
-        {mode !== "home" ? (
-          <button
-            type="button"
-            onClick={() => setMode("home")}
-            className="mb-6 inline-flex items-center gap-2 font-sans text-sm text-white/60 transition hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            Back
-          </button>
-        ) : null}
-
-        {mode === "home" ? (
-          <div className="flex flex-1 flex-col justify-center gap-8 py-4 md:gap-10 md:py-8">
-            <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/50">Yard</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Warehouse yard</h1>
-              <p className="mt-3 max-w-xl font-sans text-base font-light leading-relaxed text-white/70 sm:text-[1.05rem]">
-                Find stock, open the <span className="text-white/85">full inventory map</span>, or log a placement with a
-                zone QR or typed code. Yard labels only—not synced to other systems.
-              </p>
-            </div>
-
-            <div className="grid max-w-xl gap-4">
-              <button
+    <>
+      <AnimatePresence>{!bootDone ? <WarehouseYardBoot key="yard-boot" /> : null}</AnimatePresence>
+      <div className="flex min-h-0 flex-1 flex-col bg-[#050508] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-4 sm:px-8 sm:pt-6 md:px-12">
+        <div
+          className={cn(
+            "mx-auto flex w-full flex-1 flex-col",
+            mode === "inventory" ? "max-w-6xl" : "max-w-2xl",
+          )}
+        >
+          <AnimatePresence initial={false}>
+            {mode !== "home" ? (
+              <motion.button
+                key="back"
                 type="button"
-                onClick={() => setMode("find")}
-                className="flex w-full items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:border-white/20 hover:bg-white/[0.07]"
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                onClick={() => setMode("home")}
+                className="mb-6 inline-flex items-center gap-2 font-sans text-sm text-white/60 transition hover:text-white"
               >
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
-                  <PackageSearch className="h-6 w-6" aria-hidden />
-                </span>
-                <span>
-                  <span className="block font-sans text-lg font-medium text-white">Find an item</span>
-                  <span className="mt-1 block text-sm font-light text-white/65">
-                    Search the log by customer/job name or by rack slot (e.g. A4).
-                  </span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMode("place")}
-                className="flex w-full items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:border-white/20 hover:bg-white/[0.07]"
-              >
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-200">
-                  <MapPin className="h-6 w-6" aria-hidden />
-                </span>
-                <span>
-                  <span className="block font-sans text-lg font-medium text-white">Place an item</span>
-                  <span className="mt-1 block text-sm font-light text-white/65">
-                    Scan a zone QR or type the slot, then enter who it belongs to.
-                  </span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMode("inventory")}
-                className="flex w-full items-start gap-4 rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.12] to-transparent p-5 text-left transition hover:border-violet-400/35 hover:from-violet-500/[0.18]"
-              >
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-500/25 text-violet-100">
-                  <LayoutGrid className="h-6 w-6" aria-hidden />
-                </span>
-                <span>
-                  <span className="block font-sans text-lg font-medium text-white">Full inventory map</span>
-                  <span className="mt-1 block text-sm font-light text-white/65">
-                    Sleek atlas of all 26 rack cells—who is where, plus a live activity tape.
-                  </span>
-                </span>
-              </button>
-            </div>
-
-            <YardHomePulse
-              recent={pulseRecent}
-              busy={pulseBusy}
-              loading={pulseLoading}
-              onJumpToSlot={jumpToSlotFind}
-            />
-          </div>
-        ) : null}
-
-        {mode === "find" ? (
-          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pb-4 [-webkit-overflow-scrolling:touch]">
-            <h2 className="text-xl font-semibold text-white">Find an item</h2>
-
-            <div>
-              <FieldLabel htmlFor="yard-find">Search</FieldLabel>
-              <input
-                id="yard-find"
-                type="search"
-                value={findQ}
-                onChange={(e) => setFindQ(e.target.value)}
-                placeholder="Name, job, or slot (e.g. Johnson, B4, A10)…"
-                autoComplete="off"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-sans text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
-              />
-              <p
-                className={cn(
-                  "mt-2 text-xs leading-relaxed transition-colors",
-                  findSearchHint.accent === "muted" && "text-white/40",
-                  findSearchHint.accent === "amber" && "text-amber-200/80",
-                  findSearchHint.accent === "sky" && "text-sky-200/85",
-                  findSearchHint.accent === "neutral" && "text-white/50",
-                )}
-              >
-                {findSearchHint.text}
-              </p>
-            </div>
-            {findLoading ? <p className="text-sm text-white/50">Searching…</p> : null}
-            {findError ? (
-              <p className="text-sm text-red-300" role="alert">
-                {findError}
-              </p>
+                <ArrowLeft className="h-4 w-4" aria-hidden />
+                Back
+              </motion.button>
             ) : null}
-            {!findLoading && findQ.trim().length >= 2 && findResults.length === 0 && !findError ? (
-              <p className="text-sm text-white/55">No matches in the yard log yet.</p>
-            ) : null}
-            <ul className="space-y-3">
-              {findResults.map((row) => (
-                <li
-                  key={row.id}
-                  className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 font-sans text-sm text-white/90"
-                >
-                  <p className="font-medium text-white">{row.customer_name}</p>
-                  <p className="mt-1 text-white/70">
-                    Slot:{" "}
-                    <button
-                      type="button"
-                      onClick={() => jumpToSlotFind(row.slot_code)}
-                      className="font-mono font-semibold text-amber-200/95 underline-offset-2 hover:underline"
-                    >
-                      {row.slot_code}
-                    </button>
+          </AnimatePresence>
+
+          <AnimatePresence mode="wait" initial={false}>
+            {mode === "home" ? (
+              <motion.div
+                key="home"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+                className="flex min-h-0 flex-1 flex-col justify-center gap-8 py-4 md:gap-10 md:py-8"
+              >
+                <div>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/50">Yard</p>
+                  <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Warehouse yard</h1>
+                  <p className="mt-3 max-w-xl font-sans text-base font-light leading-relaxed text-white/70 sm:text-[1.05rem]">
+                    Find stock, open the <span className="text-white/85">full inventory map</span>, or log a placement with a
+                    zone QR or typed code. Yard labels only—not synced to other systems.
                   </p>
-                  {row.note ? <p className="mt-1 text-white/55">{row.note}</p> : null}
-                  <p className="mt-2 text-[11px] text-white/40">{new Date(row.created_at).toLocaleString()}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
+                </div>
 
-        {mode === "inventory" ? (
-          <WarehouseYardInventory onChooseSlot={(slot) => jumpToSlotFind(slot)} />
-        ) : null}
-
-        {mode === "place" ? (
-          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pb-4 [-webkit-overflow-scrolling:touch]">
-            <h2 className="text-xl font-semibold text-white">Place an item</h2>
-            {slotFromQr ? (
-              <p className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/95">
-                Slot from QR or link: <span className="font-mono font-semibold">{slotFromQr}</span>
-              </p>
-            ) : (
-              <p className="text-sm text-white/60">
-                Scan a <span className="text-white/80">zone QR</span> on the rack, or type the slot (e.g.{" "}
-                <span className="font-mono text-white/85">C2</span>).
-              </p>
-            )}
-
-            <div>
-              <FieldLabel htmlFor="yard-slot">Slot / zone code</FieldLabel>
-              <input
-                id="yard-slot"
-                type="text"
-                value={placeSlot}
-                onChange={(e) => setPlaceSlot(e.target.value)}
-                placeholder="e.g. A10"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-mono text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
-              />
-            </div>
-
-            <SlotTimeline
-              rows={slotHistory}
-              loading={slotHistoryLoading}
-              currentSlot={placeSlot}
-            />
-
-            <div>
-              <FieldLabel htmlFor="yard-name">Customer or job name</FieldLabel>
-              <input
-                id="yard-name"
-                type="text"
-                value={placeName}
-                onChange={(e) => setPlaceName(e.target.value)}
-                placeholder="Who this stock is for"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-sans text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
-              />
-              {otherSlots.length > 0 ? (
-                <p className="mt-2 text-xs leading-relaxed text-sky-200/85">
-                  Same name also appears at{" "}
-                  {otherSlots.map((s, i) => (
-                    <span key={s}>
-                      {i > 0 ? ", " : ""}
-                      <button
-                        type="button"
-                        className="font-mono font-semibold underline-offset-2 hover:underline"
-                        onClick={() => {
-                          setPlaceSlot(s);
-                          setPlaceMsg(`Slot set to ${s}.`);
-                        }}
-                      >
-                        {s}
-                      </button>
+                <div className="grid max-w-xl gap-4">
+                  <motion.button
+                    type="button"
+                    onClick={() => setMode("find")}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.985 }}
+                    className="flex w-full items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:border-white/20 hover:bg-white/[0.07]"
+                  >
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
+                      <PackageSearch className="h-6 w-6" aria-hidden />
                     </span>
-                  ))}
-                  —tap to switch slot.
-                </p>
-              ) : null}
-            </div>
-            <div>
-              <FieldLabel htmlFor="yard-note">Note (optional)</FieldLabel>
-              <textarea
-                id="yard-note"
-                value={placeNote}
-                onChange={(e) => setPlaceNote(e.target.value)}
-                placeholder="Door size, PO, anything helpful"
-                rows={3}
-                className="w-full resize-y rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-sans text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
-              />
-            </div>
+                    <span>
+                      <span className="block font-sans text-lg font-medium text-white">Find an item</span>
+                      <span className="mt-1 block text-sm font-light text-white/65">
+                        Search the log by customer/job name or by rack slot (e.g. A4).
+                      </span>
+                    </span>
+                  </motion.button>
 
-            {!sessionEmail ? (
-              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm text-white/80">
-                <LogIn className="h-4 w-4 shrink-0 text-white/60" aria-hidden />
-                <span>Sign in to save placements.</span>
-                <Link
-                  href="/auth/login?next=/warehouse"
-                  className="font-medium text-amber-200 underline-offset-4 hover:underline"
-                >
-                  Sign in
-                </Link>
-              </div>
-            ) : (
-              <p className="text-[11px] text-white/45">Signed in as {sessionEmail}</p>
-            )}
+                  <motion.button
+                    type="button"
+                    onClick={() => setMode("place")}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.985 }}
+                    className="flex w-full items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition hover:border-white/20 hover:bg-white/[0.07]"
+                  >
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-200">
+                      <MapPin className="h-6 w-6" aria-hidden />
+                    </span>
+                    <span>
+                      <span className="block font-sans text-lg font-medium text-white">Place an item</span>
+                      <span className="mt-1 block text-sm font-light text-white/65">
+                        Scan a zone QR or type the slot, then enter who it belongs to.
+                      </span>
+                    </span>
+                  </motion.button>
 
-            <button
-              type="button"
-              onClick={() => void submitPlace()}
-              disabled={placeSaving || !sessionEmail}
-              className="w-full rounded-xl border border-white/15 bg-white/10 py-3 font-sans text-sm font-medium text-white transition hover:bg-white/15 disabled:opacity-40"
-            >
-              {placeSaving ? "Saving…" : "Save placement"}
-            </button>
-            {placeMsg ? (
-              <p
-                className={`text-sm ${placeMsg.startsWith("Saved") ? "text-emerald-300/95" : "text-amber-200/90"}`}
-                role="status"
-              >
-                {placeMsg}
-              </p>
+                  <motion.button
+                    type="button"
+                    onClick={() => setMode("inventory")}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.985 }}
+                    className="flex w-full items-start gap-4 rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/[0.12] to-transparent p-5 text-left transition hover:border-violet-400/35 hover:from-violet-500/[0.18]"
+                  >
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-500/25 text-violet-100">
+                      <LayoutGrid className="h-6 w-6" aria-hidden />
+                    </span>
+                    <span>
+                      <span className="block font-sans text-lg font-medium text-white">Full inventory map</span>
+                      <span className="mt-1 block text-sm font-light text-white/65">
+                        Sleek atlas of all 26 rack cells—who is where, plus a live activity tape.
+                      </span>
+                    </span>
+                  </motion.button>
+                </div>
+
+                <YardHomePulse
+                  recent={pulseRecent}
+                  busy={pulseBusy}
+                  loading={pulseLoading}
+                  onJumpToSlot={jumpToSlotFind}
+                />
+              </motion.div>
             ) : null}
-          </div>
-        ) : null}
+
+            {mode === "find" ? (
+              <motion.div
+                key="find"
+                initial={{ opacity: 0, x: 18 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -14 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                className="min-h-0 flex-1 space-y-6 overflow-y-auto pb-4 [-webkit-overflow-scrolling:touch]"
+              >
+                <h2 className="text-xl font-semibold text-white">Find an item</h2>
+
+                <div>
+                  <FieldLabel htmlFor="yard-find">Search</FieldLabel>
+                  <input
+                    id="yard-find"
+                    type="search"
+                    value={findQ}
+                    onChange={(e) => setFindQ(e.target.value)}
+                    placeholder="Name, job, or slot (e.g. Johnson, B4, A10)…"
+                    autoComplete="off"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-sans text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
+                  />
+                  <p
+                    className={cn(
+                      "mt-2 text-xs leading-relaxed transition-colors",
+                      findSearchHint.accent === "muted" && "text-white/40",
+                      findSearchHint.accent === "amber" && "text-amber-200/80",
+                      findSearchHint.accent === "sky" && "text-sky-200/85",
+                      findSearchHint.accent === "neutral" && "text-white/50",
+                    )}
+                  >
+                    {findSearchHint.text}
+                  </p>
+                </div>
+                <AnimatePresence mode="wait">
+                  {findLoading ? (
+                    <motion.div
+                      key="loading"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center gap-2 text-sm text-white/55"
+                    >
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin text-amber-200/90" aria-hidden />
+                      Searching the yard log…
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+                {findError ? (
+                  <motion.p
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-200/95"
+                    role="alert"
+                  >
+                    {findError}
+                  </motion.p>
+                ) : null}
+                {!findLoading && findQ.trim().length >= 2 && findResults.length === 0 && !findError ? (
+                  <p className="text-sm text-white/55">No matches in the yard log yet.</p>
+                ) : null}
+                <ul className="space-y-3">
+                  {findResults.map((row, i) => (
+                    <motion.li
+                      key={row.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(i * 0.04, 0.35), duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                      className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 font-sans text-sm text-white/90"
+                    >
+                      <p className="font-medium text-white">{row.customer_name}</p>
+                      <p className="mt-1 text-white/70">
+                        Slot:{" "}
+                        <button
+                          type="button"
+                          onClick={() => jumpToSlotFind(row.slot_code)}
+                          className="font-mono font-semibold text-amber-200/95 underline-offset-2 hover:underline"
+                        >
+                          {row.slot_code}
+                        </button>
+                      </p>
+                      {row.note ? <p className="mt-1 text-white/55">{row.note}</p> : null}
+                      <p className="mt-2 text-[11px] text-white/40">{new Date(row.created_at).toLocaleString()}</p>
+                    </motion.li>
+                  ))}
+                </ul>
+              </motion.div>
+            ) : null}
+
+            {mode === "inventory" ? (
+              <motion.div
+                key="inventory"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.99 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className="min-h-0 flex-1"
+              >
+                <WarehouseYardInventory onChooseSlot={(slot) => jumpToSlotFind(slot)} />
+              </motion.div>
+            ) : null}
+
+            {mode === "place" ? (
+              <motion.div
+                key="place"
+                initial={{ opacity: 0, x: 18 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -14 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                className="min-h-0 flex-1 space-y-6 overflow-y-auto pb-4 [-webkit-overflow-scrolling:touch]"
+              >
+                <h2 className="text-xl font-semibold text-white">Place an item</h2>
+                {slotFromQr ? (
+                  <motion.p
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/95"
+                  >
+                    Slot from QR or link: <span className="font-mono font-semibold">{slotFromQr}</span>
+                  </motion.p>
+                ) : (
+                  <p className="text-sm text-white/60">
+                    Scan a <span className="text-white/80">zone QR</span> on the rack, or type the slot (e.g.{" "}
+                    <span className="font-mono text-white/85">C2</span>).
+                  </p>
+                )}
+
+                <div>
+                  <FieldLabel htmlFor="yard-slot">Slot / zone code</FieldLabel>
+                  <input
+                    id="yard-slot"
+                    type="text"
+                    value={placeSlot}
+                    onChange={(e) => setPlaceSlot(e.target.value)}
+                    placeholder="e.g. A10"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-mono text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
+                  />
+                </div>
+
+                <SlotTimeline
+                  rows={slotHistory}
+                  loading={slotHistoryLoading}
+                  currentSlot={placeSlot}
+                />
+
+                <div>
+                  <FieldLabel htmlFor="yard-name">Customer or job name</FieldLabel>
+                  <input
+                    id="yard-name"
+                    type="text"
+                    value={placeName}
+                    onChange={(e) => setPlaceName(e.target.value)}
+                    placeholder="Who this stock is for"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-sans text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
+                  />
+                  {otherSlots.length > 0 ? (
+                    <p className="mt-2 text-xs leading-relaxed text-sky-200/85">
+                      Same name also appears at{" "}
+                      {otherSlots.map((s, i) => (
+                        <span key={s}>
+                          {i > 0 ? ", " : ""}
+                          <button
+                            type="button"
+                            className="font-mono font-semibold underline-offset-2 hover:underline"
+                            onClick={() => {
+                              setPlaceSlot(s);
+                              setPlaceMsg(`Slot set to ${s}.`);
+                            }}
+                          >
+                            {s}
+                          </button>
+                        </span>
+                      ))}
+                      —tap to switch slot.
+                    </p>
+                  ) : null}
+                </div>
+                <div>
+                  <FieldLabel htmlFor="yard-note">Note (optional)</FieldLabel>
+                  <textarea
+                    id="yard-note"
+                    value={placeNote}
+                    onChange={(e) => setPlaceNote(e.target.value)}
+                    placeholder="Door size, PO, anything helpful"
+                    rows={3}
+                    className="w-full resize-y rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-sans text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
+                  />
+                </div>
+
+                {!sessionEmail ? (
+                  <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm text-white/80">
+                    <LogIn className="h-4 w-4 shrink-0 text-white/60" aria-hidden />
+                    <span>Sign in to save placements.</span>
+                    <Link
+                      href="/auth/login?next=/warehouse"
+                      className="font-medium text-amber-200 underline-offset-4 hover:underline"
+                    >
+                      Sign in
+                    </Link>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-white/45">Signed in as {sessionEmail}</p>
+                )}
+
+                <motion.button
+                  type="button"
+                  onClick={() => void submitPlace()}
+                  disabled={placeSaving || !sessionEmail}
+                  whileHover={placeSaving || !sessionEmail ? undefined : { scale: 1.01 }}
+                  whileTap={placeSaving || !sessionEmail ? undefined : { scale: 0.98 }}
+                  className="relative w-full overflow-hidden rounded-xl border border-white/15 bg-white/10 py-3 font-sans text-sm font-medium text-white transition hover:bg-white/15 disabled:opacity-40"
+                >
+                  {placeSaving ? (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                      Saving…
+                    </span>
+                  ) : (
+                    "Save placement"
+                  )}
+                </motion.button>
+                <AnimatePresence mode="wait">
+                  {placeMsg ? (
+                    <motion.div
+                      key={placeMsg}
+                      role="status"
+                      initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 28 }}
+                      className={cn(
+                        "flex items-start gap-3 rounded-xl border px-4 py-3 text-sm",
+                        placeSuccess
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-100/95"
+                          : "border-amber-500/25 bg-amber-500/10 text-amber-100/95",
+                      )}
+                    >
+                      {placeSuccess ? (
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300/95" aria-hidden />
+                      ) : null}
+                      <p className={cn("leading-snug", placeSuccess ? "text-emerald-100/95" : "text-amber-100/90")}>
+                        {placeMsg}
+                      </p>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { YardRow } from "@/components/warehouse/warehouse-yard-types";
 import { WAREHOUSE_COLUMNS, cellKey, eachWarehouseGridCell, maxRowForColumn } from "@/lib/warehouse-grid";
+import { humanizeDbError, runPostgrestWithRetry } from "@/lib/supabase-retry";
 import { cn } from "@/lib/utils";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -77,16 +78,21 @@ export function WarehouseYardInventory({ onChooseSlot }: { onChooseSlot: (slot: 
   const [countsBySlot, setCountsBySlot] = useState<Record<string, number>>({});
   const [tape, setTape] = useState<YardRow[]>([]);
   const [totalRows, setTotalRows] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("warehouse_yard_placements")
-      .select("id,customer_name,slot_code,note,created_at")
-      .order("created_at", { ascending: false })
-      .limit(4000);
+    setLoadError(null);
+    const { data, error } = await runPostgrestWithRetry(() =>
+      supabase
+        .from("warehouse_yard_placements")
+        .select("id,customer_name,slot_code,note,created_at")
+        .order("created_at", { ascending: false })
+        .limit(4000),
+    );
     setLoading(false);
     if (error || !data) {
+      setLoadError(humanizeDbError(error?.message ?? "Could not load the yard log."));
       setLatestBySlot({});
       setCountsBySlot({});
       setTape([]);
@@ -105,6 +111,7 @@ export function WarehouseYardInventory({ onChooseSlot }: { onChooseSlot: (slot: 
     }
     setLatestBySlot(latest);
     setCountsBySlot(counts);
+    setLoadError(null);
   }, [supabase]);
 
   useEffect(() => {
@@ -173,6 +180,22 @@ export function WarehouseYardInventory({ onChooseSlot }: { onChooseSlot: (slot: 
 
       {loading && Object.keys(latestBySlot).length === 0 ? (
         <p className="text-center text-sm text-white/45">Loading yard data…</p>
+      ) : null}
+
+      {loadError ? (
+        <div
+          className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-center text-sm text-red-200/95"
+          role="alert"
+        >
+          {loadError}{" "}
+          <button
+            type="button"
+            className="font-medium text-amber-200 underline-offset-2 hover:underline"
+            onClick={() => setRefreshKey((k) => k + 1)}
+          >
+            Retry
+          </button>
+        </div>
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-3">
