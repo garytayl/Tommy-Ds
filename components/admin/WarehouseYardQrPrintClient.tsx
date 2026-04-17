@@ -11,8 +11,8 @@ import {
 } from "@/lib/warehouse-grid";
 import { buildWarehouseYardSlotPath } from "@/lib/warehouse-checkpoint";
 
-/** Bitmap size for sharp prints when scaled down in CSS. */
-const QR_BITMAP = 128;
+/** Bitmap size for sharp display at ~120px CSS (screen + print). */
+const QR_BITMAP = 200;
 
 function cellsForColumn(col: WarehouseColumn) {
   const max = maxRowForColumn(col);
@@ -50,11 +50,11 @@ function SlotLabelCard({
             alt={`QR ${slot}`}
             width={QR_BITMAP}
             height={QR_BITMAP}
-            className="h-[96px] w-[96px] print:h-[76px] print:w-[76px]"
+            className="h-[120px] w-[120px] print:h-[104px] print:w-[104px]"
           />
         ) : (
           <div
-            className="flex h-[96px] w-[96px] items-center justify-center bg-muted/30 text-[10px] text-muted-foreground print:h-[76px] print:w-[76px]"
+            className="flex h-[120px] w-[120px] items-center justify-center bg-muted/30 text-[10px] text-muted-foreground print:h-[104px] print:w-[104px]"
             aria-hidden
           >
             …
