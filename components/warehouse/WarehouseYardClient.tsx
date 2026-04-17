@@ -1,20 +1,14 @@
 "use client";
 
-import { PackageSearch, MapPin, ArrowLeft, LogIn } from "lucide-react";
+import { PackageSearch, MapPin, ArrowLeft, LogIn, Sparkles, History } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import type { YardRow } from "@/components/warehouse/warehouse-yard-types";
+import { cn } from "@/lib/utils";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-type YardRow = {
-  id: string;
-  customer_name: string;
-  slot_code: string;
-  note: string | null;
-  created_at: string;
-};
-
-/** Devotions-inspired panels: dark field, light label, rounded-xl (see fxtranscriptor devotions-client JournalPanel). */
+/** Devotions-inspired panels: dark field, light label, rounded-xl */
 function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
     <label
@@ -26,6 +20,122 @@ function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?
   );
 }
 
+function formatWhen(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  } catch {
+    return iso;
+  }
+}
+
+function YardHomePulse({
+  recent,
+  busy,
+  loading,
+  onJumpToSlot,
+}: {
+  recent: YardRow[];
+  busy: { slot: string; count: number }[];
+  loading: boolean;
+  onJumpToSlot: (slot: string) => void;
+}) {
+  if (loading && recent.length === 0 && busy.length === 0) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-white/45">
+        Loading yard activity…
+      </div>
+    );
+  }
+  if (recent.length === 0 && busy.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-4 py-6 text-center text-sm text-white/50">
+        No placements logged yet. When the team starts placing stock, recent activity and busy slots will show here.
+      </div>
+    );
+  }
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-transparent p-4">
+        <div className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-emerald-200/80">
+          <Sparkles className="h-3.5 w-3.5" aria-hidden />
+          Latest
+        </div>
+        <ul className="space-y-2">
+          {recent.slice(0, 6).map((row) => (
+            <li key={row.id} className="flex items-start justify-between gap-2 text-sm">
+              <span className="min-w-0 truncate text-white/90">{row.customer_name}</span>
+              <button
+                type="button"
+                onClick={() => onJumpToSlot(row.slot_code)}
+                className="shrink-0 font-mono text-xs font-semibold text-amber-200/95 underline-offset-2 hover:underline"
+              >
+                {row.slot_code}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-amber-500/10 to-transparent p-4">
+        <div className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-amber-200/75">
+          <History className="h-3.5 w-3.5" aria-hidden />
+          Busiest slots
+        </div>
+        <p className="mb-2 text-[11px] leading-relaxed text-white/45">By number of log entries (all time, capped sample).</p>
+        <ul className="space-y-2">
+          {busy.map(({ slot, count }) => (
+            <li key={slot} className="flex items-center justify-between gap-2 text-sm">
+              <button
+                type="button"
+                onClick={() => onJumpToSlot(slot)}
+                className="font-mono font-semibold text-white/90 underline-offset-2 hover:underline"
+              >
+                {slot}
+              </button>
+              <span className="text-xs tabular-nums text-white/45">{count} logs</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function SlotTimeline({
+  rows,
+  loading,
+  currentSlot,
+}: {
+  rows: YardRow[];
+  loading: boolean;
+  currentSlot: string;
+}) {
+  if (!currentSlot.trim()) return null;
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">
+        <History className="h-3.5 w-3.5" aria-hidden />
+        At {currentSlot.trim().toUpperCase()}
+      </div>
+      {loading ? (
+        <p className="text-xs text-white/45">Loading history…</p>
+      ) : rows.length === 0 ? (
+        <p className="text-xs text-white/50">No prior entries for this slot yet—first placement here.</p>
+      ) : (
+        <ul className="max-h-48 space-y-2 overflow-y-auto text-sm [-webkit-overflow-scrolling:touch]">
+          {rows.map((row) => (
+            <li key={row.id} className="border-b border-white/5 pb-2 last:border-0 last:pb-0">
+              <p className="font-medium text-white/90">{row.customer_name}</p>
+              {row.note ? <p className="mt-0.5 text-xs text-white/45">{row.note}</p> : null}
+              <p className="mt-1 text-[10px] text-white/35">{formatWhen(row.created_at)}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function YardInner({ initialSlot }: { initialSlot?: string | null }) {
   const slotFromQr = initialSlot?.trim() ?? "";
 
@@ -34,6 +144,7 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
 
   const [mode, setMode] = useState<"home" | "find" | "place">("home");
 
+  const [findScope, setFindScope] = useState<"name" | "slot">("name");
   const [findQ, setFindQ] = useState("");
   const [findResults, setFindResults] = useState<YardRow[]>([]);
   const [findLoading, setFindLoading] = useState(false);
@@ -44,6 +155,15 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
   const [placeNote, setPlaceNote] = useState("");
   const [placeSaving, setPlaceSaving] = useState(false);
   const [placeMsg, setPlaceMsg] = useState<string | null>(null);
+
+  const [slotHistory, setSlotHistory] = useState<YardRow[]>([]);
+  const [slotHistoryLoading, setSlotHistoryLoading] = useState(false);
+
+  const [otherSlots, setOtherSlots] = useState<string[]>([]);
+
+  const [pulseRecent, setPulseRecent] = useState<YardRow[]>([]);
+  const [pulseBusy, setPulseBusy] = useState<{ slot: string; count: number }[]>([]);
+  const [pulseLoading, setPulseLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -65,22 +185,71 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
     setPlaceSlot(slotFromQr);
   }, [slotFromQr]);
 
+  const loadHomePulse = useCallback(async () => {
+    setPulseLoading(true);
+    const recentQ = supabase
+      .from("warehouse_yard_placements")
+      .select("id,customer_name,slot_code,note,created_at")
+      .order("created_at", { ascending: false })
+      .limit(8);
+    const sampleQ = supabase.from("warehouse_yard_placements").select("slot_code").limit(800);
+    const [{ data: recent, error: e1 }, { data: sample, error: e2 }] = await Promise.all([recentQ, sampleQ]);
+    setPulseLoading(false);
+    if (!e1 && recent) setPulseRecent(recent as YardRow[]);
+    if (e2 || !sample) {
+      setPulseBusy([]);
+      return;
+    }
+    const counts: Record<string, number> = {};
+    for (const r of sample) {
+      const k = String((r as { slot_code: string }).slot_code).trim().toUpperCase();
+      if (!k) continue;
+      counts[k] = (counts[k] ?? 0) + 1;
+    }
+    const busy = Object.entries(counts)
+      .map(([slot, count]) => ({ slot, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+    setPulseBusy(busy);
+  }, [supabase]);
+
+  useEffect(() => {
+    if (mode !== "home") return;
+    void loadHomePulse();
+  }, [mode, loadHomePulse]);
+
+  const jumpToSlotFind = useCallback((slot: string) => {
+    setFindScope("slot");
+    setFindQ(slot);
+    setMode("find");
+  }, []);
+
   const runFind = useCallback(async () => {
-    const q = findQ.trim().replace(/[%_]/g, "");
-    if (q.length < 2) {
+    const raw = findQ.trim().replace(/[%_]/g, "");
+    if (raw.length < 2) {
       setFindResults([]);
       setFindError(null);
       return;
     }
     setFindLoading(true);
     setFindError(null);
-    const pattern = `%${q}%`;
-    const { data, error } = await supabase
-      .from("warehouse_yard_placements")
-      .select("id,customer_name,slot_code,note,created_at")
-      .ilike("customer_name", pattern)
-      .order("created_at", { ascending: false })
-      .limit(40);
+    const pattern = `%${raw}%`;
+    const q =
+      findScope === "name"
+        ? supabase
+            .from("warehouse_yard_placements")
+            .select("id,customer_name,slot_code,note,created_at")
+            .ilike("customer_name", pattern)
+            .order("created_at", { ascending: false })
+            .limit(40)
+        : supabase
+            .from("warehouse_yard_placements")
+            .select("id,customer_name,slot_code,note,created_at")
+            .ilike("slot_code", pattern)
+            .order("created_at", { ascending: false })
+            .limit(40);
+
+    const { data, error } = await q;
     setFindLoading(false);
     if (error) {
       setFindError(error.message);
@@ -88,12 +257,82 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
       return;
     }
     setFindResults((data ?? []) as YardRow[]);
-  }, [findQ, supabase]);
+  }, [findQ, findScope, supabase]);
 
   useEffect(() => {
     const t = setTimeout(() => void runFind(), 320);
     return () => clearTimeout(t);
-  }, [findQ, runFind]);
+  }, [findQ, findScope, runFind]);
+
+  useEffect(() => {
+    const slot = placeSlot.trim();
+    if (mode !== "place" || slot.length < 2) {
+      setSlotHistory([]);
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      void (async () => {
+        setSlotHistoryLoading(true);
+        const { data, error } = await supabase
+          .from("warehouse_yard_placements")
+          .select("id,customer_name,slot_code,note,created_at")
+          .ilike("slot_code", slot)
+          .order("created_at", { ascending: false })
+          .limit(12);
+        if (cancelled) return;
+        setSlotHistoryLoading(false);
+        if (error) {
+          setSlotHistory([]);
+          return;
+        }
+        const rows = (data ?? []) as YardRow[];
+        const norm = slot.toUpperCase();
+        setSlotHistory(rows.filter((r) => r.slot_code.trim().toUpperCase() === norm));
+      })();
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [placeSlot, mode, supabase]);
+
+  useEffect(() => {
+    const name = placeName.trim();
+    if (mode !== "place" || name.length < 2) {
+      setOtherSlots([]);
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      void (async () => {
+        const pattern = `%${name.replace(/%/g, "")}%`;
+        const { data } = await supabase
+          .from("warehouse_yard_placements")
+          .select("slot_code,customer_name")
+          .ilike("customer_name", pattern)
+          .order("created_at", { ascending: false })
+          .limit(40);
+        if (cancelled) return;
+        const here = placeSlot.trim().toUpperCase();
+        const seen = new Set<string>();
+        const out: string[] = [];
+        for (const r of data ?? []) {
+          const s = String((r as { slot_code: string }).slot_code).trim().toUpperCase();
+          if (!s || s === here) continue;
+          if (seen.has(s)) continue;
+          seen.add(s);
+          out.push(s);
+          if (out.length >= 5) break;
+        }
+        setOtherSlots(out);
+      })();
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [placeName, placeSlot, mode, supabase]);
 
   async function submitPlace() {
     const name = placeName.trim();
@@ -103,7 +342,7 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
       return;
     }
     if (!sessionEmail) {
-      setPlaceMsg("Sign in to save a placement.");
+      setPlaceMsg("Sign in to save placements.");
       return;
     }
     setPlaceSaving(true);
@@ -121,6 +360,17 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
     setPlaceMsg("Saved. Stock is logged at this slot.");
     setPlaceName("");
     setPlaceNote("");
+    void loadHomePulse();
+    const norm = slot.toUpperCase();
+    const { data: hist } = await supabase
+      .from("warehouse_yard_placements")
+      .select("id,customer_name,slot_code,note,created_at")
+      .ilike("slot_code", slot)
+      .order("created_at", { ascending: false })
+      .limit(12);
+    if (hist) {
+      setSlotHistory((hist as YardRow[]).filter((r) => r.slot_code.trim().toUpperCase() === norm));
+    }
   }
 
   return (
@@ -138,13 +388,13 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
         ) : null}
 
         {mode === "home" ? (
-          <div className="flex flex-1 flex-col justify-center gap-10 py-4 md:py-8">
+          <div className="flex flex-1 flex-col justify-center gap-8 py-4 md:gap-10 md:py-8">
             <div>
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/50">Yard</p>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Warehouse yard</h1>
               <p className="mt-3 max-w-xl font-sans text-base font-light leading-relaxed text-white/70 sm:text-[1.05rem]">
-                Find stock by name, or log a placement: scan a <span className="text-white/90">zone QR</span> or type the
-                slot code. Yard labels only—not synced to other systems.
+                Find stock by name or slot, or log a placement with a zone QR or typed code. Yard labels only—not synced
+                to other systems.
               </p>
             </div>
 
@@ -160,7 +410,7 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
                 <span>
                   <span className="block font-sans text-lg font-medium text-white">Find an item</span>
                   <span className="mt-1 block text-sm font-light text-white/65">
-                    Search by customer or job name on file in the yard log.
+                    Search the log by customer/job name or by rack slot (e.g. A4).
                   </span>
                 </span>
               </button>
@@ -181,20 +431,53 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
                 </span>
               </button>
             </div>
+
+            <YardHomePulse
+              recent={pulseRecent}
+              busy={pulseBusy}
+              loading={pulseLoading}
+              onJumpToSlot={jumpToSlotFind}
+            />
           </div>
         ) : null}
 
         {mode === "find" ? (
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pb-4 [-webkit-overflow-scrolling:touch]">
             <h2 className="text-xl font-semibold text-white">Find an item</h2>
+
+            <div className="flex rounded-xl border border-white/10 p-0.5">
+              <button
+                type="button"
+                onClick={() => setFindScope("name")}
+                className={cn(
+                  "flex-1 rounded-lg py-2.5 text-sm font-medium transition",
+                  findScope === "name" ? "bg-white/15 text-white shadow-sm" : "text-white/50 hover:text-white/75",
+                )}
+              >
+                By name
+              </button>
+              <button
+                type="button"
+                onClick={() => setFindScope("slot")}
+                className={cn(
+                  "flex-1 rounded-lg py-2.5 text-sm font-medium transition",
+                  findScope === "slot" ? "bg-white/15 text-white shadow-sm" : "text-white/50 hover:text-white/75",
+                )}
+              >
+                By slot
+              </button>
+            </div>
+
             <div>
-              <FieldLabel htmlFor="yard-find">Customer or job name</FieldLabel>
+              <FieldLabel htmlFor="yard-find">
+                {findScope === "name" ? "Customer or job name" : "Slot code"}
+              </FieldLabel>
               <input
                 id="yard-find"
                 type="search"
                 value={findQ}
                 onChange={(e) => setFindQ(e.target.value)}
-                placeholder="Start typing…"
+                placeholder={findScope === "name" ? "Start typing a name…" : "e.g. B4 or A10"}
                 autoComplete="off"
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-sans text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
               />
@@ -216,12 +499,17 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
                 >
                   <p className="font-medium text-white">{row.customer_name}</p>
                   <p className="mt-1 text-white/70">
-                    Slot: <span className="text-amber-200/95">{row.slot_code}</span>
+                    Slot:{" "}
+                    <button
+                      type="button"
+                      onClick={() => jumpToSlotFind(row.slot_code)}
+                      className="font-mono font-semibold text-amber-200/95 underline-offset-2 hover:underline"
+                    >
+                      {row.slot_code}
+                    </button>
                   </p>
                   {row.note ? <p className="mt-1 text-white/55">{row.note}</p> : null}
-                  <p className="mt-2 text-[11px] text-white/40">
-                    {new Date(row.created_at).toLocaleString()}
-                  </p>
+                  <p className="mt-2 text-[11px] text-white/40">{new Date(row.created_at).toLocaleString()}</p>
                 </li>
               ))}
             </ul>
@@ -253,6 +541,13 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-mono text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
               />
             </div>
+
+            <SlotTimeline
+              rows={slotHistory}
+              loading={slotHistoryLoading}
+              currentSlot={placeSlot}
+            />
+
             <div>
               <FieldLabel htmlFor="yard-name">Customer or job name</FieldLabel>
               <input
@@ -263,6 +558,27 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
                 placeholder="Who this stock is for"
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-sans text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
               />
+              {otherSlots.length > 0 ? (
+                <p className="mt-2 text-xs leading-relaxed text-sky-200/85">
+                  Same name also appears at{" "}
+                  {otherSlots.map((s, i) => (
+                    <span key={s}>
+                      {i > 0 ? ", " : ""}
+                      <button
+                        type="button"
+                        className="font-mono font-semibold underline-offset-2 hover:underline"
+                        onClick={() => {
+                          setPlaceSlot(s);
+                          setPlaceMsg(`Slot set to ${s}.`);
+                        }}
+                      >
+                        {s}
+                      </button>
+                    </span>
+                  ))}
+                  —tap to switch slot.
+                </p>
+              ) : null}
             </div>
             <div>
               <FieldLabel htmlFor="yard-note">Note (optional)</FieldLabel>
@@ -300,7 +616,10 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
               {placeSaving ? "Saving…" : "Save placement"}
             </button>
             {placeMsg ? (
-              <p className={`text-sm ${placeMsg.startsWith("Saved") ? "text-emerald-300/95" : "text-amber-200/90"}`} role="status">
+              <p
+                className={`text-sm ${placeMsg.startsWith("Saved") ? "text-emerald-300/95" : "text-amber-200/90"}`}
+                role="status"
+              >
                 {placeMsg}
               </p>
             ) : null}
