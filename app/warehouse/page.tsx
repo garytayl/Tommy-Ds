@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { PublicShell } from "@/components/PublicShell";
-import { WarehouseMapSection } from "@/components/warehouse/WarehouseMapSection";
+import { WarehouseYardClient } from "@/components/warehouse/WarehouseYardClient";
 import { features } from "@/lib/config";
 
 export default function WarehousePage() {
@@ -10,7 +10,7 @@ export default function WarehousePage() {
       <PublicShell>
         <div className="mx-auto max-w-2xl px-4 pb-16 pt-6 md:px-6">
           <div className="rounded-xl border border-border bg-card/60 p-6 shadow-sm">
-            <h1 className="text-xl font-semibold text-foreground">Warehouse map</h1>
+            <h1 className="text-xl font-semibold text-foreground">Warehouse yard</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Supabase is not configured. Add <code className="text-foreground">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
               <code className="text-foreground">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, apply migrations, then reload.
@@ -30,18 +30,16 @@ export default function WarehousePage() {
         <header className="shrink-0 border-b border-white/10 px-4 pb-4 pt-2 md:px-8">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Yard</p>
           <div className="mt-1 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Upper warehouse</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Warehouse yard</h1>
             <p className="max-w-xl text-xs leading-relaxed text-muted-foreground md:text-right">
-              Checkpoints are task-first on phones: zone label and optional customer pull list, then the floor plan
-              behind a button. Signed-in staff can build QR links with a zone name and optional customer ID. Search by
-              customer for pull locations, or stack windows/doors/screens on the grid.
+              Find stock by customer or job name, or log a placement after scanning a zone QR. Names here are yard
+              labels only—not synced to other systems.
             </p>
           </div>
         </header>
 
-        {/* Desktop: fixed viewport band for the workspace. Mobile: natural page height so Safari can scroll (overflow was clipped by PublicShell before). */}
-        <div className="flex flex-col bg-[#050508] pb-10 md:h-[min(calc(100dvh-12rem),1200px)] md:min-h-[min(72dvh,640px)]">
-          <WarehouseMapSection />
+        <div className="flex flex-col bg-[#050508]">
+          <WarehouseYardClient />
         </div>
       </div>
     </PublicShell>

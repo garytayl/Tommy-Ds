@@ -210,7 +210,7 @@ function PublicNavBar() {
                 onClick={() => setSheetOpen(false)}
                 className="touch-manipulation rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
               >
-                Warehouse map
+                Warehouse
               </Link>
               <Link
                 href="/auth/login?next=/admin"
