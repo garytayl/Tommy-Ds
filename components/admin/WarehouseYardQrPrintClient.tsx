@@ -125,10 +125,8 @@ export function WarehouseYardQrPrintClient() {
             One sticker per grid cell from the upper floor layout (column <strong className="text-foreground">A</strong>:{" "}
             <strong className="text-foreground">10</strong> rows; <strong className="text-foreground">B</strong> &amp;{" "}
             <strong className="text-foreground">C</strong>: <strong className="text-foreground">8</strong> each).{" "}
-            <span className="font-medium text-foreground">QR codes give a fast, reliable open in the browser</span>—great
-            on dim racks or when the phone camera is finicky. Staff can also{" "}
-            <span className="font-medium text-foreground">read the big slot text with the camera</span> on{" "}
-            <span className="font-mono text-foreground">/warehouse</span> if a label is easier than QR.
+            <span className="font-medium text-foreground">QR codes open the yard page with that slot filled in</span> for
+            placing stock—fast on the floor. Staff can always type the slot instead if a label is missing.
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
             <strong className="text-foreground">Print tip:</strong> use <span className="font-medium">Print sheet</span>{" "}
