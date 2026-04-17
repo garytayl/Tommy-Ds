@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CheckCircle2, LayoutGrid, Loader2, MapPin, PackageSearch, ArrowLeft, LogIn, Sparkles, History } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -24,6 +24,100 @@ function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?
   );
 }
 
+/** Focus ring and light glow while typing (focus captured from nested inputs). */
+function AnimatedFieldShell({
+  children,
+  className,
+  accent = "amber",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  accent?: "amber" | "sky";
+}) {
+  const [focused, setFocused] = useState(false);
+  const reduce = useReducedMotion();
+  const ringFocus =
+    accent === "sky"
+      ? "ring-2 ring-sky-400/40 shadow-[0_0_28px_rgba(56,189,248,0.12)]"
+      : "ring-2 ring-amber-400/45 shadow-[0_0_32px_rgba(245,166,35,0.14)]";
+  return (
+    <motion.div
+      className={cn("rounded-xl", className)}
+      animate={reduce ? {} : focused ? { scale: 1.008 } : { scale: 1 }}
+      transition={{ type: "spring", stiffness: 460, damping: 28 }}
+    >
+      <div
+        className={cn(
+          "rounded-xl bg-white/[0.05] transition-shadow duration-200",
+          focused ? ringFocus : "ring-1 ring-inset ring-white/10",
+        )}
+        onFocusCapture={() => setFocused(true)}
+        onBlurCapture={() => setFocused(false)}
+      >
+        {children}
+      </div>
+    </motion.div>
+  );
+}
+
+function PlacementStepBar({
+  slotOk,
+  nameOk,
+  canSave,
+  reduceMotion,
+}: {
+  slotOk: boolean;
+  nameOk: boolean;
+  canSave: boolean;
+  reduceMotion: boolean | null;
+}) {
+  const steps = [
+    { id: "slot", label: "Slot", ok: slotOk },
+    { id: "name", label: "Who", ok: nameOk },
+    { id: "go", label: "Ready", ok: canSave },
+  ];
+  return (
+    <div className="flex gap-2 sm:gap-3" aria-hidden>
+      {steps.map((s, i) => (
+        <div key={s.id} className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <motion.div
+            className={cn(
+              "flex items-center justify-center gap-1.5 rounded-full border px-2 py-1.5 text-[10px] font-mono uppercase tracking-[0.12em] sm:px-3",
+              s.ok
+                ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-100/95"
+                : "border-white/10 bg-white/[0.03] text-white/40",
+            )}
+            animate={reduceMotion ? {} : s.ok ? { scale: [1, 1.035, 1] } : { scale: 1 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {s.ok ? (
+              <motion.span
+                initial={reduceMotion ? false : { scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                className="text-emerald-300/95"
+              >
+                ✓
+              </motion.span>
+            ) : (
+              <span className="tabular-nums text-white/35">{i + 1}</span>
+            )}
+            <span className="truncate">{s.label}</span>
+          </motion.div>
+          <div className="h-0.5 overflow-hidden rounded-full bg-white/[0.08]">
+            <motion.div
+              className={cn("h-full rounded-full", s.ok ? "bg-emerald-400/80" : "bg-amber-400/20")}
+              initial={false}
+              animate={{ width: s.ok ? "100%" : "0%" }}
+              transition={{ duration: reduceMotion ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function formatWhen(iso: string): string {
   try {
     const d = new Date(iso);
@@ -32,6 +126,22 @@ function formatWhen(iso: string): string {
     return iso;
   }
 }
+
+const placeFieldReveal = {
+  hidden: { opacity: 0, y: 14 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const },
+  },
+};
+
+const placeFormStagger = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.055, delayChildren: 0.04 },
+  },
+};
 
 function YardHomePulse({
   recent,
@@ -109,34 +219,90 @@ function SlotTimeline({
   rows,
   loading,
   currentSlot,
+  reduceMotion,
 }: {
   rows: YardRow[];
   loading: boolean;
   currentSlot: string;
+  reduceMotion: boolean | null;
 }) {
   if (!currentSlot.trim()) return null;
+  const label = currentSlot.trim().toUpperCase();
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-      <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">
-        <History className="h-3.5 w-3.5" aria-hidden />
-        At {currentSlot.trim().toUpperCase()}
+    <motion.div
+      layout
+      className="overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.02] p-4"
+    >
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <motion.div animate={reduceMotion ? {} : { opacity: [0.55, 1, 0.55] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
+          <History className="h-3.5 w-3.5 text-amber-200/70" aria-hidden />
+        </motion.div>
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">At</span>
+        <motion.span
+          key={label}
+          initial={reduceMotion ? false : { opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", stiffness: 420, damping: 24 }}
+          className="font-mono text-sm font-bold tracking-wide text-amber-100/95"
+        >
+          {label}
+        </motion.span>
       </div>
-      {loading ? (
-        <p className="text-xs text-white/45">Loading history…</p>
-      ) : rows.length === 0 ? (
-        <p className="text-xs text-white/50">No prior entries for this slot yet—first placement here.</p>
-      ) : (
-        <ul className="max-h-48 space-y-2 overflow-y-auto text-sm [-webkit-overflow-scrolling:touch]">
-          {rows.map((row) => (
-            <li key={row.id} className="border-b border-white/5 pb-2 last:border-0 last:pb-0">
-              <p className="font-medium text-white/90">{row.customer_name}</p>
-              {row.note ? <p className="mt-0.5 text-xs text-white/45">{row.note}</p> : null}
-              <p className="mt-1 text-[10px] text-white/35">{formatWhen(row.created_at)}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <motion.div
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col gap-2"
+          >
+            <p className="text-xs text-white/45">Pulling prior logs…</p>
+            <div className="flex gap-1.5">
+              {[0, 1, 2].map((i) => (
+                <motion.span
+                  key={i}
+                  className="h-1.5 flex-1 rounded-full bg-amber-400/35"
+                  animate={reduceMotion ? {} : { opacity: [0.35, 1, 0.35], scaleY: [0.6, 1, 0.6] }}
+                  transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.14, ease: "easeInOut" }}
+                />
+              ))}
+            </div>
+          </motion.div>
+        ) : rows.length === 0 ? (
+          <motion.p
+            key="empty"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="text-xs leading-relaxed text-white/50"
+          >
+            No prior entries for this slot yet—first placement here.
+          </motion.p>
+        ) : (
+          <motion.ul
+            key="list"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="max-h-48 space-y-2 overflow-y-auto text-sm [-webkit-overflow-scrolling:touch]"
+          >
+            {rows.map((row, i) => (
+              <motion.li
+                key={row.id}
+                initial={reduceMotion ? false : { opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: reduceMotion ? 0 : Math.min(i * 0.05, 0.35), duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                className="border-b border-white/5 pb-2 last:border-0 last:pb-0"
+              >
+                <p className="font-medium text-white/90">{row.customer_name}</p>
+                {row.note ? <p className="mt-0.5 text-xs text-white/45">{row.note}</p> : null}
+                <p className="mt-1 text-[10px] text-white/35">{formatWhen(row.created_at)}</p>
+              </motion.li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -455,6 +621,10 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
   }
 
   const placeSuccess = Boolean(placeMsg?.startsWith("Saved"));
+  const reduceMotion = useReducedMotion();
+  const placeSlotOk = placeSlot.trim().length >= 2;
+  const placeNameOk = placeName.trim().length > 0;
+  const placeReady = Boolean(sessionEmail && placeSlotOk && placeNameOk);
 
   return (
     <>
@@ -677,143 +847,241 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -14 }}
                 transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                className="min-h-0 flex-1 space-y-6 overflow-y-auto pb-4 [-webkit-overflow-scrolling:touch]"
+                className="min-h-0 flex-1 overflow-y-auto pb-4 [-webkit-overflow-scrolling:touch]"
               >
-                <h2 className="text-xl font-semibold text-white">Place an item</h2>
-                {slotFromQr ? (
-                  <motion.p
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/95"
-                  >
-                    Slot from QR or link: <span className="font-mono font-semibold">{slotFromQr}</span>
-                  </motion.p>
-                ) : (
-                  <p className="text-sm text-white/60">
-                    Scan a <span className="text-white/80">zone QR</span> on the rack, or type the slot (e.g.{" "}
-                    <span className="font-mono text-white/85">C2</span>).
-                  </p>
-                )}
-
-                <div>
-                  <FieldLabel htmlFor="yard-slot">Slot / zone code</FieldLabel>
-                  <input
-                    id="yard-slot"
-                    type="text"
-                    value={placeSlot}
-                    onChange={(e) => setPlaceSlot(e.target.value)}
-                    placeholder="e.g. A10"
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-mono text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
-                  />
-                </div>
-
-                <SlotTimeline
-                  rows={slotHistory}
-                  loading={slotHistoryLoading}
-                  currentSlot={placeSlot}
-                />
-
-                <div>
-                  <FieldLabel htmlFor="yard-name">Customer or job name</FieldLabel>
-                  <input
-                    id="yard-name"
-                    type="text"
-                    value={placeName}
-                    onChange={(e) => setPlaceName(e.target.value)}
-                    placeholder="Who this stock is for"
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-sans text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
-                  />
-                  {otherSlots.length > 0 ? (
-                    <p className="mt-2 text-xs leading-relaxed text-sky-200/85">
-                      Same name also appears at{" "}
-                      {otherSlots.map((s, i) => (
-                        <span key={s}>
-                          {i > 0 ? ", " : ""}
-                          <button
-                            type="button"
-                            className="font-mono font-semibold underline-offset-2 hover:underline"
-                            onClick={() => {
-                              setPlaceSlot(s);
-                              setPlaceMsg(`Slot set to ${s}.`);
-                            }}
-                          >
-                            {s}
-                          </button>
-                        </span>
-                      ))}
-                      —tap to switch slot.
-                    </p>
-                  ) : null}
-                </div>
-                <div>
-                  <FieldLabel htmlFor="yard-note">Note (optional)</FieldLabel>
-                  <textarea
-                    id="yard-note"
-                    value={placeNote}
-                    onChange={(e) => setPlaceNote(e.target.value)}
-                    placeholder="Door size, PO, anything helpful"
-                    rows={3}
-                    className="w-full resize-y rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-sans text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
-                  />
-                </div>
-
-                {!sessionEmail ? (
-                  <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm text-white/80">
-                    <LogIn className="h-4 w-4 shrink-0 text-white/60" aria-hidden />
-                    <span>Sign in to save placements.</span>
-                    <Link
-                      href="/auth/login?next=/warehouse"
-                      className="font-medium text-amber-200 underline-offset-4 hover:underline"
-                    >
-                      Sign in
-                    </Link>
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-white/45">Signed in as {sessionEmail}</p>
-                )}
-
-                <motion.button
-                  type="button"
-                  onClick={() => void submitPlace()}
-                  disabled={placeSaving || !sessionEmail}
-                  whileHover={placeSaving || !sessionEmail ? undefined : { scale: 1.01 }}
-                  whileTap={placeSaving || !sessionEmail ? undefined : { scale: 0.98 }}
-                  className="relative w-full overflow-hidden rounded-xl border border-white/15 bg-white/10 py-3 font-sans text-sm font-medium text-white transition hover:bg-white/15 disabled:opacity-40"
+                <motion.div
+                  variants={placeFormStagger}
+                  initial="hidden"
+                  animate="show"
+                  className="space-y-6"
                 >
-                  {placeSaving ? (
-                    <span className="inline-flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                      Saving…
-                    </span>
+                  <motion.div variants={placeFieldReveal}>
+                    <h2 className="text-xl font-semibold text-white">Place an item</h2>
+                    <p className="mt-1 text-xs font-light text-white/45">Fields unlock the log as you go—watch the strip fill in.</p>
+                  </motion.div>
+
+                  <motion.div variants={placeFieldReveal}>
+                    <PlacementStepBar
+                      slotOk={placeSlotOk}
+                      nameOk={placeNameOk}
+                      canSave={placeReady}
+                      reduceMotion={reduceMotion}
+                    />
+                  </motion.div>
+
+                  {slotFromQr ? (
+                    <motion.p
+                      variants={placeFieldReveal}
+                      className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/95"
+                    >
+                      Slot from QR or link: <span className="font-mono font-semibold">{slotFromQr}</span>
+                    </motion.p>
                   ) : (
-                    "Save placement"
+                    <motion.p variants={placeFieldReveal} className="text-sm text-white/60">
+                      Scan a <span className="text-white/80">zone QR</span> on the rack, or type the slot (e.g.{" "}
+                      <span className="font-mono text-white/85">C2</span>).
+                    </motion.p>
                   )}
-                </motion.button>
-                <AnimatePresence mode="wait">
-                  {placeMsg ? (
-                    <motion.div
-                      key={placeMsg}
-                      role="status"
-                      initial={{ opacity: 0, y: 6, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      transition={{ type: "spring", stiffness: 420, damping: 28 }}
+
+                  <motion.div variants={placeFieldReveal}>
+                    <div className="mb-1 flex items-end justify-between gap-2">
+                      <FieldLabel htmlFor="yard-slot">Slot / zone code</FieldLabel>
+                      {placeSlot.trim() ? (
+                        <motion.span
+                          key={placeSlot.trim().toUpperCase()}
+                          initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="font-mono text-[10px] uppercase tracking-[0.14em] text-amber-200/75"
+                        >
+                          {placeSlot.trim().toUpperCase()}
+                        </motion.span>
+                      ) : null}
+                    </div>
+                    <AnimatedFieldShell>
+                      <input
+                        id="yard-slot"
+                        type="text"
+                        value={placeSlot}
+                        onChange={(e) => setPlaceSlot(e.target.value)}
+                        placeholder="e.g. A10"
+                        autoComplete="off"
+                        className="w-full rounded-xl border-0 bg-transparent px-4 py-3 font-mono text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-0"
+                      />
+                    </AnimatedFieldShell>
+                  </motion.div>
+
+                  <motion.div variants={placeFieldReveal}>
+                    <SlotTimeline
+                      rows={slotHistory}
+                      loading={slotHistoryLoading}
+                      currentSlot={placeSlot}
+                      reduceMotion={reduceMotion}
+                    />
+                  </motion.div>
+
+                  <motion.div variants={placeFieldReveal}>
+                    <FieldLabel htmlFor="yard-name">Customer or job name</FieldLabel>
+                    <AnimatedFieldShell accent="sky">
+                      <input
+                        id="yard-name"
+                        type="text"
+                        value={placeName}
+                        onChange={(e) => setPlaceName(e.target.value)}
+                        placeholder="Who this stock is for"
+                        autoComplete="off"
+                        className="w-full rounded-xl border-0 bg-transparent px-4 py-3 font-sans text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-0"
+                      />
+                    </AnimatedFieldShell>
+                    <AnimatePresence>
+                      {otherSlots.length > 0 ? (
+                        <motion.div
+                          key="other-slots"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                          className="mt-3 overflow-hidden rounded-xl border border-sky-500/20 bg-sky-500/[0.07] px-3 py-2.5"
+                        >
+                          <p className="text-[11px] font-mono uppercase tracking-[0.12em] text-sky-200/70">Also on record</p>
+                          <p className="mt-2 text-xs leading-relaxed text-sky-100/90">
+                            Same name at{" "}
+                            {otherSlots.map((s, i) => (
+                              <span key={s}>
+                                {i > 0 ? ", " : ""}
+                                <motion.button
+                                  type="button"
+                                  className="font-mono font-semibold text-sky-200 underline-offset-2 hover:underline"
+                                  onClick={() => {
+                                    setPlaceSlot(s);
+                                    setPlaceMsg(`Slot set to ${s}.`);
+                                  }}
+                                  whileHover={{ scale: 1.04 }}
+                                  whileTap={{ scale: 0.97 }}
+                                >
+                                  {s}
+                                </motion.button>
+                              </span>
+                            ))}
+                            <span className="text-sky-200/70"> — tap to switch.</span>
+                          </p>
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
+                  </motion.div>
+
+                  <motion.div variants={placeFieldReveal}>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <FieldLabel htmlFor="yard-note">Note (optional)</FieldLabel>
+                      <motion.span
+                        key={placeNote.length}
+                        className={cn(
+                          "font-mono text-[10px] tabular-nums",
+                          placeNote.length > 0 ? "text-amber-200/80" : "text-white/35",
+                        )}
+                        initial={reduceMotion ? false : { scale: 1.2, opacity: 0.7 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                      >
+                        {placeNote.length}
+                      </motion.span>
+                    </div>
+                    <AnimatedFieldShell>
+                      <textarea
+                        id="yard-note"
+                        value={placeNote}
+                        onChange={(e) => setPlaceNote(e.target.value)}
+                        placeholder="Door size, PO, anything helpful"
+                        rows={3}
+                        className="w-full resize-y rounded-xl border-0 bg-transparent px-4 py-3 font-sans text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-0"
+                      />
+                    </AnimatedFieldShell>
+                  </motion.div>
+
+                  {!sessionEmail ? (
+                    <motion.div variants={placeFieldReveal} className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm text-white/80">
+                      <LogIn className="h-4 w-4 shrink-0 text-white/60" aria-hidden />
+                      <span>Sign in to save placements.</span>
+                      <Link
+                        href="/auth/login?next=/warehouse"
+                        className="font-medium text-amber-200 underline-offset-4 hover:underline"
+                      >
+                        Sign in
+                      </Link>
+                    </motion.div>
+                  ) : (
+                    <motion.p variants={placeFieldReveal} className="text-[11px] text-white/45">
+                      Signed in as {sessionEmail}
+                    </motion.p>
+                  )}
+
+                  <motion.div variants={placeFieldReveal}>
+                    <motion.button
+                      type="button"
+                      onClick={() => void submitPlace()}
+                      disabled={placeSaving || !sessionEmail}
+                      whileHover={placeSaving || !sessionEmail ? undefined : { scale: 1.015 }}
+                      whileTap={placeSaving || !sessionEmail ? undefined : { scale: 0.98 }}
                       className={cn(
-                        "flex items-start gap-3 rounded-xl border px-4 py-3 text-sm",
-                        placeSuccess
-                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-100/95"
-                          : "border-amber-500/25 bg-amber-500/10 text-amber-100/95",
+                        "relative w-full overflow-hidden rounded-xl border py-3 font-sans text-sm font-medium text-white transition disabled:opacity-40",
+                        placeReady && !placeSaving
+                          ? "border-emerald-400/35 bg-gradient-to-r from-emerald-600/25 via-white/10 to-amber-500/20 shadow-[0_0_32px_rgba(16,185,129,0.12)]"
+                          : "border-white/15 bg-white/10 hover:bg-white/15",
                       )}
                     >
-                      {placeSuccess ? (
-                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300/95" aria-hidden />
+                      {placeSaving ? (
+                        <span className="inline-flex items-center justify-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                          Saving…
+                        </span>
+                      ) : (
+                        "Save placement"
+                      )}
+                      {placeSaving && !reduceMotion ? (
+                        <motion.span
+                          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                          initial={{ x: "-100%" }}
+                          animate={{ x: "100%" }}
+                          transition={{ repeat: Infinity, duration: 1.1, ease: "linear" }}
+                          aria-hidden
+                        />
                       ) : null}
-                      <p className={cn("leading-snug", placeSuccess ? "text-emerald-100/95" : "text-amber-100/90")}>
-                        {placeMsg}
-                      </p>
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
+                    </motion.button>
+                  </motion.div>
+
+                  <AnimatePresence mode="wait">
+                    {placeMsg ? (
+                      <motion.div
+                        key={placeMsg}
+                        role="status"
+                        initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                        animate={
+                          placeSuccess
+                            ? { opacity: 1, y: 0, scale: 1 }
+                            : { opacity: 1, y: 0, scale: 1, x: reduceMotion ? 0 : [0, -5, 5, -3, 0] }
+                        }
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={
+                          placeSuccess
+                            ? { type: "spring", stiffness: 420, damping: 28 }
+                            : { duration: 0.42, ease: [0.22, 1, 0.36, 1] }
+                        }
+                        className={cn(
+                          "flex items-start gap-3 rounded-xl border px-4 py-3 text-sm",
+                          placeSuccess
+                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-100/95"
+                            : "border-amber-500/25 bg-amber-500/10 text-amber-100/95",
+                        )}
+                      >
+                        {placeSuccess ? (
+                          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300/95" aria-hidden />
+                        ) : null}
+                        <p className={cn("leading-snug", placeSuccess ? "text-emerald-100/95" : "text-amber-100/90")}>
+                          {placeMsg}
+                        </p>
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
+                </motion.div>
               </motion.div>
             ) : null}
           </AnimatePresence>
