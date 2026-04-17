@@ -15,6 +15,8 @@ export function WarehouseCheckpointLinker({ maps, activeMapSlug }: Props) {
   const [mapSlug, setMapSlug] = useState<string>("");
   const [col, setCol] = useState<WarehouseColumn>("A");
   const [row, setRow] = useState(1);
+  const [zoneTitle, setZoneTitle] = useState("");
+  const [customerId, setCustomerId] = useState("");
 
   useEffect(() => {
     if (activeMapSlug) setMapSlug(activeMapSlug);
@@ -29,8 +31,13 @@ export function WarehouseCheckpointLinker({ maps, activeMapSlug }: Props) {
   const path = useMemo(() => {
     const slug = mapSlug || maps[0]?.slug;
     if (!slug) return "/warehouse";
-    return buildWarehouseCheckpointPath({ mapSlug: slug, cell: formatCellQuery(col, row) });
-  }, [mapSlug, col, row, maps]);
+    return buildWarehouseCheckpointPath({
+      mapSlug: slug,
+      cell: formatCellQuery(col, row),
+      title: zoneTitle.trim() || undefined,
+      customer: customerId.trim() || undefined,
+    });
+  }, [mapSlug, col, row, maps, zoneTitle, customerId]);
 
   const fullUrl =
     typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
@@ -84,9 +91,31 @@ export function WarehouseCheckpointLinker({ maps, activeMapSlug }: Props) {
     <div className="mt-3 rounded-lg border border-white/10 bg-black/30 p-3">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">QR checkpoint</h3>
       <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-        The code below encodes the same URL—scan with iPhone Camera to open the map and highlight this cell. Use the
-        map that matches your printed floor diagram.
+        Scan opens a <strong className="text-foreground/90">task-first</strong> screen: zone title and optional
+        customer pull list first; floor plan stays behind &quot;Show floor plan&quot; on phones.
       </p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+          Zone label (large text after scan)
+          <input
+            type="text"
+            value={zoneTitle}
+            onChange={(e) => setZoneTitle(e.target.value)}
+            placeholder='e.g. "Bay 2 · North rack"'
+            className="rounded-md border border-white/15 bg-black/50 px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/70"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+          Customer ID (optional — pull list)
+          <input
+            type="text"
+            value={customerId}
+            onChange={(e) => setCustomerId(e.target.value)}
+            placeholder="UUID from Admin → Customers"
+            className="rounded-md border border-white/15 bg-black/50 px-2 py-1.5 font-mono text-xs text-foreground placeholder:text-muted-foreground/70"
+          />
+        </label>
+      </div>
       <div className="mt-2 flex flex-wrap gap-2">
         <label className="flex min-w-[8rem] flex-col gap-1 text-[11px] text-muted-foreground">
           Map

@@ -11,6 +11,7 @@ import {
   WarehousePlacementEditDialog,
 } from "@/components/warehouse/WarehouseMapInspector";
 import { WarehouseCheckpointLinker } from "@/components/warehouse/WarehouseCheckpointLinker";
+import { WarehouseCheckpointTaskFirst } from "@/components/warehouse/WarehouseCheckpointTaskFirst";
 import { WarehouseCustomerGuide } from "@/components/warehouse/WarehouseCustomerGuide";
 import { WarehousePlacementListPanel } from "@/components/warehouse/WarehousePlacementListPanel";
 import { WarehouseGridTable, type WarehouseGridMoveTarget } from "@/components/warehouse/WarehouseGridTable";
@@ -95,8 +96,11 @@ export function WarehouseMapClient() {
   const mapSlugParam = searchParams.get("map");
   const cellParam = searchParams.get("cell");
   const placementParam = searchParams.get("placement");
-  const checkpointUrlKey = `${mapSlugParam ?? ""}|${cellParam ?? ""}|${placementParam ?? ""}`;
+  const titleParam = searchParams.get("title");
+  const customerParam = searchParams.get("customer");
+  const checkpointUrlKey = `${mapSlugParam ?? ""}|${cellParam ?? ""}|${placementParam ?? ""}|${titleParam ?? ""}|${customerParam ?? ""}`;
   const appliedCheckpointKey = useRef<string | null>(null);
+  const [floorWorkspaceOpen, setFloorWorkspaceOpen] = useState(true);
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
@@ -295,8 +299,43 @@ export function WarehouseMapClient() {
       parts.push(p ? `Cell ${formatCellQuery(p.col, p.row)}` : `cell=${cellParam}`);
     }
     if (placementParam) parts.push("Marker");
+    if (titleParam?.trim()) {
+      try {
+        parts.push(decodeURIComponent(titleParam.trim()));
+      } catch {
+        parts.push(titleParam.trim());
+      }
+    }
+    if (customerParam?.trim()) parts.push(`customer ${customerParam.trim().slice(0, 8)}…`);
     return parts.join(" · ");
-  }, [mapSlugParam, cellParam, placementParam, maps]);
+  }, [mapSlugParam, cellParam, placementParam, titleParam, customerParam, maps]);
+
+  const taskFirstMode = Boolean(cellParam || placementParam || titleParam?.trim() || customerParam?.trim());
+
+  useEffect(() => {
+    if (!taskFirstMode) {
+      setFloorWorkspaceOpen(true);
+      return;
+    }
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) {
+      setFloorWorkspaceOpen(false);
+    } else {
+      setFloorWorkspaceOpen(true);
+    }
+  }, [taskFirstMode, cellParam, placementParam, titleParam, customerParam]);
+
+  const placementRow = useMemo(
+    () => (placementParam ? placements.find((p) => p.id === placementParam) ?? null : null),
+    [placementParam, placements],
+  );
+
+  const mapTitleForCheckpoint = useMemo(() => {
+    if (mapSlugParam) {
+      const m = maps.find((x) => x.slug === mapSlugParam);
+      if (m) return m.title;
+    }
+    return activeMap?.title ?? null;
+  }, [maps, mapSlugParam, activeMap]);
 
   const placementsForActive = useMemo(
     () => placements.filter((p) => p.map_id === activeMapId),
@@ -606,8 +645,6 @@ export function WarehouseMapClient() {
     );
   }
 
-  const isCheckpointLink = Boolean(cellParam || placementParam);
-
   return (
     <div
       className={`flex flex-col ${mobileFullscreen ? "fixed inset-0 z-[9000] h-dvh min-h-0 overflow-hidden bg-[#050508]" : "min-h-[72vh] md:min-h-0 md:flex-1"}`}
@@ -641,6 +678,24 @@ export function WarehouseMapClient() {
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {taskFirstMode ? (
+            <WarehouseCheckpointTaskFirst
+              supabase={supabase}
+              titleParam={titleParam}
+              customerParam={customerParam}
+              cellParam={cellParam}
+              placementParam={placementParam}
+              mapTitle={mapTitleForCheckpoint}
+              placementLabel={placementRow?.label?.trim() || null}
+              checkpointSummary={checkpointSummary}
+              unknownMapSlug={unknownMapSlug}
+              floorWorkspaceOpen={floorWorkspaceOpen}
+              onToggleFloorWorkspace={() => setFloorWorkspaceOpen((o) => !o)}
+            />
+          ) : null}
+          <div
+            className={`flex min-h-0 min-w-0 flex-1 flex-col ${taskFirstMode && !floorWorkspaceOpen ? "max-md:hidden" : ""}`}
+          >
           <div className="shrink-0 border-b border-white/10 bg-black/55 backdrop-blur-md">
             <WarehouseCustomerGuide
               supabase={supabase}
@@ -653,7 +708,7 @@ export function WarehouseMapClient() {
                 setWorkspaceView("floor");
               }}
             />
-            {mapSlugParam || cellParam || placementParam ? (
+            {!taskFirstMode && (mapSlugParam || cellParam || placementParam) ? (
               <div
                 className="mx-3 mt-2 rounded-lg border border-accent-gold/35 bg-accent-gold/10 px-3 py-2 text-[12px] text-foreground md:mx-4"
                 role="status"
@@ -665,15 +720,6 @@ export function WarehouseMapClient() {
                     Unknown map slug. Check the URL or pick a map below.
                   </span>
                 ) : null}
-              </div>
-            ) : null}
-            {isCheckpointLink ? (
-              <div className="mx-3 mt-2 rounded-xl border border-white/15 bg-black/55 px-4 py-3 md:mx-4 md:hidden">
-                <p className="text-base font-semibold leading-snug text-foreground">Scanned checkpoint</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                  Scroll this page to see tools and the floor diagram. Your cell is highlighted with a gold ring on the
-                  map when it loads—pinch to zoom the plan if you need to.
-                </p>
               </div>
             ) : null}
             {canEdit && maps.length > 0 ? (
@@ -855,6 +901,7 @@ export function WarehouseMapClient() {
                 />
               </div>
             ) : null}
+          </div>
           </div>
         </div>
       </div>

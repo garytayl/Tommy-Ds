@@ -23,6 +23,10 @@ export type WarehouseCheckpointParams = {
   mapSlug: string;
   cell?: string;
   placement?: string;
+  /** Shown large after scan (e.g. Bay 2 · North aisle). */
+  title?: string;
+  /** Customer UUID — pull list loads on checkpoint screen when signed in with access. */
+  customer?: string;
 };
 
 export function buildWarehouseCheckpointPath(p: WarehouseCheckpointParams): string {
@@ -30,5 +34,7 @@ export function buildWarehouseCheckpointPath(p: WarehouseCheckpointParams): stri
   u.set("map", p.mapSlug);
   if (p.cell) u.set("cell", p.cell);
   if (p.placement) u.set("placement", p.placement);
+  if (p.title?.trim()) u.set("title", p.title.trim());
+  if (p.customer?.trim()) u.set("customer", p.customer.trim());
   return `/warehouse?${u.toString()}`;
 }

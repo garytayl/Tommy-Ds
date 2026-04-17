@@ -32,11 +32,9 @@ export default function WarehousePage() {
           <div className="mt-1 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Upper warehouse</h1>
             <p className="max-w-xl text-xs leading-relaxed text-muted-foreground md:text-right">
-              Use the marker list to search and jump; tap a pin for read-only details, then edit when signed in. Table
-              view drags chips between cells; floor view pans the plan. When signed in, copy a checkpoint URL for a
-              grid cell and encode it as a QR code—scanning opens this map and highlights that cell (great on iPhone).
-              Office staff can search by customer for pull locations. Stack as many items per cell as needed (window,
-              door, or screen).
+              Checkpoints are task-first on phones: zone label and optional customer pull list, then the floor plan
+              behind a button. Signed-in staff can build QR links with a zone name and optional customer ID. Search by
+              customer for pull locations, or stack windows/doors/screens on the grid.
             </p>
           </div>
         </header>
