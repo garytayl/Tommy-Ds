@@ -145,7 +145,6 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
 
   const [mode, setMode] = useState<"home" | "find" | "place" | "inventory">("home");
 
-  const [findScope, setFindScope] = useState<"name" | "slot">("name");
   const [findQ, setFindQ] = useState("");
   const [findResults, setFindResults] = useState<YardRow[]>([]);
   const [findLoading, setFindLoading] = useState(false);
@@ -220,10 +219,37 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
   }, [mode, loadHomePulse]);
 
   const jumpToSlotFind = useCallback((slot: string) => {
-    setFindScope("slot");
     setFindQ(slot);
     setMode("find");
   }, []);
+
+  const findSearchHint = useMemo(() => {
+    const q = findQ.trim();
+    if (q.length < 2) {
+      return {
+        text: "Type at least 2 characters. We search customer/job names and slot codes together.",
+        accent: "muted" as const,
+      };
+    }
+    const onlySlotChars = /^[ABCabc]\d{0,2}$/.test(q);
+    const looksLikeNameFirst = /^[a-z]/i.test(q) && !/^[ABC]\d/i.test(q);
+    if (onlySlotChars) {
+      return {
+        text: "Rack-style input — matching slot codes and any name that contains this text.",
+        accent: "amber" as const,
+      };
+    }
+    if (looksLikeNameFirst) {
+      return {
+        text: "Name-style input — matching names and slot codes that contain this text.",
+        accent: "sky" as const,
+      };
+    }
+    return {
+      text: "Searching both fields: whoever the stock is for and where it sits.",
+      accent: "neutral" as const,
+    };
+  }, [findQ]);
 
   const runFind = useCallback(async () => {
     const raw = findQ.trim().replace(/[%_]/g, "");
@@ -235,35 +261,32 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
     setFindLoading(true);
     setFindError(null);
     const pattern = `%${raw}%`;
-    const q =
-      findScope === "name"
-        ? supabase
-            .from("warehouse_yard_placements")
-            .select("id,customer_name,slot_code,note,created_at")
-            .ilike("customer_name", pattern)
-            .order("created_at", { ascending: false })
-            .limit(40)
-        : supabase
-            .from("warehouse_yard_placements")
-            .select("id,customer_name,slot_code,note,created_at")
-            .ilike("slot_code", pattern)
-            .order("created_at", { ascending: false })
-            .limit(40);
-
-    const { data, error } = await q;
+    const sel = "id,customer_name,slot_code,note,created_at";
+    const [byName, bySlot] = await Promise.all([
+      supabase.from("warehouse_yard_placements").select(sel).ilike("customer_name", pattern).order("created_at", { ascending: false }).limit(40),
+      supabase.from("warehouse_yard_placements").select(sel).ilike("slot_code", pattern).order("created_at", { ascending: false }).limit(40),
+    ]);
     setFindLoading(false);
-    if (error) {
-      setFindError(error.message);
+    const err = byName.error ?? bySlot.error;
+    if (err) {
+      setFindError(err.message);
       setFindResults([]);
       return;
     }
-    setFindResults((data ?? []) as YardRow[]);
-  }, [findQ, findScope, supabase]);
+    const merged = new Map<string, YardRow>();
+    for (const row of [...(byName.data ?? []), ...(bySlot.data ?? [])]) {
+      merged.set((row as YardRow).id, row as YardRow);
+    }
+    const list = Array.from(merged.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+    setFindResults(list.slice(0, 40));
+  }, [findQ, supabase]);
 
   useEffect(() => {
     const t = setTimeout(() => void runFind(), 320);
     return () => clearTimeout(t);
-  }, [findQ, findScope, runFind]);
+  }, [findQ, runFind]);
 
   useEffect(() => {
     const slot = placeSlot.trim();
@@ -468,42 +491,28 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pb-4 [-webkit-overflow-scrolling:touch]">
             <h2 className="text-xl font-semibold text-white">Find an item</h2>
 
-            <div className="flex rounded-xl border border-white/10 p-0.5">
-              <button
-                type="button"
-                onClick={() => setFindScope("name")}
-                className={cn(
-                  "flex-1 rounded-lg py-2.5 text-sm font-medium transition",
-                  findScope === "name" ? "bg-white/15 text-white shadow-sm" : "text-white/50 hover:text-white/75",
-                )}
-              >
-                By name
-              </button>
-              <button
-                type="button"
-                onClick={() => setFindScope("slot")}
-                className={cn(
-                  "flex-1 rounded-lg py-2.5 text-sm font-medium transition",
-                  findScope === "slot" ? "bg-white/15 text-white shadow-sm" : "text-white/50 hover:text-white/75",
-                )}
-              >
-                By slot
-              </button>
-            </div>
-
             <div>
-              <FieldLabel htmlFor="yard-find">
-                {findScope === "name" ? "Customer or job name" : "Slot code"}
-              </FieldLabel>
+              <FieldLabel htmlFor="yard-find">Search</FieldLabel>
               <input
                 id="yard-find"
                 type="search"
                 value={findQ}
                 onChange={(e) => setFindQ(e.target.value)}
-                placeholder={findScope === "name" ? "Start typing a name…" : "e.g. B4 or A10"}
+                placeholder="Name, job, or slot (e.g. Johnson, B4, A10)…"
                 autoComplete="off"
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-sans text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
               />
+              <p
+                className={cn(
+                  "mt-2 text-xs leading-relaxed transition-colors",
+                  findSearchHint.accent === "muted" && "text-white/40",
+                  findSearchHint.accent === "amber" && "text-amber-200/80",
+                  findSearchHint.accent === "sky" && "text-sky-200/85",
+                  findSearchHint.accent === "neutral" && "text-white/50",
+                )}
+              >
+                {findSearchHint.text}
+              </p>
             </div>
             {findLoading ? <p className="text-sm text-white/50">Searching…</p> : null}
             {findError ? (
