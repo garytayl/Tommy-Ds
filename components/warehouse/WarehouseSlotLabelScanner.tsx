@@ -133,8 +133,8 @@ export function WarehouseSlotLabelScanner({ onSlotDetected }: Props) {
         <div className="min-w-0 flex-1">
           <p className="font-sans text-sm font-medium text-white">Scan the rack label</p>
           <p className="mt-1 text-xs font-light leading-relaxed text-white/60">
-            Point at the painted or printed <span className="font-mono text-white/85">A1</span>,{" "}
-            <span className="font-mono text-white/85">B4</span>, etc. No QR code needed.
+            Point at the big slot text (<span className="font-mono text-white/85">A1</span>,{" "}
+            <span className="font-mono text-white/85">B4</span>…). Use this when a QR isn&apos;t handy—both work great.
           </p>
         </div>
       </div>
