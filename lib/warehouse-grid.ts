@@ -6,6 +6,9 @@
 
 export type WarehouseColumn = "A" | "B" | "C";
 
+/** Column order for UI and print sheets (matches upper floor inner grid). */
+export const WAREHOUSE_COLUMNS: readonly WarehouseColumn[] = ["A", "B", "C"];
+
 const IMAGE_W = 1000;
 const IMAGE_H = 640;
 const INNER_LEFT = 72;
@@ -21,6 +24,22 @@ export function maxRowForColumn(col: WarehouseColumn): number {
 
 export function cellKey(col: WarehouseColumn, row: number): string {
   return `${col}${row}`;
+}
+
+/** Every cell on the upper warehouse grid: A has 10 rows; B and C have 8 each (26 slots). */
+export function eachWarehouseGridCell(): Array<{
+  col: WarehouseColumn;
+  row: number;
+  slot: string;
+}> {
+  const out: Array<{ col: WarehouseColumn; row: number; slot: string }> = [];
+  for (const col of WAREHOUSE_COLUMNS) {
+    const max = maxRowForColumn(col);
+    for (let row = 1; row <= max; row++) {
+      out.push({ col, row, slot: cellKey(col, row) });
+    }
+  }
+  return out;
 }
 
 /** Normalized 0–1 (same convention as Leaflet placement: x left→right, y top→bottom for pos_y). */

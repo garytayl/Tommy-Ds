@@ -39,7 +39,8 @@ const INSIGHTS_LINKS: GlassNavLink[] = [
 ];
 
 const YARD_LINKS: GlassNavLink[] = [
-  { href: "/warehouse", label: "Warehouse map" },
+  { href: "/warehouse", label: "Warehouse" },
+  { href: "/admin/warehouse-qr", label: "Warehouse QR" },
   { href: "/admin/locations", label: "Locations" },
   { href: "/admin/lots", label: "Lots" },
   { href: "/admin/materials", label: "Materials" },

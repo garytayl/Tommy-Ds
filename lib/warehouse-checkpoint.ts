@@ -38,3 +38,10 @@ export function buildWarehouseCheckpointPath(p: WarehouseCheckpointParams): stri
   if (p.customer?.trim()) u.set("customer", p.customer.trim());
   return `/warehouse?${u.toString()}`;
 }
+
+/** Public yard “place” flow with slot pre-filled (grid cell code from the floor diagram, e.g. A3, B8). */
+export function buildWarehouseYardSlotPath(slot: string): string {
+  const u = new URLSearchParams();
+  u.set("slot", slot.trim());
+  return `/warehouse?${u.toString()}`;
+}

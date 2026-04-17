@@ -34,6 +34,7 @@ const NAV_TOOLS: ReadonlyArray<{
   { href: "/admin/locations", label: "Locations" },
   { href: "/admin/lots", label: "Lots" },
   { href: "/admin/materials", label: "Materials" },
+  { href: "/admin/warehouse-qr", label: "Warehouse QR" },
   { href: "/admin/scan", label: "Scan" },
   { href: "/admin/future-features", label: "Future features" },
 ];
