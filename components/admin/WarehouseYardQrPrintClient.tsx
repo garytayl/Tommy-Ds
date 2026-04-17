@@ -74,11 +74,12 @@ export function WarehouseYardQrPrintClient() {
       <div className="print:hidden">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Warehouse yard QR codes</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          One code per grid cell from the upper floor layout: column <strong className="text-foreground">A</strong> has{" "}
-          <strong className="text-foreground">10</strong> rows; columns <strong className="text-foreground">B</strong>{" "}
-          and <strong className="text-foreground">C</strong> have <strong className="text-foreground">8</strong> rows
-          each (26 codes). Scanning opens the public warehouse page with that slot filled in for{" "}
-          <span className="font-medium text-foreground">Place an item</span>.
+          Optional backup labels: one QR per grid cell from the upper floor layout (column{" "}
+          <strong className="text-foreground">A</strong>: <strong className="text-foreground">10</strong> rows;{" "}
+          <strong className="text-foreground">B</strong> &amp; <strong className="text-foreground">C</strong>:{" "}
+          <strong className="text-foreground">8</strong> each). On the floor, staff can{" "}
+          <span className="font-medium text-foreground">scan the painted slot text with the phone camera</span> on{" "}
+          <span className="font-mono text-foreground">/warehouse</span> instead.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button type="button" onClick={() => window.print()} className="btn-primary inline-flex items-center gap-2">

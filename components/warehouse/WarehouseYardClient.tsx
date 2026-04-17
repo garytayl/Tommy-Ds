@@ -4,6 +4,7 @@ import { PackageSearch, MapPin, ArrowLeft, LogIn } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { WarehouseSlotLabelScanner } from "@/components/warehouse/WarehouseSlotLabelScanner";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type YardRow = {
@@ -143,8 +144,9 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/50">Yard</p>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Warehouse yard</h1>
               <p className="mt-3 max-w-xl font-sans text-base font-light leading-relaxed text-white/70 sm:text-[1.05rem]">
-                Find stock by name, or log a placement after scanning a zone QR. Labels here are for this yard only—not
-                synced to other systems.
+                Find stock by name, or log a placement using the camera on the painted rack label (e.g.{" "}
+                <span className="font-mono text-white/85">A4</span>, <span className="font-mono text-white/85">B8</span>
+                ). Labels here are for this yard only—not synced to other systems.
               </p>
             </div>
 
@@ -176,7 +178,7 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
                 <span>
                   <span className="block font-sans text-lg font-medium text-white">Place an item</span>
                   <span className="mt-1 block text-sm font-light text-white/65">
-                    Scan a zone QR (or enter a slot code), then type who it belongs to.
+                    Read the rack label with the camera (or type the slot), then enter who it belongs to.
                   </span>
                 </span>
               </button>
@@ -233,14 +235,22 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
             <h2 className="text-xl font-semibold text-white">Place an item</h2>
             {slotFromQr ? (
               <p className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/95">
-                Zone from QR: <span className="font-mono font-semibold">{slotFromQr}</span>
+                Slot from link: <span className="font-mono font-semibold">{slotFromQr}</span>
               </p>
             ) : (
               <p className="text-sm text-white/60">
-                Scan a QR that points here with <span className="font-mono text-white/85">?slot=YOUR-ZONE</span>, or type
-                the slot code below.
+                Use the camera on the painted label, or type a slot code (e.g. <span className="font-mono text-white/85">C2</span>
+                ).
               </p>
             )}
+
+            <WarehouseSlotLabelScanner
+              onSlotDetected={(slot) => {
+                setPlaceSlot(slot);
+                setPlaceMsg(`Slot set to ${slot}. Add the customer name and save.`);
+              }}
+            />
+
             <div>
               <FieldLabel htmlFor="yard-slot">Slot / zone code</FieldLabel>
               <input
@@ -248,7 +258,7 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
                 type="text"
                 value={placeSlot}
                 onChange={(e) => setPlaceSlot(e.target.value)}
-                placeholder="e.g. BAY-2-N"
+                placeholder="e.g. A10"
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-mono text-sm text-white placeholder:text-white/35 focus:outline-none focus:ring-1 focus:ring-white/30"
               />
             </div>
