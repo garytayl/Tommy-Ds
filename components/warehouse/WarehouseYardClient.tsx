@@ -2,8 +2,7 @@
 
 import { PackageSearch, MapPin, ArrowLeft, LogIn } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -27,9 +26,8 @@ function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?
   );
 }
 
-function YardInner() {
-  const searchParams = useSearchParams();
-  const slotFromQr = searchParams.get("slot")?.trim() ?? "";
+function YardInner({ initialSlot }: { initialSlot?: string | null }) {
+  const slotFromQr = initialSlot?.trim() ?? "";
 
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
@@ -126,8 +124,8 @@ function YardInner() {
   }
 
   return (
-    <div className="min-h-[min(80dvh,900px)] bg-[#050508] px-4 pb-20 pt-8 md:px-10">
-      <div className="mx-auto max-w-lg">
+    <div className="flex min-h-0 flex-1 flex-col bg-[#050508] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-4 sm:px-8 sm:pt-6 md:px-12">
+      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
         {mode !== "home" ? (
           <button
             type="button"
@@ -140,17 +138,17 @@ function YardInner() {
         ) : null}
 
         {mode === "home" ? (
-          <div className="space-y-8">
+          <div className="flex flex-1 flex-col justify-center gap-10 py-4 md:py-8">
             <div>
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/50">Yard</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white md:text-3xl">Warehouse</h2>
-              <p className="mt-2 font-sans text-sm font-light leading-relaxed text-white/70">
-                Find where something is stored, or log where you put it. Names are labels for this yard only—not synced
-                to other systems.
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Warehouse yard</h1>
+              <p className="mt-3 max-w-xl font-sans text-base font-light leading-relaxed text-white/70 sm:text-[1.05rem]">
+                Find stock by name, or log a placement after scanning a zone QR. Labels here are for this yard only—not
+                synced to other systems.
               </p>
             </div>
 
-            <div className="grid gap-4">
+            <div className="grid max-w-xl gap-4">
               <button
                 type="button"
                 onClick={() => setMode("find")}
@@ -187,7 +185,7 @@ function YardInner() {
         ) : null}
 
         {mode === "find" ? (
-          <div className="space-y-6">
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pb-4 [-webkit-overflow-scrolling:touch]">
             <h2 className="text-xl font-semibold text-white">Find an item</h2>
             <div>
               <FieldLabel htmlFor="yard-find">Customer or job name</FieldLabel>
@@ -231,7 +229,7 @@ function YardInner() {
         ) : null}
 
         {mode === "place" ? (
-          <div className="space-y-6">
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pb-4 [-webkit-overflow-scrolling:touch]">
             <h2 className="text-xl font-semibold text-white">Place an item</h2>
             {slotFromQr ? (
               <p className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100/95">
@@ -312,16 +310,6 @@ function YardInner() {
   );
 }
 
-export function WarehouseYardClient() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[40dvh] items-center justify-center bg-[#050508] font-sans text-sm text-white/50">
-          Loading…
-        </div>
-      }
-    >
-      <YardInner />
-    </Suspense>
-  );
+export function WarehouseYardClient({ initialSlot }: { initialSlot?: string | null }) {
+  return <YardInner initialSlot={initialSlot} />;
 }

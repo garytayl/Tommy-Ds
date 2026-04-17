@@ -4,7 +4,10 @@ import { PublicShell } from "@/components/PublicShell";
 import { WarehouseYardClient } from "@/components/warehouse/WarehouseYardClient";
 import { features } from "@/lib/config";
 
-export default function WarehousePage() {
+type PageProps = { searchParams: Promise<{ slot?: string }> };
+
+export default async function WarehousePage({ searchParams }: PageProps) {
+  const { slot: slotParam } = await searchParams;
   if (!features.supabase) {
     return (
       <PublicShell>
@@ -25,22 +28,9 @@ export default function WarehousePage() {
   }
 
   return (
-    <PublicShell>
-      <div className="flex flex-col">
-        <header className="shrink-0 border-b border-white/10 px-4 pb-4 pt-2 md:px-8">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Yard</p>
-          <div className="mt-1 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Warehouse yard</h1>
-            <p className="max-w-xl text-xs leading-relaxed text-muted-foreground md:text-right">
-              Find stock by customer or job name, or log a placement after scanning a zone QR. Names here are yard
-              labels only—not synced to other systems.
-            </p>
-          </div>
-        </header>
-
-        <div className="flex flex-col bg-[#050508]">
-          <WarehouseYardClient />
-        </div>
+    <PublicShell immersive>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <WarehouseYardClient initialSlot={slotParam} />
       </div>
     </PublicShell>
   );
