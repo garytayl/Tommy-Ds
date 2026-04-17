@@ -273,11 +273,12 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
     let cancelled = false;
     const t = setTimeout(() => {
       void (async () => {
+        const safeSlot = slot.replace(/[%_]/g, "");
         setSlotHistoryLoading(true);
         const { data, error } = await supabase
           .from("warehouse_yard_placements")
           .select("id,customer_name,slot_code,note,created_at")
-          .ilike("slot_code", slot)
+          .ilike("slot_code", safeSlot)
           .order("created_at", { ascending: false })
           .limit(12);
         if (cancelled) return;
@@ -287,7 +288,7 @@ function YardInner({ initialSlot }: { initialSlot?: string | null }) {
           return;
         }
         const rows = (data ?? []) as YardRow[];
-        const norm = slot.toUpperCase();
+        const norm = safeSlot.toUpperCase();
         setSlotHistory(rows.filter((r) => r.slot_code.trim().toUpperCase() === norm));
       })();
     }, 350);
