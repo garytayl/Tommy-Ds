@@ -1,98 +1,19 @@
-# Field Service Scheduler MVP
+# Tommy D's Demo Workspace
 
-**Field Service Scheduler** is the project name. The business using it is **Tommy D's** (Windows, Doors, & More).
+An interactive, browser-only demonstration of a field-service workspace for Tommy D's Windows, Doors & More.
 
-MVP for a local installer business:
-- Jobs are typed as **installation** vs **service** (`jobs.job_kind`) for scheduling and supplies copy; `project_type` remains in the DB for legacy data only.
-- Office/admin dashboard: schedule, jobs, quotes, crews, customers, invoices, locations, lots, materials, scan
-- Installer mobile flow (`/m`) for today’s jobs, notes, and photos
-- Supabase schema + RLS + invoice recompute helpers
+The demo has no sign-in, database, API routes, payments, analytics, environment variables, or external customer records. Every displayed person, project, count, price, and schedule entry is fictional sample data. Interactive changes remain in the current browser session and reset on refresh.
 
-## Stack
-
-- Next.js App Router + TypeScript
-- Supabase (Postgres, Auth, RLS, Storage)
-- Tailwind CSS
-
-## Required Environment Variables
-
-Copy `.env.example` to `.env.local` and fill in. The app uses the **anon key + user session** for normal data (RLS enforces access). **`SUPABASE_SERVICE_ROLE_KEY`** is optional for day-to-day use; keep it for local **seed scripts** and for **Admin → Team** actions that call Supabase Auth admin APIs (invite/delete user).
+## Run locally
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-# Optional: seed scripts + Team page auth.admin (invites / user delete)
-SUPABASE_SERVICE_ROLE_KEY=
-# optional but recommended for invite + auth callback links
-NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
-# Optional: enable Stripe pay links in Admin → Billings / Jobs → Billings
-STRIPE_SECRET_KEY=
-# Optional but recommended when using webhook sync at /api/stripe/webhook
-STRIPE_WEBHOOK_SECRET=
+npm install
+npm run dev
 ```
 
-## Key File Tree
+## Verify
 
-```txt
-app/
-  auth/
-    callback/route.ts
-    onboarding/page.tsx
-  (admin)/
-    admin/
-      layout.tsx, page.tsx
-      schedule/page.tsx, jobs/, quotes/, crews/, customers/, invoices/
-      locations/, lots/, materials/, scan/, future-features/
-  (installer)/m/
-    layout.tsx, page.tsx, jobs/[id]/page.tsx
-  api/
-lib/
-  supabase/, config.ts, money.ts
-components/
-  InvoiceSummary.tsx, JobStatusBadge.tsx
-supabase/
-  migrations/
-    20260302141000_mvp_schema.sql
-    20260302150000_enforce_job_update_permissions.sql
-    20260310120000_locations_materials_job_supplies.sql
-    20260320150000_job_kind.sql
-    20260310140000_crews.sql
-    20260310160000_quotes.sql
-    20260310170000_lots_inventory_barcodes.sql
-    20260320103000_profiles_onboarding_completed.sql
+```bash
+npm run build
+npm run lint
 ```
-
-## Local Setup
-
-1. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-2. Apply SQL migrations in Supabase (in order):
-   - All files in `supabase/migrations/` (mvp_schema first, then the rest by timestamp)
-
-3. **(Optional)** Seed placeholder data (customers, jobs, invoices):
-   - From the project root (with `.env.local` containing `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`):  
-     `npm run db:seed`
-   - Or open [Supabase Dashboard](https://supabase.com/dashboard) → your project → **SQL Editor**, paste and run the contents of `supabase/seed.sql`.
-   - Adds 10 customers, 15 jobs, invoices with line items, and a few payments so the app has data to show.
-
-4. Run app:
-
-   ```bash
-   npm run dev
-   ```
-
-5. Open:
-   - Home: `http://localhost:3000`
-   - Admin: `http://localhost:3000/admin`
-   - Installer: `http://localhost:3000/m`
-
-## Team onboarding flow
-
-- Invite email HTML lives in `supabase/email-templates/invite-user.html` (paste into **Supabase → Authentication → Email Templates → Invite user**). Set subject to e.g. `You're invited to Tommy D's`.
-- Admins can send invite links from **Admin → Team**.
-- Invited users complete setup at `/auth/onboarding` (name, password), then are redirected by role.
-- Manual user creation remains available as a fallback.
